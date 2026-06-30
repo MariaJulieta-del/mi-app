@@ -1,111 +1,479 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/* ============================================================
+   GymTrack — Design System
+   Basado en Figma: GymTrack — Wireframes v2.0
+   ============================================================ */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+  background: #F3F4F6;
+  -webkit-font-smoothing: antialiased;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ============================================================
+   LAYOUT PRINCIPAL
+   ============================================================ */
+
+.gt-topbar {
+  height: 44px;
+  background: #1B5E44;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.gt-topbar-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.gt-topbar-user {
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+}
+
+.gt-layout {
+  display: flex;
+  margin-top: 44px;
+  min-height: calc(100vh - 44px);
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.gt-sidebar {
+  width: 140px;
+  min-width: 140px;
+  background: #fff;
+  border-right: 1px solid #E5E7EB;
+  position: fixed;
+  top: 44px;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.gt-sidebar nav {
+  padding: 8px 0;
+}
+
+.gt-sidebar-link {
+  display: block;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #374151;
+  text-decoration: none;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, color 0.15s;
+}
+
+.gt-sidebar-link:hover {
+  background: #F9FAFB;
+  color: #111827;
+}
+
+.gt-sidebar-link.active {
+  background: #F0FDF4;
+  color: #166534;
+  font-weight: 600;
+  border-left-color: #1B5E44;
+}
+
+/* ============================================================
+   CONTENIDO
+   ============================================================ */
+
+.gt-content {
+  margin-left: 140px;
+  flex: 1;
+  padding: 28px 32px;
+  background: #F3F4F6;
+}
+
+.gt-page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 20px 0;
+}
+
+/* ============================================================
+   TARJETAS DE ESTADÍSTICAS (stats cards)
+   ============================================================ */
+
+.gt-stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.gt-stat-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-width: 160px;
+}
+
+.gt-stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1B5E44;
+  line-height: 1.2;
+}
+
+.gt-stat-label {
+  font-size: 11px;
+  color: #6B7280;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   TARJETAS GENERALES
+   ============================================================ */
+
+.gt-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.gt-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 14px 0;
+}
+
+/* ============================================================
+   BARRA DE ACCIONES (búsqueda + botón)
+   ============================================================ */
+
+.gt-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.gt-search {
+  flex: 1;
+  min-width: 200px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  outline: none;
+}
+
+.gt-search:focus {
+  border-color: #1B5E44;
+  box-shadow: 0 0 0 2px rgba(27,94,68,0.15);
+}
+
+/* ============================================================
+   BOTONES
+   ============================================================ */
+
+.gt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--text-h);
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+.gt-btn-primary {
+  background: #1B5E44;
+  color: #fff;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+.gt-btn-primary:hover { background: #145038; color: #fff; }
+
+.gt-btn-secondary {
+  background: #F3F4F6;
+  color: #374151;
+  border: 1px solid #D1D5DB;
 }
-p {
+.gt-btn-secondary:hover { background: #E5E7EB; }
+
+.gt-btn-danger {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+.gt-btn-danger:hover { background: #FECACA; }
+
+.gt-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   TABLAS
+   ============================================================ */
+
+.gt-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.gt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gt-table thead tr {
+  background: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.gt-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.gt-table td {
+  padding: 11px 16px;
+  color: #374151;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.gt-table tbody tr:last-child td { border-bottom: none; }
+
+.gt-table tbody tr:nth-child(even) { background: #F9FAFB; }
+
+.gt-table tbody tr:hover { background: #F0FDF4; }
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+
+.gt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.gt-badge-green  { background: #D1FAE5; color: #065F46; }
+.gt-badge-red    { background: #FEE2E2; color: #991B1B; }
+.gt-badge-yellow { background: #FEF3C7; color: #92400E; }
+.gt-badge-gray   { background: #F3F4F6; color: #4B5563; }
+.gt-badge-blue   { background: #DBEAFE; color: #1E40AF; }
+
+/* ============================================================
+   FORMULARIOS
+   ============================================================ */
+
+.gt-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.gt-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gt-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.gt-input,
+.gt-select,
+.gt-textarea {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  font-family: inherit;
+}
+
+.gt-textarea {
+  height: auto;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.gt-input:focus,
+.gt-select:focus,
+.gt-textarea:focus {
+  border-color: #1B5E44;
+  box-shadow: 0 0 0 2px rgba(27,94,68,0.12);
+}
+
+/* ============================================================
+   ALERTAS
+   ============================================================ */
+
+.gt-alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.gt-alert-error   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+.gt-alert-success { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+.gt-alert-warning { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
+
+/* ============================================================
+   ESTADO VACÍO
+   ============================================================ */
+
+.gt-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #9CA3AF;
+  font-size: 13px;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+
+.gt-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 16px;
+}
+
+.gt-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #6B7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.gt-tab.active {
+  color: #1B5E44;
+  font-weight: 600;
+  border-bottom-color: #1B5E44;
+}
+
+/* ============================================================
+   CARDS DE RUTINAS (lista tipo cards)
+   ============================================================ */
+
+.gt-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gt-list-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.gt-list-card:hover {
+  border-color: #1B5E44;
+  box-shadow: 0 2px 8px rgba(27,94,68,0.1);
+}
+
+.gt-list-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.gt-list-card-sub {
+  font-size: 12px;
+  color: #6B7280;
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+
+.gt-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.gt-divider {
+  border: none;
+  border-top: 1px solid #E5E7EB;
+  margin: 20px 0;
 }
+
+.gt-text-muted { color: #6B7280; font-size: 12px; }
+.gt-text-sm    { font-size: 12px; }
+.gt-fw-600     { font-weight: 600; }
+.gt-mt-4       { margin-top: 4px; }
+.gt-mb-0       { margin-bottom: 0; }

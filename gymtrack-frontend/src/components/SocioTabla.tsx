@@ -7,62 +7,49 @@ interface Props {
 }
 
 const SocioTabla = ({ socios, onEditar, onEliminar }: Props) => {
+  if (socios.length === 0) {
+    return <div className="gt-empty">No hay socios registrados aún.</div>
+  }
+
   return (
-    <div className="card shadow-sm">
-      <div className="card-header bg-success text-white">
-        <h5 className="mb-0">Socios Registrados ({socios.length})</h5>
-      </div>
-      <div className="card-body p-0">
-        {socios.length === 0 ? (
-          <div className="p-4 text-center text-muted">
-            No hay socios registrados aún.
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-striped table-hover mb-0">
-              <thead className="table-dark">
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Apellido</th>
-                  <th>DNI</th>
-                  <th>Email</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {socios.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.id}</td>
-                    <td>{s.nombre}</td>
-                    <td>{s.apellido}</td>
-                    <td>{s.dni}</td>
-                    <td>{s.email || '—'}</td>
-                    <td>
-                      <span className={`badge ${s.estado === 'ACTIVO' ? 'bg-success' : 'bg-danger'}`}>
-                        {s.estado}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => onEditar(s)}
-                        className="btn btn-warning btn-sm me-2">
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => onEliminar(s.id!)}
-                        className="btn btn-danger btn-sm">
-                        Dar de baja
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+    <div className="gt-table-wrap">
+      <table className="gt-table">
+        <thead>
+          <tr>
+            <th>Nombre y Apellido</th>
+            <th>DNI</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {socios.map(s => (
+            <tr key={s.id}>
+              <td className="gt-fw-600">{s.nombre} {s.apellido}</td>
+              <td>{s.dni}</td>
+              <td>{s.email || '—'}</td>
+              <td>{s.telefono || '—'}</td>
+              <td>
+                <span className={s.estado === 'ACTIVO' ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-red'}>
+                  {s.estado ?? 'ACTIVO'}
+                </span>
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="gt-btn gt-btn-secondary" onClick={() => onEditar(s)}>
+                    Editar
+                  </button>
+                  <button className="gt-btn gt-btn-danger" onClick={() => onEliminar(s.id!)}>
+                    Dar de baja
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

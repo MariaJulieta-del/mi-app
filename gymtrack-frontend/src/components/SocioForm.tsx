@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Socio } from '../types/Socio'
 
 interface Props {
@@ -8,22 +8,22 @@ interface Props {
 }
 
 const SocioForm = ({ onGuardar, socioEditar, onCancelar }: Props) => {
-  const [form, setForm] = useState<Socio>(socioEditar || {
-    nombre: '',
-    apellido: '',
-    dni: '',
-    email: '',
-    telefono: '',
-    estado: 'ACTIVO'
+  const [form, setForm] = useState<Socio>({
+    nombre: '', apellido: '', dni: '', email: '', telefono: '', estado: 'ACTIVO'
   })
-
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (socioEditar) setForm(socioEditar)
+    else setForm({ nombre: '', apellido: '', dni: '', email: '', telefono: '', estado: 'ACTIVO' })
+  }, [socioEditar])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
     if (!form.nombre || !form.apellido || !form.dni) {
       setError('Nombre, apellido y DNI son obligatorios')
       return
@@ -33,58 +33,58 @@ const SocioForm = ({ onGuardar, socioEditar, onCancelar }: Props) => {
   }
 
   return (
-    <div className="card mb-4 shadow-sm">
-      <div className="card-header bg-success text-white">
-        <h5 className="mb-0">{socioEditar ? 'Editar Socio' : 'Nuevo Socio'}</h5>
-      </div>
-      <div className="card-body">
-        <div className="row g-3">
-          <div className="col-md-6">
-            <label className="form-label fw-bold">Nombre *</label>
-            <input name="nombre" value={form.nombre} onChange={handleChange}
-              className="form-control" placeholder="Nombre" />
+    <div className="gt-card" style={{ marginBottom: 20 }}>
+      <p className="gt-card-title">{socioEditar ? 'Editar Socio' : 'Alta / Edición de Socio'}</p>
+
+      {error && <div className="gt-alert gt-alert-error">{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="gt-form-grid">
+          <div className="gt-form-group">
+            <label className="gt-label">Nombre *</label>
+            <input className="gt-input" name="nombre" value={form.nombre}
+              onChange={handleChange} placeholder="Nombre" />
           </div>
-          <div className="col-md-6">
-            <label className="form-label fw-bold">Apellido *</label>
-            <input name="apellido" value={form.apellido} onChange={handleChange}
-              className="form-control" placeholder="Apellido" />
+          <div className="gt-form-group">
+            <label className="gt-label">Apellido *</label>
+            <input className="gt-input" name="apellido" value={form.apellido}
+              onChange={handleChange} placeholder="Apellido" />
           </div>
-          <div className="col-md-6">
-            <label className="form-label fw-bold">DNI *</label>
-            <input name="dni" value={form.dni} onChange={handleChange}
-              className="form-control" placeholder="DNI" />
+          <div className="gt-form-group">
+            <label className="gt-label">DNI *</label>
+            <input className="gt-input" name="dni" value={form.dni}
+              onChange={handleChange} placeholder="Ej: 38.112.445" />
           </div>
-          <div className="col-md-6">
-            <label className="form-label fw-bold">Email</label>
-            <input name="email" value={form.email} onChange={handleChange}
-              className="form-control" placeholder="Email" />
+          <div className="gt-form-group">
+            <label className="gt-label">Teléfono</label>
+            <input className="gt-input" name="telefono" value={form.telefono}
+              onChange={handleChange} placeholder="Teléfono" />
           </div>
-          <div className="col-md-6">
-            <label className="form-label fw-bold">Teléfono</label>
-            <input name="telefono" value={form.telefono} onChange={handleChange}
-              className="form-control" placeholder="Teléfono" />
+          <div className="gt-form-group">
+            <label className="gt-label">Email</label>
+            <input className="gt-input" name="email" value={form.email}
+              onChange={handleChange} placeholder="Email" />
           </div>
-          <div className="col-md-6">
-            <label className="form-label fw-bold">Estado</label>
-            <select name="estado" value={form.estado} onChange={handleChange}
-              className="form-select">
-              <option>ACTIVO</option>
-              <option>INACTIVO</option>
+          <div className="gt-form-group">
+            <label className="gt-label">Estado</label>
+            <select className="gt-select" name="estado" value={form.estado} onChange={handleChange}>
+              <option value="ACTIVO">ACTIVO</option>
+              <option value="INACTIVO">INACTIVO</option>
             </select>
           </div>
         </div>
-        {error && <div className="alert alert-danger mt-3">{error}</div>}
-        <div className="mt-3 d-flex gap-2">
-          <button onClick={handleSubmit} className="btn btn-success">
-            {socioEditar ? 'Actualizar' : 'Registrar'}
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="submit" className="gt-btn gt-btn-primary">
+            {socioEditar ? 'Actualizar' : 'Guardar socio'}
           </button>
           {socioEditar && (
-            <button onClick={onCancelar} className="btn btn-secondary">
+            <button type="button" className="gt-btn gt-btn-secondary" onClick={onCancelar}>
               Cancelar
             </button>
           )}
         </div>
-      </div>
+      </form>
     </div>
   )
 }
