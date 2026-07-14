@@ -1,4 +1,4 @@
-# 💪 GymTrack
+#GymTrack
 
 Sistema de gestión de gimnasios desarrollado con **Spring Boot** (backend) y **React + TypeScript** (frontend).
 
