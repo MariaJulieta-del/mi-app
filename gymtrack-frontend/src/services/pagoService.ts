@@ -1,22 +1,33 @@
-import axios from 'axios'
+import axiosInstance from './axiosInstance'
 import type { Pago, PagoRequestDTO } from '../types/Pago'
-
-const API = 'http://localhost:8080/api/v1/pagos'
-
-/** Registra un nuevo pago */
+const API = '/api/v1/pagos'
 export const registrarPago = async (data: PagoRequestDTO): Promise<Pago> => {
-  const res = await axios.post(API, data)
-  return res.data
+ const res = await axiosInstance.post(API, data)
+ return res.data
 }
-
-/** Lista todos los pagos */
+export const registrarConMembresia = async (data: {
+ socioId: number
+ planTipo: string
+ metodoPago: string
+ observaciones?: string
+}): Promise<Pago> => {
+ const res = await axiosInstance.post(`${API}/con-membresia`, data)
+ return res.data
+}
 export const listarPagos = async (): Promise<Pago[]> => {
-  const res = await axios.get(API)
-  return res.data
+ const res = await axiosInstance.get(API)
+ return res.data
 }
-
-/** Historial de pagos de una membresía específica */
 export const pagosPorMembresia = async (membresiaId: number): Promise<Pago[]> => {
-  const res = await axios.get(`${API}/membresia/${membresiaId}`)
-  return res.data
+ const res = await axiosInstance.get(`${API}/membresia/${membresiaId}`)
+ return res.data
+}
+/** Paga una membresía existente en PENDIENTE_PAGO y la activa. */
+export const saldarDeuda = async (data: {
+ membresiaId: number
+ metodoPago: string
+ observaciones?: string
+}): Promise<Pago> => {
+ const res = await axiosInstance.post(`${API}/saldar-deuda`, data)
+ return res.data
 }

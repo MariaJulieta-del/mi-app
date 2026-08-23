@@ -1,65 +1,94 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Rutina } from '../types/Rutina'
-import { obtenerRutinas, eliminarRutina } from '../services/rutinaService'
-
-const SOCIO_ID = 1
-
+import { obtenerRutinas, obtenerTodasRutinas, eliminarRutina } from '../services/rutinaService'
+import { useAuth } from '../context/AuthContext'
 export default function RutinasList() {
-  const [rutinas, setRutinas]   = useState<Rutina[]>([])
-  const [error, setError]       = useState<string | null>(null)
-  const [cargando, setCargando] = useState(true)
-
-  useEffect(() => { cargar() }, [])
-
-  const cargar = async () => {
-    try { setRutinas(await obtenerRutinas(SOCIO_ID)) }
-    catch { setError('Error al cargar las rutinas') }
-    finally { setCargando(false) }
-  }
-
-  const handleEliminar = async (id: number) => {
-    if (!confirm('¿Eliminar esta rutina?')) return
-    try { await eliminarRutina(id, SOCIO_ID); setRutinas(p => p.filter(r => r.id !== id)) }
-    catch { setError('No se pudo eliminar la rutina') }
-  }
-
-  return (
-    <>
-      <div className="gt-section-header">
-        <h1 className="gt-page-title" style={{ margin: 0 }}>Rutinas</h1>
-        <Link to="/rutinas/nueva" className="gt-btn gt-btn-primary">+ Nueva rutina</Link>
-      </div>
-
-      {error && <div className="gt-alert gt-alert-error">{error}</div>}
-
-      {cargando ? (
-        <p className="gt-text-muted">Cargando...</p>
-      ) : rutinas.length === 0 ? (
-        <div className="gt-empty">
-          <p>Todavía no tenés rutinas.</p>
-          <Link to="/rutinas/nueva" className="gt-btn gt-btn-primary" style={{ marginTop: 12 }}>Crear primera rutina</Link>
-        </div>
-      ) : (
-        <div className="gt-card-list">
-          {rutinas.map(r => (
-            <div key={r.id} className="gt-list-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <p className="gt-list-card-title">{r.nombre}</p>
-                  {r.descripcion && <p className="gt-list-card-sub">{r.descripcion}</p>}
-                  <p className="gt-text-muted gt-mt-4">Creada: {r.fechaCreacion?.slice(0, 10)}</p>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Link to={`/rutinas/${r.id}`} className="gt-btn gt-btn-secondary">Ver</Link>
-                  <Link to={`/rutinas/editar/${r.id}`} className="gt-btn gt-btn-secondary">Editar</Link>
-                  <button className="gt-btn gt-btn-danger" onClick={() => handleEliminar(r.id!)}>Eliminar</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </>
-  )
+ const { user } = useAuth()
+ const esAdmin = user?.rol === 'ADMIN' || user?.rol === 'EMPLEADO'
+ const socioId = user?.socioId ?? null
+ const [rutinas, setRutinas] = useState<Rutina[]>([])
+ const [error, setError] = useState<string | null>(null)
+ const [cargando, setCargando] = useState(true)
+ useEffect(() => { cargar() }, [])
+ const cargar = async () => {
+ try {
+ if (esAdmin) {
+ setRutinas(await obtenerTodasRutinas())
+ } else if (socioId) {
+ setRutinas(await obtenerRutinas(socioId))
+ }
+ } catch {
+ setError('Error al cargar las rutinas')
+ } finally {
+ setCargando(false)
+ }
+ }
+ const handleEliminar = async (r: Rutina) => {
+ if (!confirm('¿Eliminar esta rutina?')) return
+ const sid = esAdmin ? r.socioId : socioId!
+ try {
+ await eliminarRutina(r.id!, sid)
+ setRutinas(prev => prev.filter(x => x.id !== r.id))
+ } catch {
+ setError('No se pudo eliminar la rutina')
+ }
+ }
+ // Para admin, agrega el socioId de la rutina como query param
+ const linkVer = (r: Rutina) => esAdmin ? `/rutinas/${r.id}?socioId=${r.socioId}` : `/rutinas/${r.id}`
+ const linkEditar = (r: Rutina) => esAdmin ? `/rutinas/editar/${r.id}?socioId=${r.socioId}` : `/rutinas/editar/${r.id}`
+ return (
+ <>
+ <div className="gt-section-header">
+ <h1 className="gt-page-title" style={{ margin: 0 }}>
+ Rutinas
+ {esAdmin && (
+ <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', marginLeft: 10 }}>
+ — vista administrador ({rutinas.length} en total)
+ </span>
+ )}
+ </h1>
+ <Link to="/rutinas/nueva" className="gt-btn gt-btn-primary">+ Nueva rutina</Link>
+ </div>
+ {error && <div className="gt-alert gt-alert-error">{error}</div>}
+ {cargando ? (
+ <p className="gt-text-muted">Cargando...</p>
+ ) : rutinas.length === 0 ? (
+ <div className="gt-empty">
+ <p>{esAdmin ? 'No hay rutinas registradas en el sistema.' : 'Todavía no tenés rutinas.'}</p>
+ <Link to="/rutinas/nueva" className="gt-btn gt-btn-primary" style={{ marginTop: 12 }}>
+ Crear primera rutina
+ </Link>
+ </div>
+ ) : (
+ <div className="gt-card-list">
+ {rutinas.map(r => (
+ <div key={r.id} className="gt-list-card">
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+ <div>
+ <p className="gt-list-card-title">{r.nombre}</p>
+ {r.descripcion && <p className="gt-list-card-sub">{r.descripcion}</p>}
+ <p className="gt-text-muted gt-mt-4">
+ Creada: {r.fechaCreacion?.slice(0, 10)}
+ {esAdmin && (
+ <span style={{ marginLeft: 12, color: '#2E75B6', fontWeight: 600 }}>
+ Socio #{r.socioId}
+ </span>
+ )}
+ </p>
+ </div>
+ <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+ <Link to={linkVer(r)} className="gt-btn gt-btn-secondary">Ver</Link>
+ <Link to={linkEditar(r)} className="gt-btn gt-btn-secondary">Editar</Link>
+ <button className="gt-btn gt-btn-danger" onClick={() => handleEliminar(r)}>
+ Eliminar
+ </button>
+ </div>
+ </div>
+ </div>
+ ))}
+ </div>
+ )}
+ </>
+ )
 }

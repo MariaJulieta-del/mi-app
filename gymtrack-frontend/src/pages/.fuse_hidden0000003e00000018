@@ -1,0 +1,359 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { obtenerPorId } from '../services/socioService'
+import { obtenerPorSocio, crearMembresiaSinPago } from '../services/membresiaService'
+import { obtenerRutinas } from '../services/rutinaService'
+import { listarTarifas } from '../services/tarifaService'
+import type { Socio } from '../types/Socio'
+import type { Membresia } from '../types/Membresia'
+import type { Rutina } from '../types/Rutina'
+import type { Tarifa } from '../types/Tarifa'
+
+function formatFecha(iso?: string) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-AR')
+}
+
+function EstadoBadge({ activo, estado }: { activo?: boolean; estado?: string }) {
+  const inactivo = activo === false || estado === 'INACTIVO'
+  return (
+    <span className={inactivo ? 'gt-badge gt-badge-red' : 'gt-badge gt-badge-green'}>
+      {inactivo ? 'INACTIVO' : 'ACTIVO'}
+    </span>
+  )
+}
+
+const MEMBRESIA_COLORES: Record<string, string> = {
+  ACTIVA:          '#16A34A',
+  PENDIENTE_PAGO:  '#D97706',
+  VENCIDA:         '#DC2626',
+  CANCELADA:       '#6B7280',
+}
+
+export default function SocioPerfilPage() {
+  const { socioId } = useParams<{ socioId: string }>()
+  const navigate     = useNavigate()
+  const id = Number(socioId)
+
+  const [socio, setSocio]           = useState<Socio | null>(null)
+  const [membresias, setMembresias] = useState<Membresia[]>([])
+  const [rutinas, setRutinas]       = useState<Rutina[]>([])
+  const [planes, setPlanes]         = useState<Tarifa[]>([])
+  const [cargando, setCargando]     = useState(true)
+  const [error, setError]           = useState<string | null>(null)
+  const [msg, setMsg]               = useState<string | null>(null)
+
+  // Modal fiado
+  const [showFiado, setShowFiado]   = useState(false)
+  const [planFiado, setPlanFiado]   = useState('')
+  const [guardandoFiado, setGuardandoFiado] = useState(false)
+
+  const cargar = async () => {
+    if (!id) return
+    const [s, mems, ruts, tars] = await Promise.all([
+      obtenerPorId(id),
+      obtenerPorSocio(id).catch(() => [] as Membresia[]),
+      obtenerRutinas(id).catch(() => [] as Rutina[]),
+      listarTarifas().catch(() => [] as Tarifa[]),
+    ])
+    setSocio(s); setMembresias(mems); setRutinas(ruts); setPlanes(tars)
+  }
+
+  useEffect(() => {
+    cargar()
+      .catch(() => setError('No se pudo cargar la información del socio'))
+      .finally(() => setCargando(false))
+  }, [id])
+
+  const handleAsignarFiado = async () => {
+    if (!planFiado) return
+    setGuardandoFiado(true)
+    try {
+      await crearMembresiaSinPago(id, planFiado)
+      setMsg('Plan asignado sin pago. El socio puede ingresar 1 vez antes de ser bloqueado.')
+      setShowFiado(false)
+      setPlanFiado('')
+      await cargar()
+    } catch (e: any) {
+      setError(e?.response?.data?.error ?? 'Error al asignar el plan')
+    } finally {
+      setGuardandoFiado(false) }
+  }
+
+  if (cargando) return <p className="gt-text-muted">Cargando perfil...</p>
+  if (error || !socio) return <div className="gt-alert gt-alert-error">{error ?? 'Socio no encontrado.'}</div>
+
+  const inactivo         = socio.activo === false || socio.estado === 'INACTIVO'
+  const membresiaActiva  = membresias.find(m => m.estadoMembresia === 'ACTIVA')
+  const membresiaPendiente = membresias.find(m => m.estadoMembresia === 'PENDIENTE_PAGO')
+
+  return (
+    <>
+      {/* ── Botón volver ── */}
+      <button className="gt-btn gt-btn-secondary" style={{ marginBottom: 16 }} onClick={() => navigate('/socios')}>
+        ← Volver a Socios
+      </button>
+
+      {msg && (
+        <div className="gt-alert gt-alert-success" style={{ marginBottom: 12 }}>
+          {msg}
+          <button onClick={() => setMsg(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
+      {error && (
+        <div className="gt-alert gt-alert-error" style={{ marginBottom: 12 }}>
+          {error}
+          <button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
+
+      {/* ── Banner de deuda pendiente ── */}
+      {membresiaPendiente && (
+        <div style={{
+          background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8,
+          padding: '12px 16px', marginBottom: 16,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12
+        }}>
+          <div>
+            <strong style={{ color: '#92400E' }}>⚠️ Deuda pendiente</strong>
+            <span style={{ marginLeft: 8, color: '#78350F', fontSize: 14 }}>
+              Plan {membresiaPendiente.tipoMembresia} — ${Number(membresiaPendiente.precio).toLocaleString('es-AR')} sin abonar
+            </span>
+          </div>
+          <Link
+            to={`/pagos/saldar?membresiaId=${membresiaPendiente.id}`}
+            className="gt-btn gt-btn-primary"
+            style={{ fontSize: 13, background: '#D97706', borderColor: '#D97706' }}
+          >
+            💰 Saldar deuda
+          </Link>
+        </div>
+      )}
+
+      {/* ── Header del socio ── */}
+      <div className="gt-card" style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+              <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 700 }}>#{socio.id}</span>
+              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
+                {socio.nombre} {socio.apellido}
+              </h1>
+              <EstadoBadge activo={socio.activo} estado={socio.estado} />
+            </div>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 14, color: '#374151' }}>
+              <span>🪪 DNI: <strong>{socio.dni}</strong></span>
+              {socio.email    && <span>📧 {socio.email}</span>}
+              {socio.telefono && <span>📱 {socio.telefono}</span>}
+            </div>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 12, color: '#6B7280', marginTop: 6 }}>
+              <span>Alta: {formatFecha(socio.fechaCreacion)}</span>
+              <span>Últ. modificación: {formatFecha(socio.fechaModificacion)}</span>
+              {socio.fechaNacimiento && <span>Nacimiento: {formatFecha(socio.fechaNacimiento)}</span>}
+            </div>
+          </div>
+
+          {/* Acciones rápidas */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link to={`/socios/${id}/ficha`} className="gt-btn gt-btn-secondary" style={{ fontSize: 13 }}>
+              🏥 Ficha médica
+            </Link>
+            {!membresiaActiva && !membresiaPendiente && (
+              <button
+                className="gt-btn gt-btn-secondary"
+                style={{ fontSize: 13, color: '#D97706', borderColor: '#D97706' }}
+                onClick={() => setShowFiado(true)}
+              >
+                📋 Asignar plan sin pago
+              </button>
+            )}
+            <Link to={`/rutinas/nueva?socioId=${id}`} className="gt-btn gt-btn-secondary" style={{ fontSize: 13 }}>
+              🏋️ Nueva rutina
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Resumen rápido ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div className="gt-card" style={{ textAlign: 'center', padding: 16 }}>
+          <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#2E75B6' }}>{membresias.length}</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>Membresías totales</p>
+        </div>
+        <div className="gt-card" style={{ textAlign: 'center', padding: 16 }}>
+          <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#16A34A' }}>
+            {membresiaActiva ? '✓' : '—'}
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>
+            {membresiaActiva ? 'Membresía activa' : 'Sin membresía activa'}
+          </p>
+        </div>
+        <div className="gt-card" style={{ textAlign: 'center', padding: 16 }}>
+          <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#7C3AED' }}>{rutinas.length}</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>Rutinas asignadas</p>
+        </div>
+      </div>
+
+      {/* ── Membresías ── */}
+      <h2 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 10px' }}>
+        Membresías <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280' }}>({membresias.length})</span>
+      </h2>
+
+      {membresias.length === 0 ? (
+        <div className="gt-empty" style={{ marginBottom: 20 }}>
+          <p>Este socio no tiene membresías registradas.</p>
+          <Link
+            to={`/pagos/nuevo?socioId=${id}`}
+            className="gt-btn gt-btn-primary"
+            style={{ marginTop: 10 }}
+          >
+            💰 Asignar plan y registrar pago
+          </Link>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 20 }}>
+          {/* Botón para asignar nuevo plan si no hay activa */}
+          {!membresiaActiva && (
+            <Link
+              to={`/pagos/nuevo?socioId=${id}`}
+              className="gt-btn gt-btn-primary"
+              style={{ marginBottom: 12, display: 'inline-block', fontSize: 13 }}
+            >
+              💰 Asignar nuevo plan
+            </Link>
+          )}
+
+          {membresias.map(m => (
+            <div key={m.id} className="gt-list-card" style={{ marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, color: '#2E75B6', fontSize: 13 }}>#{m.id}</span>
+                    <span style={{ fontWeight: 600 }}>{m.tipoMembresia}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
+                      background: `${MEMBRESIA_COLORES[m.estadoMembresia ?? ''] ?? '#6B7280'}20`,
+                      color: MEMBRESIA_COLORES[m.estadoMembresia ?? ''] ?? '#6B7280',
+                    }}>
+                      {m.estadoMembresia ?? '—'}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: '#6B7280' }}>
+                    {formatFecha(m.fechaInicio)} → {formatFecha(m.fechaVencimiento)}
+                    {' · '}
+                    <strong style={{ color: '#374151' }}>${Number(m.precio).toLocaleString('es-AR')}</strong>
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Link
+                    to={`/membresias/${m.id}`}
+                    className="gt-btn gt-btn-secondary"
+                    style={{ fontSize: 12 }}
+                  >
+                    Ver detalle
+                  </Link>
+                  {m.estadoMembresia === 'ACTIVA' && (
+                    <Link
+                      to={`/pagos/nuevo?socioId=${id}`}
+                      className="gt-btn gt-btn-secondary"
+                      style={{ fontSize: 12 }}
+                    >
+                      💰 Renovar plan
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Rutinas ── */}
+      <h2 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 10px' }}>
+        Rutinas <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280' }}>({rutinas.length})</span>
+      </h2>
+
+      {rutinas.length === 0 ? (
+        <div className="gt-empty" style={{ marginBottom: 20 }}>
+          <p>Este socio no tiene rutinas asignadas.</p>
+          <Link
+            to={`/rutinas/nueva?socioId=${id}`}
+            className="gt-btn gt-btn-primary"
+            style={{ marginTop: 10 }}
+          >
+            Crear rutina
+          </Link>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 20 }}>
+          {rutinas.map(r => (
+            <div key={r.id} className="gt-list-card" style={{ marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <div>
+                  <p style={{ margin: '0 0 2px', fontWeight: 600 }}>{r.nombre}</p>
+                  {r.descripcion && (
+                    <p style={{ margin: 0, fontSize: 13, color: '#6B7280' }}>{r.descripcion}</p>
+                  )}
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9CA3AF' }}>
+                    Creada: {r.fechaCreacion?.slice(0, 10)}
+                  </p>
+                </div>
+                <Link
+                  to={`/rutinas/${r.id}?socioId=${id}`}
+                  className="gt-btn gt-btn-secondary"
+                  style={{ fontSize: 12, flexShrink: 0 }}
+                >
+                  Ver rutina
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* ── Modal: asignar plan sin pago ── */}
+      {showFiado && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999
+        }}>
+          <div className="gt-card" style={{ width: 360, padding: 24 }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Asignar plan sin pago</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B7280' }}>
+              El socio podrá ingresar <strong>1 vez</strong> antes de quedar bloqueado hasta saldar la deuda.
+            </p>
+            <label className="gt-label">Plan</label>
+            <select
+              className="gt-select"
+              value={planFiado}
+              onChange={e => setPlanFiado(e.target.value)}
+              style={{ marginBottom: 16 }}
+            >
+              <option value="">— Seleccioná un plan —</option>
+              {planes.map(p => (
+                <option key={p.tipo} value={p.tipo}>
+                  {p.nombre} — {p.duracionDias} días — ${Number(p.precio).toLocaleString('es-AR')}
+                </option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className="gt-btn gt-btn-primary"
+                disabled={!planFiado || guardandoFiado}
+                onClick={handleAsignarFiado}
+                style={{ background: '#D97706', borderColor: '#D97706' }}
+              >
+                {guardandoFiado ? 'Asignando...' : 'Confirmar'}
+              </button>
+              <button
+                className="gt-btn gt-btn-secondary"
+                onClick={() => { setShowFiado(false); setPlanFiado('') }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

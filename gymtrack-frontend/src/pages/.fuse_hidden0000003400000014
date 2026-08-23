@@ -1,0 +1,94 @@
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { obtenerFicha, guardarFicha } from '../services/fichaService'
+interface FichaForm {
+ lesiones: string
+ nivelAptitud: string
+ historialGimnasio: string
+ disponibilidad: string
+ observacionesMedicas: string
+}
+const VACIO: FichaForm = {
+ lesiones: '',
+ nivelAptitud: 'BUENO',
+ historialGimnasio: '',
+ disponibilidad: '',
+ observacionesMedicas: '',
+}
+export default function FichaMedicaPage() {
+ const { socioId } = useParams<{ socioId: string }>()
+ const id = Number(socioId)
+ const [form, setForm] = useState<FichaForm>(VACIO)
+ const [error, setError] = useState<string | null>(null)
+ const [exito, setExito] = useState<string | null>(null)
+ const [guardando, setGuardando] = useState(false)
+ const [cargando, setCargando] = useState(true)
+ useEffect(() => {
+ if (!id) return
+ obtenerFicha(id)
+ .then(data => {
+ if (data) setForm({
+ lesiones: data.lesiones || '',
+ nivelAptitud: data.nivelAptitud || 'BUENO',
+ historialGimnasio: data.historialGimnasio || '',
+ disponibilidad: data.disponibilidad || '',
+ observacionesMedicas: data.observacionesMedicas || '',
+ })
+ })
+ .catch(() => {}) // 404 = ficha no creada todavía, está bien
+ .finally(() => setCargando(false))
+ }, [id])
+ const handleSubmit = async (e: React.FormEvent) => {
+ e.preventDefault()
+ setGuardando(true); setError(null); setExito(null)
+ try {
+ await guardarFicha(id, form)
+ setExito('Ficha médica guardada correctamente')
+ } catch { setError('Error al guardar la ficha médica') }
+ finally { setGuardando(false) }
+ }
+ if (cargando) return <p className="gt-text-muted">Cargando ficha médica...</p>
+ return (
+ <>
+ <h1 className="gt-page-title">Ficha Médico-Deportiva</h1>
+ <p style={{ color: '#6B7280', marginTop: -8, marginBottom: 16 }}>Socio ID: {id}</p>
+ {exito && <div className="gt-alert gt-alert-success">{exito}<button onClick={() => setExito(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button></div>}
+ {error && <div className="gt-alert gt-alert-error">{error}<button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button></div>}
+ <div className="gt-card">
+ <form onSubmit={handleSubmit}>
+ <div className="gt-form-grid">
+ <div className="gt-form-group">
+ <label className="gt-label">Nivel de aptitud física</label>
+ <select className="gt-select" value={form.nivelAptitud} onChange={e => setForm({ ...form, nivelAptitud: e.target.value })}>
+ <option value="EXCELENTE">Excelente</option>
+ <option value="BUENO">Bueno</option>
+ <option value="REGULAR">Regular</option>
+ <option value="BAJO">Bajo</option>
+ <option value="MUY_BAJO">Muy bajo</option>
+ </select>
+ </div>
+ <div className="gt-form-group">
+ <label className="gt-label">Disponibilidad horaria</label>
+ <input className="gt-input" value={form.disponibilidad} onChange={e => setForm({ ...form, disponibilidad: e.target.value })} placeholder="Ej: Lunes a viernes mañana" />
+ </div>
+ <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
+ <label className="gt-label">Lesiones / antecedentes</label>
+ <textarea className="gt-textarea" rows={3} value={form.lesiones} onChange={e => setForm({ ...form, lesiones: e.target.value })} placeholder="Describir lesiones previas, problemas articulares, cirugías, etc." />
+ </div>
+ <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
+ <label className="gt-label">Historial en gimnasios</label>
+ <textarea className="gt-textarea" rows={2} value={form.historialGimnasio} onChange={e => setForm({ ...form, historialGimnasio: e.target.value })} placeholder="Años de entrenamiento, disciplinas previas, objetivos..." />
+ </div>
+ <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
+ <label className="gt-label">Observaciones médicas</label>
+ <textarea className="gt-textarea" rows={3} value={form.observacionesMedicas} onChange={e => setForm({ ...form, observacionesMedicas: e.target.value })} placeholder="Condiciones médicas relevantes, medicación, restricciones..." />
+ </div>
+ </div>
+ <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>
+ {guardando ? 'Guardando...' : ' Guardar ficha médica'}
+ </button>
+ </form>
+ </div>
+ </>
+ )
+}

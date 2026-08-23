@@ -1,0 +1,17 @@
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+export interface LoginResponse {
+  token: string
+  username: string
+  rol: 'ADMIN' | 'EMPLEADO' | 'SOCIO'
+  socioId: number | null
+}
+
+export interface AuthUser {
+  username: string
+  rol: 'ADMIN' | 'EMPLEADO' | 'SOCIO'
+  socioId: number | null
+}

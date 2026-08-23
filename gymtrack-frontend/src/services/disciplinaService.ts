@@ -1,0 +1,17 @@
+import axiosInstance from './axiosInstance'
+const API = '/api/v1/disciplinas'
+export const listarDisciplinas = async (soloActivas = true) => {
+ const res = await axiosInstance.get(API, { params: { soloActivas } })
+ return res.data
+}
+export const crearDisciplina = async (data: any) => {
+ const res = await axiosInstance.post(API, data)
+ return res.data
+}
+export const actualizarDisciplina = async (id: number, data: any) => {
+ const res = await axiosInstance.put(`${API}/${id}`, data)
+ return res.data
+}
+export const desactivarDisciplina = async (id: number) => {
+ await axiosInstance.delete(`${API}/${id}`)
+}

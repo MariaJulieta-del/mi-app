@@ -8,7 +8,7 @@
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   color: #374151;
   background: #F3F4F6;
@@ -27,7 +27,7 @@ body {
    ============================================================ */
 
 .gt-topbar {
-  height: 44px;
+  height: 52px;
   background: #1B5E44;
   display: flex;
   align-items: center;
@@ -41,21 +41,21 @@ body {
 }
 
 .gt-topbar-brand {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.3px;
 }
 
 .gt-topbar-user {
-  font-size: 12px;
+  font-size: 13px;
   color: rgba(255,255,255,0.8);
 }
 
 .gt-layout {
   display: flex;
-  margin-top: 44px;
-  min-height: calc(100vh - 44px);
+  margin-top: 52px;
+  min-height: calc(100vh - 52px);
 }
 
 /* ============================================================
@@ -63,12 +63,12 @@ body {
    ============================================================ */
 
 .gt-sidebar {
-  width: 140px;
-  min-width: 140px;
+  width: 200px;
+  min-width: 200px;
   background: #fff;
   border-right: 1px solid #E5E7EB;
   position: fixed;
-  top: 44px;
+  top: 52px;
   bottom: 0;
   left: 0;
   overflow-y: auto;
@@ -81,8 +81,8 @@ body {
 
 .gt-sidebar-link {
   display: block;
-  padding: 10px 14px;
-  font-size: 13px;
+  padding: 12px 16px;
+  font-size: 14px;
   color: #374151;
   text-decoration: none;
   cursor: pointer;
@@ -107,14 +107,14 @@ body {
    ============================================================ */
 
 .gt-content {
-  margin-left: 140px;
+  margin-left: 200px;
   flex: 1;
-  padding: 28px 32px;
+  padding: 32px 36px;
   background: #F3F4F6;
 }
 
 .gt-page-title {
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 600;
   color: #111827;
   margin: 0 0 20px 0;
@@ -125,10 +125,10 @@ body {
    ============================================================ */
 
 .gt-stats-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 
 .gt-stat-card {
@@ -136,18 +136,17 @@ body {
   border: 1px solid #E5E7EB;
   border-radius: 8px;
   padding: 16px 20px;
-  min-width: 160px;
 }
 
 .gt-stat-number {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1B5E44;
   line-height: 1.2;
 }
 
 .gt-stat-label {
-  font-size: 11px;
+  font-size: 13px;
   color: #6B7280;
   margin-top: 4px;
 }
@@ -160,12 +159,12 @@ body {
   background: #fff;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
-  padding: 20px 24px;
+  padding: 24px 28px;
   margin-bottom: 20px;
 }
 
 .gt-card-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #374151;
   margin: 0 0 14px 0;
@@ -186,11 +185,11 @@ body {
 .gt-search {
   flex: 1;
   min-width: 200px;
-  height: 34px;
+  height: 38px;
   padding: 0 12px;
   border: 1px solid #D1D5DB;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: #374151;
   background: #fff;
   outline: none;
@@ -209,10 +208,10 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 14px;
+  height: 38px;
+  padding: 0 16px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -259,7 +258,7 @@ body {
 .gt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .gt-table thead tr {
@@ -268,9 +267,9 @@ body {
 }
 
 .gt-table th {
-  padding: 10px 16px;
+  padding: 12px 16px;
   text-align: left;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #6B7280;
   text-transform: uppercase;
@@ -279,7 +278,7 @@ body {
 }
 
 .gt-table td {
-  padding: 11px 16px;
+  padding: 13px 16px;
   color: #374151;
   border-bottom: 1px solid #F3F4F6;
 }
@@ -297,9 +296,9 @@ body {
 .gt-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border-radius: 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -328,7 +327,7 @@ body {
 }
 
 .gt-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #374151;
 }
@@ -336,11 +335,11 @@ body {
 .gt-input,
 .gt-select,
 .gt-textarea {
-  height: 34px;
+  height: 38px;
   padding: 0 10px;
   border: 1px solid #D1D5DB;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: #374151;
   background: #fff;
   outline: none;
@@ -369,7 +368,7 @@ body {
 .gt-alert {
   padding: 12px 16px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   margin-bottom: 16px;
 }
 
@@ -385,7 +384,7 @@ body {
   text-align: center;
   padding: 48px 20px;
   color: #9CA3AF;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* ============================================================
@@ -401,7 +400,7 @@ body {
 
 .gt-tab {
   padding: 8px 16px;
-  font-size: 13px;
+  font-size: 14px;
   color: #6B7280;
   cursor: pointer;
   border-bottom: 2px solid transparent;
@@ -477,3 +476,24 @@ body {
 .gt-fw-600     { font-weight: 600; }
 .gt-mt-4       { margin-top: 4px; }
 .gt-mb-0       { margin-bottom: 0; }
+
+/* ============================================================
+   LOGIN PAGE
+   ============================================================ */
+
+.gt-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1B5E44 0%, #166534 60%, #14532D 100%);
+}
+
+.gt-login-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}

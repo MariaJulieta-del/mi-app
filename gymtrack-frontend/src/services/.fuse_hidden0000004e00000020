@@ -1,0 +1,17 @@
+import axiosInstance from './axiosInstance'
+
+const API = '/api/v1/notificaciones'
+
+export const listarNotificaciones = async () => {
+  const res = await axiosInstance.get(API)
+  return res.data
+}
+
+export const crearNotificacion = async (data: any) => {
+  const res = await axiosInstance.post(API, data)
+  return res.data
+}
+
+export const archivarNotificacion = async (id: number) => {
+  await axiosInstance.delete(`${API}/${id}`)
+}

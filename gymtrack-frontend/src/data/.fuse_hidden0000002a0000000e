@@ -1,0 +1,143 @@
+// ──────────────────────────────────────────────────────────────
+// Plantillas de rutinas predefinidas para GymTrack
+// Clasificadas por tren muscular y objetivo
+// ──────────────────────────────────────────────────────────────
+
+export type TrenMuscular = 'SUPERIOR' | 'INFERIOR' | 'COMPLETO'
+export type ObjetivoRutina = 'HIPERTROFIA' | 'FUERZA' | 'DEFINICION' | 'RESISTENCIA'
+
+export const TREN_LABELS: Record<TrenMuscular, string> = {
+  SUPERIOR: 'Tren Superior',
+  INFERIOR: 'Tren Inferior',
+  COMPLETO: 'Cuerpo Completo',
+}
+
+export const OBJETIVO_LABELS: Record<ObjetivoRutina, string> = {
+  HIPERTROFIA: 'Hipertrofia',
+  FUERZA:      'Fuerza',
+  DEFINICION:  'Definición',
+  RESISTENCIA: 'Resistencia',
+}
+
+export interface PlantillaEjercicio {
+  nombreEjercicio: string
+  series: number
+  repeticiones: number
+  descansoSeg: number
+  notas?: string // incluye peso recomendado
+}
+
+export interface RutinaPlantilla {
+  id: string
+  nombre: string
+  descripcion: string
+  trenMuscular: TrenMuscular
+  objetivo: ObjetivoRutina
+  duracionEstimada: string
+  ejercicios: PlantillaEjercicio[]
+}
+
+export const PLANTILLAS: RutinaPlantilla[] = [
+  // ── TREN SUPERIOR ─────────────────────────────────────────
+  {
+    id: 'sup-hiper',
+    nombre: 'Tren Superior — Hipertrofia',
+    descripcion: 'Rutina para ganar masa muscular en pecho, espalda, hombros y brazos. 4 series de 8-12 reps con descanso de 90s.',
+    trenMuscular: 'SUPERIOR',
+    objetivo: 'HIPERTROFIA',
+    duracionEstimada: '70 min',
+    ejercicios: [
+      { nombreEjercicio: 'Press de banca con barra',       series: 4, repeticiones: 10, descansoSeg: 90,  notas: 'Peso recomendado: 70-80% 1RM.' },
+      { nombreEjercicio: 'Remo con barra',                  series: 4, repeticiones: 10, descansoSeg: 90,  notas: 'Peso recomendado: 60-70% 1RM. Espalda recta.' },
+      { nombreEjercicio: 'Press militar con mancuernas',   series: 3, repeticiones: 12, descansoSeg: 75,  notas: 'Peso recomendado: 15-25 kg por mancuerna.' },
+      { nombreEjercicio: 'Jalón al pecho (polea alta)',    series: 3, repeticiones: 12, descansoSeg: 75,  notas: 'Agarre pronado, codos hacia abajo.' },
+      { nombreEjercicio: 'Aperturas con mancuernas',       series: 3, repeticiones: 12, descansoSeg: 60,  notas: 'Peso recomendado: 10-15 kg. Codos ligeramente flexionados.' },
+      { nombreEjercicio: 'Curl de bíceps con barra',       series: 3, repeticiones: 10, descansoSeg: 60,  notas: 'Peso recomendado: 20-30 kg.' },
+      { nombreEjercicio: 'Extensión de tríceps en polea',  series: 3, repeticiones: 12, descansoSeg: 60,  notas: 'Codos fijos al costado del cuerpo.' },
+    ],
+  },
+  {
+    id: 'sup-def',
+    nombre: 'Tren Superior — Definición',
+    descripcion: 'Rutina para definir y tonificar el tren superior. 3 series de 15-20 reps con descanso corto para mayor gasto calórico.',
+    trenMuscular: 'SUPERIOR',
+    objetivo: 'DEFINICION',
+    duracionEstimada: '55 min',
+    ejercicios: [
+      { nombreEjercicio: 'Press de banca con mancuernas',  series: 3, repeticiones: 15, descansoSeg: 60,  notas: 'Peso recomendado: 50-60% 1RM. Ritmo constante.' },
+      { nombreEjercicio: 'Remo en polea baja',             series: 3, repeticiones: 15, descansoSeg: 60,  notas: 'Peso moderado, máxima contracción de espalda.' },
+      { nombreEjercicio: 'Elevaciones laterales',          series: 3, repeticiones: 15, descansoSeg: 45,  notas: 'Peso recomendado: 8-12 kg. No balancear el cuerpo.' },
+      { nombreEjercicio: 'Flexiones de brazos',            series: 3, repeticiones: 20, descansoSeg: 45,  notas: 'Cuerpo recto, amplitud completa.' },
+      { nombreEjercicio: 'Curl martillo',                  series: 3, repeticiones: 15, descansoSeg: 45,  notas: 'Peso recomendado: 10-15 kg.' },
+      { nombreEjercicio: 'Fondos en paralelas',            series: 3, repeticiones: 15, descansoSeg: 45,  notas: 'Peso corporal. Bajá a 90° de codos.' },
+    ],
+  },
+
+  // ── TREN INFERIOR ─────────────────────────────────────────
+  {
+    id: 'inf-hiper',
+    nombre: 'Tren Inferior — Hipertrofia',
+    descripcion: 'Rutina para ganar masa muscular en cuádriceps, femorales, glúteos y pantorrillas. 4 series de 8-12 reps.',
+    trenMuscular: 'INFERIOR',
+    objetivo: 'HIPERTROFIA',
+    duracionEstimada: '65 min',
+    ejercicios: [
+      { nombreEjercicio: 'Sentadilla con barra',            series: 4, repeticiones: 10, descansoSeg: 120, notas: 'Peso recomendado: 70-80% 1RM. Rodillas alineadas con pies.' },
+      { nombreEjercicio: 'Prensa de piernas',               series: 4, repeticiones: 12, descansoSeg: 90,  notas: 'Peso recomendado: 100-150 kg. Pies a la altura de los hombros.' },
+      { nombreEjercicio: 'Peso muerto rumano',              series: 3, repeticiones: 10, descansoSeg: 90,  notas: 'Peso recomendado: 60-70% 1RM. Bisagra de cadera.' },
+      { nombreEjercicio: 'Estocadas con mancuernas',        series: 3, repeticiones: 12, descansoSeg: 75,  notas: 'Por pierna. Peso recomendado: 15-20 kg por mancuerna.' },
+      { nombreEjercicio: 'Curl femoral en máquina',         series: 3, repeticiones: 12, descansoSeg: 60,  notas: 'Movimiento controlado en la fase excéntrica.' },
+      { nombreEjercicio: 'Extensión de cuádriceps',         series: 3, repeticiones: 15, descansoSeg: 60,  notas: 'Peso moderado, enfocarse en la contracción.' },
+      { nombreEjercicio: 'Elevación de pantorrillas de pie',series: 4, repeticiones: 15, descansoSeg: 45,  notas: 'Amplitud completa de movimiento.' },
+    ],
+  },
+  {
+    id: 'inf-def',
+    nombre: 'Tren Inferior — Definición',
+    descripcion: 'Rutina para tonificar piernas y glúteos. Series de 15-20 reps con poco descanso para mayor gasto calórico.',
+    trenMuscular: 'INFERIOR',
+    objetivo: 'DEFINICION',
+    duracionEstimada: '50 min',
+    ejercicios: [
+      { nombreEjercicio: 'Sentadilla con peso corporal',    series: 3, repeticiones: 20, descansoSeg: 45,  notas: 'Enfocate en la técnica y la amplitud.' },
+      { nombreEjercicio: 'Sentadilla sumo con mancuerna',   series: 3, repeticiones: 15, descansoSeg: 60,  notas: 'Peso recomendado: 20-30 kg.' },
+      { nombreEjercicio: 'Estocadas alternadas',            series: 3, repeticiones: 16, descansoSeg: 60,  notas: '8 por pierna. Con mancuernas livianas.' },
+      { nombreEjercicio: 'Elevación de cadera (hip thrust)',series: 3, repeticiones: 15, descansoSeg: 60,  notas: 'Máxima contracción de glúteos al subir.' },
+      { nombreEjercicio: 'Sentadilla lateral',              series: 3, repeticiones: 15, descansoSeg: 45,  notas: 'Trabaja aductores y abductores.' },
+      { nombreEjercicio: 'Saltos al cajón (box jump)',      series: 3, repeticiones: 10, descansoSeg: 60,  notas: 'Aterrizaje suave. Aporta componente cardiovascular.' },
+    ],
+  },
+
+  // ── CUERPO COMPLETO ───────────────────────────────────────
+  {
+    id: 'comp-fuerza',
+    nombre: 'Cuerpo Completo — Fuerza',
+    descripcion: 'Rutina de fuerza con los movimientos compuestos fundamentales. 5 series de 5 reps con descanso largo para máxima recuperación.',
+    trenMuscular: 'COMPLETO',
+    objetivo: 'FUERZA',
+    duracionEstimada: '75 min',
+    ejercicios: [
+      { nombreEjercicio: 'Sentadilla con barra',            series: 5, repeticiones: 5, descansoSeg: 180, notas: 'Peso recomendado: 80-90% 1RM.' },
+      { nombreEjercicio: 'Peso muerto convencional',        series: 5, repeticiones: 5, descansoSeg: 180, notas: 'Peso recomendado: 80-90% 1RM. El ejercicio más completo.' },
+      { nombreEjercicio: 'Press de banca con barra',        series: 5, repeticiones: 5, descansoSeg: 150, notas: 'Peso recomendado: 80-90% 1RM.' },
+      { nombreEjercicio: 'Press militar con barra',         series: 5, repeticiones: 5, descansoSeg: 150, notas: 'Peso recomendado: 70-80% 1RM.' },
+      { nombreEjercicio: 'Remo con barra (Pendlay)',        series: 5, repeticiones: 5, descansoSeg: 150, notas: 'Arrancar desde el piso en cada repetición.' },
+    ],
+  },
+  {
+    id: 'comp-res',
+    nombre: 'Cuerpo Completo — Resistencia',
+    descripcion: 'Circuito funcional para mejorar la resistencia muscular y cardiovascular. Series de 20-30 reps con descanso mínimo.',
+    trenMuscular: 'COMPLETO',
+    objetivo: 'RESISTENCIA',
+    duracionEstimada: '45 min',
+    ejercicios: [
+      { nombreEjercicio: 'Sentadilla con salto',            series: 3, repeticiones: 20, descansoSeg: 30,  notas: 'Explosividad al subir. Aterrizaje suave.' },
+      { nombreEjercicio: 'Flexiones de brazos',             series: 3, repeticiones: 20, descansoSeg: 30,  notas: 'Ritmo moderado sin perder técnica.' },
+      { nombreEjercicio: 'Burpees',                         series: 3, repeticiones: 15, descansoSeg: 45,  notas: 'Ejercicio completo de alta intensidad.' },
+      { nombreEjercicio: 'Remo con mancuerna a una mano',  series: 3, repeticiones: 20, descansoSeg: 30,  notas: 'Por lado. Peso recomendado: 10-15 kg.' },
+      { nombreEjercicio: 'Plancha abdominal',               series: 3, repeticiones: 45, descansoSeg: 30,  notas: '45 segundos por serie. Cuerpo recto, core activo.' },
+      { nombreEjercicio: 'Mountain climbers',               series: 3, repeticiones: 30, descansoSeg: 30,  notas: '30 reps (15 por pierna). Ritmo alto.' },
+    ],
+  },
+]

@@ -1,0 +1,88 @@
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { obtenerMembresia } from '../services/membresiaService'
+import { saldarDeuda } from '../services/pagoService'
+import type { Membresia } from '../types/Membresia'
+import type { MetodoPago } from '../types/Pago'
+const METODOS: MetodoPago[] = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA']
+export default function SaldarDeudaPage() {
+ const [searchParams] = useSearchParams()
+ const navigate = useNavigate()
+ const membresiaId = Number(searchParams.get('membresiaId'))
+ const [membresia, setMembresia] = useState<Membresia | null>(null)
+ const [metodo, setMetodo] = useState<MetodoPago>('EFECTIVO')
+ const [observaciones, setObs] = useState('')
+ const [error, setError] = useState<string | null>(null)
+ const [guardando, setGuardando] = useState(false)
+ const [cargando, setCargando] = useState(true)
+ useEffect(() => {
+ if (!membresiaId) { setError('Membresía no especificada'); setCargando(false); return }
+ obtenerMembresia(membresiaId)
+ .then(setMembresia)
+ .catch(() => setError('No se pudo cargar la membresía'))
+ .finally(() => setCargando(false))
+ }, [membresiaId])
+ const handleSubmit = async (e: React.FormEvent) => {
+ e.preventDefault()
+ if (!membresia) return
+ try {
+ setGuardando(true)
+ await saldarDeuda({ membresiaId, metodoPago: metodo, observaciones: observaciones || undefined })
+ navigate(`/socios/${membresia.socioId}/perfil`)
+ } catch (err: any) {
+ setError(err?.response?.data?.error ?? 'Error al registrar el pago')
+ } finally {
+ setGuardando(false)
+ }
+ }
+ if (cargando) return <p className="gt-text-muted">Cargando...</p>
+ if (error && !membresia) return <div className="gt-alert gt-alert-error">{error}</div>
+ return (
+ <>
+ <h1 className="gt-page-title">Saldar deuda</h1>
+ <div className="gt-card" style={{ maxWidth: 480 }}>
+ {error && (
+ <div className="gt-alert gt-alert-error" style={{ marginBottom: 16 }}>
+ {error}
+ <button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button>
+ </div>
+ )}
+ {/* Resumen de la deuda */}
+ <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', marginBottom: 20 }}>
+ <p style={{ margin: 0, fontSize: 13, color: '#92400E' }}>
+ <strong>Plan:</strong> {membresia?.tipoMembresia}
+ </p>
+ <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 700, color: '#78350F' }}>
+ ${Number(membresia?.precio ?? 0).toLocaleString('es-AR')} pendiente
+ </p>
+ </div>
+ <form onSubmit={handleSubmit}>
+ <div className="gt-form-group" style={{ marginBottom: 16 }}>
+ <label className="gt-label">Método de pago</label>
+ <select className="gt-select" value={metodo} onChange={e => setMetodo(e.target.value as MetodoPago)}>
+ {METODOS.map(m => <option key={m} value={m}>{m}</option>)}
+ </select>
+ </div>
+ <div className="gt-form-group" style={{ marginBottom: 20 }}>
+ <label className="gt-label">Observaciones (opcional)</label>
+ <textarea
+ className="gt-textarea"
+ rows={2}
+ value={observaciones}
+ onChange={e => setObs(e.target.value)}
+ placeholder="Ej: Pagó en cuotas, comprobante #..."
+ />
+ </div>
+ <div style={{ display: 'flex', gap: 8 }}>
+ <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>
+ {guardando ? 'Registrando...' : 'Confirmar pago'}
+ </button>
+ <button type="button" className="gt-btn gt-btn-secondary" onClick={() => navigate(-1)}>
+ Cancelar
+ </button>
+ </div>
+ </form>
+ </div>
+ </>
+ )
+}
