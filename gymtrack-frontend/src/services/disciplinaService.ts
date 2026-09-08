@@ -15,3 +15,7 @@ export const actualizarDisciplina = async (id: number, data: any) => {
 export const desactivarDisciplina = async (id: number) => {
  await axiosInstance.delete(`${API}/${id}`)
 }
+
+export const renovarMesDisciplina = async (id: number) => {
+ await axiosInstance.post(`${API}/${id}/renovar-mes`)
+}

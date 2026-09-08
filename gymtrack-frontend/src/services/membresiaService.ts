@@ -26,3 +26,9 @@ export const crearMembresiaSinPago = async (socioId: number, planTipo: string): 
  const res = await axiosInstance.post(`${API}/pendiente`, { socioId, planTipo })
  return res.data
 }
+
+/** Membresías ACTIVAS que vencen en los próximos `dias` días (default 7). */
+export const listarProximasAVencer = async (dias = 7): Promise<Membresia[]> => {
+ const res = await axiosInstance.get(`${API}/proximas-a-vencer`, { params: { dias } })
+ return res.data
+}

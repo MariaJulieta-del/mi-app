@@ -7,6 +7,7 @@ import {
  agregarEjercicio,
  eliminarEjercicio,
 } from '../services/rutinaService'
+import { listarMaquinas, type Maquina as MaquinaCatalogo } from '../services/maquinaService'
 import { useAuth } from '../context/AuthContext'
 const ejVacio: EjercicioRequestDTO = {
  nombreEjercicio: '',
@@ -22,12 +23,16 @@ export default function RutinasDetail() {
  const navigate = useNavigate()
  const { user } = useAuth()
  const esAdmin = user?.rol === 'ADMIN' || user?.rol === 'EMPLEADO'
- // SOCIO usa su propio id; ADMIN toma el socioId del query param
- const socioId: number = esAdmin
- ? Number(searchParams.get('socioId'))
- : (user?.socioId as number)
+ // SOCIO usa su propio id; ADMIN toma el socioId del query param (null si es rutina genérica)
+ const esGeneral = searchParams.get('general') === 'true'
+ const socioId: number | null = esGeneral
+ ? null
+ : esAdmin
+  ? (searchParams.get('socioId') ? Number(searchParams.get('socioId')) : null)
+  : (user?.socioId ?? null)
  const [rutina, setRutina] = useState<Rutina | null>(null)
  const [ejercicios, setEjercicios] = useState<Ejercicio[]>([])
+ const [catalogo, setCatalogo] = useState<MaquinaCatalogo[]>([])
  const [error, setError] = useState<string | null>(null)
  const [cargando, setCargando] = useState(true)
  // Estado del formulario de nuevo ejercicio
@@ -35,12 +40,13 @@ export default function RutinasDetail() {
  const [nuevoEj, setNuevoEj] = useState<EjercicioRequestDTO>(ejVacio)
  const [guardandoEj, setGuardandoEj] = useState(false)
  useEffect(() => {
- if (!id || !socioId) return
+ if (!id) return
  Promise.all([
  obtenerRutina(Number(id), socioId),
  obtenerEjercicios(Number(id), socioId),
+ listarMaquinas(true),
  ])
- .then(([r, ejs]) => { setRutina(r); setEjercicios(ejs) })
+ .then(([r, ejs, cat]) => { setRutina(r as Rutina); setEjercicios(ejs as Ejercicio[]); setCatalogo(cat) })
  .catch(() => setError('No se pudo cargar la rutina'))
  .finally(() => setCargando(false))
  }, [id])
@@ -70,9 +76,11 @@ export default function RutinasDetail() {
  }
  if (cargando) return <p className="gt-text-muted">Cargando...</p>
  if (!rutina) return <div className="gt-alert gt-alert-error">{error ?? 'Rutina no encontrada.'}</div>
- const linkEditar = esAdmin
- ? `/rutinas/editar/${rutina.id}?socioId=${socioId}`
- : `/rutinas/editar/${rutina.id}`
+ const linkEditar = esGeneral
+ ? `/rutinas/editar/${rutina.id}?general=true`
+ : esAdmin && socioId
+  ? `/rutinas/editar/${rutina.id}?socioId=${socioId}`
+  : `/rutinas/editar/${rutina.id}`
  return (
  <>
  {/* ── Cabecera ── */}
@@ -83,9 +91,9 @@ export default function RutinasDetail() {
  <div className="gt-section-header" style={{ marginBottom: 0 }}>
  <div>
  <h1 className="gt-page-title" style={{ margin: 0 }}>{rutina.nombre}</h1>
- {esAdmin && (
+ {esAdmin && rutina.socioId && (
  <p style={{ margin: '2px 0 0', fontSize: 13, color: '#6B7280' }}>
- Socio #{rutina.socioId}
+ {rutina.socioNombre ?? `Socio #${rutina.socioId}`}
  </p>
  )}
  </div>
@@ -224,6 +232,7 @@ export default function RutinasDetail() {
  <thead>
  <tr>
  <th style={{ width: 40 }}>#</th>
+ <th style={{ width: 72 }}></th>
  <th>Ejercicio</th>
  <th style={{ width: 70 }}>Series</th>
  <th style={{ width: 70 }}>Reps</th>
@@ -234,10 +243,46 @@ export default function RutinasDetail() {
  </tr>
  </thead>
  <tbody>
- {ejercicios.map(ej => (
+ {ejercicios.map(ej => {
+ // Resolver nombres de máquinas requeridas
+ const maquinasReq = (ej.maquinaIds ?? [])
+  .map(mid => { const c = catalogo.find(x => x.id === mid); return c ? `${c.nroMaquina} ${c.nombre}` : null })
+  .filter(Boolean) as string[]
+ return (
  <tr key={ej.id}>
  <td style={{ color: '#6B7280', fontSize: 13 }}>{ej.orden}</td>
- <td className="gt-fw-600">{ej.nombreEjercicio}</td>
+ <td>
+ {ej.imagenUrl ? (
+  <img src={ej.imagenUrl} alt={ej.nombreEjercicio}
+   style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid #E5E7EB' }} />
+ ) : (
+  <div style={{ width: 56, height: 56, borderRadius: 8, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#D1D5DB' }}>
+   {ej.esMaquina ? '⚙' : '💪'}
+  </div>
+ )}
+ </td>
+ <td>
+ <span className="gt-fw-600">{ej.nombreEjercicio}</span>
+ <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap' }}>
+ {ej.esMaquina && (
+ <span style={{ fontSize: 11, background: '#FEF3C7', color: '#92400E', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>⚙ Máquina</span>
+ )}
+ {ej.grupoMuscular && (
+ <span style={{ fontSize: 11, background: '#EFF6FF', color: '#2E75B6', borderRadius: 4, padding: '1px 6px' }}>{ej.grupoMuscular}</span>
+ )}
+ </div>
+ {ej.descripcionEjercicio && (
+ <p style={{ margin: '4px 0 0', fontSize: 12, color: '#6B7280', maxWidth: 260 }}>{ej.descripcionEjercicio}</p>
+ )}
+ {maquinasReq.length > 0 && (
+ <div style={{ marginTop: 4, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+  <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600 }}>REQUIERE:</span>
+  {maquinasReq.map(m => (
+  <span key={m} style={{ fontSize: 11, background: '#FEF9C3', color: '#854D0E', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>⚙ {m}</span>
+  ))}
+ </div>
+ )}
+ </td>
  <td>{ej.series ?? '—'}</td>
  <td>{ej.repeticiones ?? '—'}</td>
  <td>{ej.pesoKg != null ? `${ej.pesoKg} kg` : '—'}</td>
@@ -252,7 +297,8 @@ export default function RutinasDetail() {
  </button>
  </td>
  </tr>
- ))}
+ )
+ })}
  </tbody>
  </table>
  </div>

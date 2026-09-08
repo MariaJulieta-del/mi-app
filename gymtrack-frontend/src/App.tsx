@@ -19,6 +19,8 @@ import ReportesPage from './pages/ReportesPage'
 import FichaMedicaPage from './pages/FichaMedicaPage'
 import SocioPerfilPage from './pages/SocioPerfilPage'
 import SaldarDeudaPage from './pages/SaldarDeudaPage'
+import EjerciciosPage from './pages/EjerciciosPage'
+import MaquinasPage from './pages/MaquinasPage'
 // ── Sidebar ───────────────────────────────────────────────────────────────
 const NAV_LINKS = [
  { to: '/', label: 'Dashboard', end: true },
@@ -28,6 +30,8 @@ const NAV_LINKS = [
  { to: '/membresias', label: 'Membresías', end: false },
  { to: '/pagos', label: 'Pagos', end: false },
  { to: '/disciplinas', label: 'Disciplinas', end: false },
+ { to: '/ejercicios', label: 'Ejercicios', end: false },
+ { to: '/maquinas', label: 'Máquinas', end: false },
  { to: '/reportes', label: 'Reportes', end: false },
  { to: '/notificaciones', label: 'Notificaciones', end: false },
 ]
@@ -103,6 +107,8 @@ function AppLayout() {
  <Route path="/pagos/saldar" element={<SaldarDeudaPage />} />
  {/* Nuevos módulos Sprint 3 */}
  <Route path="/disciplinas" element={<DisciplinasPage />} />
+ <Route path="/ejercicios" element={<EjerciciosPage />} />
+ <Route path="/maquinas" element={<MaquinasPage />} />
  <Route path="/notificaciones" element={<NotificacionesPage />} />
  <Route path="/reportes" element={<ReportesPage />} />
  {/* Fallback */}

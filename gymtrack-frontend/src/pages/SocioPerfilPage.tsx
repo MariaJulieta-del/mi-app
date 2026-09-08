@@ -4,10 +4,14 @@ import { obtenerPorId } from '../services/socioService'
 import { obtenerPorSocio, crearMembresiaSinPago } from '../services/membresiaService'
 import { obtenerRutinas } from '../services/rutinaService'
 import { listarTarifas } from '../services/tarifaService'
+import { asignarDisciplina } from '../services/ejercicioService'
+import axiosInstance from '../services/axiosInstance'
 import type { Socio } from '../types/Socio'
 import type { Membresia } from '../types/Membresia'
 import type { Rutina } from '../types/Rutina'
 import type { Tarifa } from '../types/Tarifa'
+
+interface Disciplina { id: number; nombre: string; instructor: string; horario: string; activa: boolean; cupoMaximo?: number; inscriptos?: number; disponibles?: number; llena?: boolean }
 function formatFecha(iso?: string) {
  if (!iso) return '—'
  return new Date(iso).toLocaleDateString('es-AR')
@@ -41,15 +45,24 @@ export default function SocioPerfilPage() {
  const [showFiado, setShowFiado] = useState(false)
  const [planFiado, setPlanFiado] = useState('')
  const [guardandoFiado, setGuardandoFiado] = useState(false)
+ // Disciplina
+ const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
+ const [showDisciplina, setShowDisciplina] = useState(false)
+ const [disciplinaSelId, setDisciplinaSelId] = useState<string>('')
+ const [guardandoDisciplina, setGuardandoDisciplina] = useState(false)
  const cargar = async () => {
  if (!id) return
- const [s, mems, ruts, tars] = await Promise.all([
+ const [s, mems, ruts, tars, discs] = await Promise.all([
  obtenerPorId(id),
  obtenerPorSocio(id).catch(() => [] as Membresia[]),
  obtenerRutinas(id).catch(() => [] as Rutina[]),
  listarTarifas().catch(() => [] as Tarifa[]),
+ axiosInstance.get('/api/v1/socios/disciplinas-cupo').then(r => r.data as Disciplina[]).catch(() => [] as Disciplina[]),
  ])
  setSocio(s); setMembresias(mems); setRutinas(ruts); setPlanes(tars)
+ setDisciplinas(discs)
+ // Pre-cargar la disciplina actual del socio si tiene
+ if ((s as any).disciplina?.id) setDisciplinaSelId(String((s as any).disciplina.id))
  }
  useEffect(() => {
  cargar()
@@ -70,6 +83,18 @@ export default function SocioPerfilPage() {
  } finally {
  setGuardandoFiado(false) }
  }
+ const handleAsignarDisciplina = async () => {
+ setGuardandoDisciplina(true)
+ try {
+ await asignarDisciplina(id, disciplinaSelId ? Number(disciplinaSelId) : null)
+ setMsg(disciplinaSelId ? 'Disciplina asignada correctamente.' : 'Disciplina eliminada.')
+ setShowDisciplina(false)
+ await cargar()
+ } catch (e: any) {
+ setError(e?.response?.data?.error ?? 'No se pudo asignar la disciplina')
+ } finally { setGuardandoDisciplina(false) }
+ }
+
  if (cargando) return <p className="gt-text-muted">Cargando perfil...</p>
  if (error || !socio) return <div className="gt-alert gt-alert-error">{error ?? 'Socio no encontrado.'}</div>
  const inactivo = socio.activo === false || socio.estado === 'INACTIVO'
@@ -140,7 +165,7 @@ export default function SocioPerfilPage() {
  {/* Acciones rápidas */}
  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
  <Link to={`/socios/${id}/ficha`} className="gt-btn gt-btn-secondary" style={{ fontSize: 13 }}>
- Ficha médica
+ Observaciones
  </Link>
  {!membresiaActiva && !membresiaPendiente && (
  <button
@@ -154,8 +179,46 @@ export default function SocioPerfilPage() {
  <Link to={`/rutinas/nueva?socioId=${id}`} className="gt-btn gt-btn-secondary" style={{ fontSize: 13 }}>
  Nueva rutina
  </Link>
+ <button
+ className="gt-btn gt-btn-secondary"
+ style={{ fontSize: 13, color: '#7C3AED', borderColor: '#7C3AED' }}
+ onClick={() => setShowDisciplina(v => !v)}
+ >
+ {(socio as any).disciplina ? 'Cambiar disciplina' : 'Asignar disciplina'}
+ </button>
  </div>
  </div>
+ {/* Disciplina actual */}
+ {(socio as any).disciplina && (
+ <div style={{ marginTop: 10, padding: '8px 12px', background: '#F5F3FF', borderRadius: 6, border: '1px solid #DDD6FE', fontSize: 13 }}>
+ <span style={{ color: '#6B7280' }}>Disciplina: </span>
+ <strong style={{ color: '#7C3AED' }}>{(socio as any).disciplina.nombre}</strong>
+ <span style={{ marginLeft: 8, color: '#9CA3AF' }}>· {(socio as any).disciplina.instructor} · {(socio as any).disciplina.horario}</span>
+ </div>
+ )}
+ {/* Panel asignar disciplina */}
+ {showDisciplina && (
+ <div style={{ marginTop: 12, padding: 14, background: '#F5F3FF', borderRadius: 8, border: '1px solid #DDD6FE' }}>
+ <p style={{ margin: '0 0 10px', fontWeight: 600, fontSize: 13, color: '#7C3AED' }}>Asignar disciplina</p>
+ <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+ <select className="gt-select" style={{ flex: 1, minWidth: 200 }}
+ value={disciplinaSelId} onChange={e => setDisciplinaSelId(e.target.value)}>
+ <option value="">— Sin disciplina —</option>
+ {disciplinas.map(d => (
+ <option key={d.id} value={d.id} disabled={!!d.llena && String(d.id) !== disciplinaSelId}>
+ {d.nombre} · {d.instructor} · {d.horario}
+ {d.cupoMaximo != null ? ` (${d.inscriptos}/${d.cupoMaximo} cupos${d.llena ? ' — LLENA' : ''})` : ''}
+ </option>
+ ))}
+ </select>
+ <button className="gt-btn gt-btn-primary" style={{ background: '#7C3AED', borderColor: '#7C3AED' }}
+ onClick={handleAsignarDisciplina} disabled={guardandoDisciplina}>
+ {guardandoDisciplina ? 'Guardando...' : 'Confirmar'}
+ </button>
+ <button className="gt-btn gt-btn-secondary" onClick={() => setShowDisciplina(false)}>Cancelar</button>
+ </div>
+ </div>
+ )}
  </div>
  {/* ── Resumen rápido ── */}
  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>

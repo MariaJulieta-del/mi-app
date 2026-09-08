@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react'
-import { getIngresos, getAsistencias } from '../services/reporteService'
-interface IngresoMes {
- mes: string
- total: number
-}
-interface AsistenciaDia {
- fecha: string
- total: number
-}
+import { useNavigate } from 'react-router-dom'
+import { getIngresos, getAsistencias, getProximosAVencer, getSinAsistencias } from '../services/reporteService'
+interface IngresoMes { mes: string; total: number }
+interface AsistenciaDia { fecha: string; total: number }
+interface ProximoVencer { socioId: number; nombre: string; dni: string; tipoMembresia: string; fechaVencimiento: string; diasRestantes: number }
+interface SinAsistencia { socioId: number; nombre: string; dni: string; ultimaAsistencia: string }
 // Fecha ISO sin hora para inputs type=date
 function hoy() { return new Date().toISOString().slice(0, 10) }
 function hace30() { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10) }
@@ -21,6 +18,7 @@ function Barra({ valor, max, color }: { valor: number; max: number; color: strin
  )
 }
 export default function ReportesPage() {
+ const navigate = useNavigate()
  const [ingresos, setIngresos] = useState<IngresoMes[]>([])
  const [asistencias, setAsistencias] = useState<AsistenciaDia[]>([])
  const [meses, setMeses] = useState(6)
@@ -30,8 +28,16 @@ export default function ReportesPage() {
  const [loadingA, setLoadingA] = useState(false)
  const [errorI, setErrorI] = useState<string | null>(null)
  const [errorA, setErrorA] = useState<string | null>(null)
+ // Nuevos reportes operativos
+ const [proximos, setProximos] = useState<ProximoVencer[]>([])
+ const [diasVencer, setDiasVencer] = useState(15)
+ const [sinAsist, setSinAsist] = useState<SinAsistencia[]>([])
+ const [diasInactivo, setDiasInactivo] = useState(14)
  useEffect(() => { cargarIngresos() }, [meses])
  useEffect(() => { cargarAsistencias() }, [])
+ useEffect(() => { cargarProximos() }, [diasVencer])
+ useEffect(() => { cargarSinAsistencias() }, [])
+ useEffect(() => { cargarSinAsistencias() }, [diasInactivo])
  const cargarIngresos = async () => {
  setLoadingI(true); setErrorI(null)
  try { setIngresos(await getIngresos(meses)) }
@@ -43,6 +49,12 @@ export default function ReportesPage() {
  try { setAsistencias(await getAsistencias(desde, hasta)) }
  catch { setErrorA('Error al cargar asistencias') }
  finally { setLoadingA(false) }
+ }
+ const cargarProximos = async () => {
+ try { setProximos(await getProximosAVencer(diasVencer)) } catch {}
+ }
+ const cargarSinAsistencias = async () => {
+ try { setSinAsist(await getSinAsistencias(diasInactivo)) } catch {}
  }
  const maxIngreso = Math.max(...ingresos.map(i => i.total), 1)
  const maxAsist = Math.max(...asistencias.map(a => a.total), 1)
@@ -133,6 +145,77 @@ export default function ReportesPage() {
  </div>
  )}
  </>
+ )}
+ </div>
+
+ {/* ─── Próximos a vencer ───────────────── */}
+ <div className="gt-card" style={{ marginTop: 20 }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+ <p className="gt-card-title" style={{ margin: 0 }}>Membresías próximas a vencer</p>
+ <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+ <label className="gt-label" style={{ margin: 0 }}>En los próximos</label>
+ <select className="gt-select" style={{ width: 'auto' }} value={diasVencer} onChange={e => setDiasVencer(Number(e.target.value))}>
+ {[7, 15, 30].map(d => <option key={d} value={d}>{d} días</option>)}
+ </select>
+ </div>
+ </div>
+ {proximos.length === 0 ? (
+ <div className="gt-empty">No hay membresías próximas a vencer en ese período.</div>
+ ) : (
+ <div className="gt-table-wrap">
+ <table className="gt-table">
+ <thead><tr><th>Socio</th><th>DNI</th><th>Plan</th><th>Vence</th><th>Días restantes</th></tr></thead>
+ <tbody>
+ {proximos.map(p => (
+ <tr key={p.socioId} style={{ cursor: 'pointer' }} onClick={() => navigate(`/socios/${p.socioId}/perfil`)}>
+ <td className="gt-fw-600">{p.nombre}</td>
+ <td>{p.dni}</td>
+ <td>{p.tipoMembresia}</td>
+ <td>{new Date(p.fechaVencimiento + 'T00:00:00').toLocaleDateString('es-AR')}</td>
+ <td>
+ <span className={`gt-badge ${p.diasRestantes <= 3 ? 'gt-badge-red' : p.diasRestantes <= 7 ? 'gt-badge-yellow' : 'gt-badge-green'}`}>
+ {p.diasRestantes} días
+ </span>
+ </td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
+ )}
+ </div>
+
+ {/* ─── Sin asistencias ─────────────────── */}
+ <div className="gt-card" style={{ marginTop: 20 }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+ <p className="gt-card-title" style={{ margin: 0 }}>Socios sin asistencias recientes</p>
+ <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+ <label className="gt-label" style={{ margin: 0 }}>Sin venir hace más de</label>
+ <select className="gt-select" style={{ width: 'auto' }} value={diasInactivo} onChange={e => setDiasInactivo(Number(e.target.value))}>
+ {[7, 14, 30].map(d => <option key={d} value={d}>{d} días</option>)}
+ </select>
+ </div>
+ </div>
+ {sinAsist.length === 0 ? (
+ <div className="gt-empty">Todos los socios tienen asistencias recientes.</div>
+ ) : (
+ <div className="gt-table-wrap">
+ <table className="gt-table">
+ <thead><tr><th>Socio</th><th>DNI</th><th>Última asistencia</th></tr></thead>
+ <tbody>
+ {sinAsist.map(s => (
+ <tr key={s.socioId} style={{ cursor: 'pointer' }} onClick={() => navigate(`/socios/${s.socioId}/perfil`)}>
+ <td className="gt-fw-600">{s.nombre}</td>
+ <td>{s.dni}</td>
+ <td style={{ color: s.ultimaAsistencia === 'Nunca' ? '#DC2626' : '#6B7280' }}>
+ {s.ultimaAsistencia === 'Nunca' ? 'Nunca asistió' :
+ new Date(s.ultimaAsistencia + 'T00:00:00').toLocaleDateString('es-AR')}
+ </td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
  )}
  </div>
  </>

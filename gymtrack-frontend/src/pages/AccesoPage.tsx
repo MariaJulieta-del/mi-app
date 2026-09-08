@@ -12,7 +12,7 @@ interface Asistencia {
 }
 export default function AccesoPage() {
  const [busqueda, setBusqueda] = useState('')
- const [tipo, setTipo] = useState<'ENTRADA' | 'SALIDA'>('ENTRADA')
+ const tipo = 'ENTRADA'
  const [resultado, setResultado] = useState<any>(null)
  const [error, setError] = useState<string | null>(null)
  const [loading, setLoading] = useState(false)
@@ -27,11 +27,12 @@ export default function AccesoPage() {
  setError(null)
  setResultado(null)
  setLoading(true)
- // Detectar si es número (ID) o texto (DNI)
- const isNumeric = /^\d+$/.test(busqueda.trim())
- const payload = isNumeric
- ? { socioId: parseInt(busqueda), tipo }
- : { dni: busqueda.trim(), tipo }
+ // Si tiene <= 5 dígitos, lo tratamos como ID. Si es más largo (DNI argentino = 7-8 dígitos), como DNI.
+ const trimmed = busqueda.trim()
+ const isId = /^\d{1,5}$/.test(trimmed)
+ const payload = isId
+ ? { socioId: parseInt(trimmed), tipo }
+ : { dni: trimmed, tipo }
  try {
  const data = await registrarCheckin(payload)
  setResultado(data)
@@ -52,9 +53,9 @@ export default function AccesoPage() {
  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
  {/* Formulario */}
  <div className="gt-card">
- <p className="gt-card-title">Registrar ingreso / salida</p>
+ <p className="gt-card-title">Registrar ingreso</p>
  <form onSubmit={handleCheckin}>
- <div className="gt-form-group" style={{ marginBottom: 12 }}>
+ <div className="gt-form-group" style={{ marginBottom: 16 }}>
  <label className="gt-label">DNI o ID del socio</label>
  <input
  className="gt-input"
@@ -64,23 +65,8 @@ export default function AccesoPage() {
  autoFocus
  />
  </div>
- <div className="gt-form-group" style={{ marginBottom: 16 }}>
- <label className="gt-label">Tipo</label>
- <div style={{ display: 'flex', gap: 8 }}>
- {(['ENTRADA', 'SALIDA'] as const).map(t => (
- <button
- key={t}
- type="button"
- onClick={() => setTipo(t)}
- className={`gt-btn ${tipo === t ? 'gt-btn-primary' : 'gt-btn-secondary'}`}
- >
- {t === 'ENTRADA' ? 'Entrada' : 'Salida'}
- </button>
- ))}
- </div>
- </div>
  <button type="submit" className="gt-btn gt-btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
- {loading ? 'Verificando...' : 'Registrar'}
+ {loading ? 'Verificando...' : 'Registrar ingreso'}
  </button>
  </form>
  {/* Resultado */}

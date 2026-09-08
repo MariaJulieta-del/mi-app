@@ -1,94 +1,95 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { obtenerFicha, guardarFicha } from '../services/fichaService'
-interface FichaForm {
- lesiones: string
- nivelAptitud: string
- historialGimnasio: string
- disponibilidad: string
- observacionesMedicas: string
-}
-const VACIO: FichaForm = {
- lesiones: '',
- nivelAptitud: 'BUENO',
- historialGimnasio: '',
- disponibilidad: '',
- observacionesMedicas: '',
-}
+
 export default function FichaMedicaPage() {
  const { socioId } = useParams<{ socioId: string }>()
+ const navigate = useNavigate()
  const id = Number(socioId)
- const [form, setForm] = useState<FichaForm>(VACIO)
+ const [observaciones, setObservaciones] = useState('')
  const [error, setError] = useState<string | null>(null)
- const [exito, setExito] = useState<string | null>(null)
+ const [exito, setExito] = useState(false)
  const [guardando, setGuardando] = useState(false)
  const [cargando, setCargando] = useState(true)
+
  useEffect(() => {
- if (!id) return
- obtenerFicha(id)
- .then(data => {
- if (data) setForm({
- lesiones: data.lesiones || '',
- nivelAptitud: data.nivelAptitud || 'BUENO',
- historialGimnasio: data.historialGimnasio || '',
- disponibilidad: data.disponibilidad || '',
- observacionesMedicas: data.observacionesMedicas || '',
- })
- })
- .catch(() => {}) // 404 = ficha no creada todavía, está bien
- .finally(() => setCargando(false))
+  if (!id) return
+  obtenerFicha(id)
+   .then(data => {
+    if (data) {
+     // Combinar los campos relevantes de la ficha anterior en un solo texto
+     const partes = [
+      data.observacionesMedicas,
+      data.lesiones ? `Antecedentes/Lesiones: ${data.lesiones}` : '',
+      data.historialGimnasio ? `Historial: ${data.historialGimnasio}` : '',
+     ].filter(Boolean)
+     setObservaciones(partes.join('\n\n'))
+    }
+   })
+   .catch(() => {})
+   .finally(() => setCargando(false))
  }, [id])
+
  const handleSubmit = async (e: React.FormEvent) => {
- e.preventDefault()
- setGuardando(true); setError(null); setExito(null)
- try {
- await guardarFicha(id, form)
- setExito('Ficha médica guardada correctamente')
- } catch { setError('Error al guardar la ficha médica') }
- finally { setGuardando(false) }
+  e.preventDefault()
+  setGuardando(true); setError(null); setExito(false)
+  try {
+   await guardarFicha(id, {
+    lesiones: '',
+    nivelAptitud: 'BUENO',
+    historialGimnasio: '',
+    disponibilidad: '',
+    observacionesMedicas: observaciones,
+   })
+   setExito(true)
+  } catch {
+   setError('Error al guardar las observaciones')
+  } finally {
+   setGuardando(false) }
  }
- if (cargando) return <p className="gt-text-muted">Cargando ficha médica...</p>
+
+ if (cargando) return <p className="gt-text-muted">Cargando...</p>
+
  return (
- <>
- <h1 className="gt-page-title">Ficha Médico-Deportiva</h1>
- <p style={{ color: '#6B7280', marginTop: -8, marginBottom: 16 }}>Socio ID: {id}</p>
- {exito && <div className="gt-alert gt-alert-success">{exito}<button onClick={() => setExito(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button></div>}
- {error && <div className="gt-alert gt-alert-error">{error}<button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button></div>}
- <div className="gt-card">
- <form onSubmit={handleSubmit}>
- <div className="gt-form-grid">
- <div className="gt-form-group">
- <label className="gt-label">Nivel de aptitud física</label>
- <select className="gt-select" value={form.nivelAptitud} onChange={e => setForm({ ...form, nivelAptitud: e.target.value })}>
- <option value="EXCELENTE">Excelente</option>
- <option value="BUENO">Bueno</option>
- <option value="REGULAR">Regular</option>
- <option value="BAJO">Bajo</option>
- <option value="MUY_BAJO">Muy bajo</option>
- </select>
- </div>
- <div className="gt-form-group">
- <label className="gt-label">Disponibilidad horaria</label>
- <input className="gt-input" value={form.disponibilidad} onChange={e => setForm({ ...form, disponibilidad: e.target.value })} placeholder="Ej: Lunes a viernes mañana" />
- </div>
- <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
- <label className="gt-label">Lesiones / antecedentes</label>
- <textarea className="gt-textarea" rows={3} value={form.lesiones} onChange={e => setForm({ ...form, lesiones: e.target.value })} placeholder="Describir lesiones previas, problemas articulares, cirugías, etc." />
- </div>
- <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
- <label className="gt-label">Historial en gimnasios</label>
- <textarea className="gt-textarea" rows={2} value={form.historialGimnasio} onChange={e => setForm({ ...form, historialGimnasio: e.target.value })} placeholder="Años de entrenamiento, disciplinas previas, objetivos..." />
- </div>
- <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
- <label className="gt-label">Observaciones médicas</label>
- <textarea className="gt-textarea" rows={3} value={form.observacionesMedicas} onChange={e => setForm({ ...form, observacionesMedicas: e.target.value })} placeholder="Condiciones médicas relevantes, medicación, restricciones..." />
- </div>
- </div>
- <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>
- {guardando ? 'Guardando...' : 'Guardar ficha médica'}
- </button>
- </form>
- </div>
- </>
+  <>
+   <button className="gt-btn gt-btn-secondary" style={{ marginBottom: 16 }} onClick={() => navigate(-1)}>
+    ← Volver
+   </button>
+   <h1 className="gt-page-title">Observaciones</h1>
+   <p style={{ color: '#6B7280', marginTop: -8, marginBottom: 16, fontSize: 13 }}>
+    Anotaciones sobre el socio: lesiones, antecedentes, restricciones, objetivos, lo que sea útil.
+   </p>
+
+   {exito && (
+    <div className="gt-alert" style={{ background: '#F0FDF4', borderColor: '#BBF7D0', color: '#16A34A', marginBottom: 12 }}>
+     Observaciones guardadas.
+     <button onClick={() => setExito(false)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+    </div>
+   )}
+   {error && (
+    <div className="gt-alert gt-alert-error" style={{ marginBottom: 12 }}>
+     {error}
+     <button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+    </div>
+   )}
+
+   <div className="gt-card">
+    <form onSubmit={handleSubmit}>
+     <div className="gt-form-group">
+      <label className="gt-label">Observaciones / Antecedentes</label>
+      <textarea
+       className="gt-textarea"
+       rows={8}
+       value={observaciones}
+       onChange={e => setObservaciones(e.target.value)}
+       placeholder="Ej: Lesión en rodilla derecha (2023), evitar sentadillas con peso. Objetivo: ganar masa muscular. Entrena lunes, miércoles y viernes..."
+      />
+     </div>
+     <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>
+      {guardando ? 'Guardando...' : 'Guardar observaciones'}
+     </button>
+    </form>
+   </div>
+  </>
  )
 }

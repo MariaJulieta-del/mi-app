@@ -5,6 +5,16 @@ import { crearRutina, obtenerRutina, actualizarRutina, agregarEjercicio } from '
 import { useAuth } from '../context/AuthContext'
 import { obtenerTodos, obtenerPorId } from '../services/socioService'
 import type { Socio } from '../types/Socio'
+import { listarEjercicios, GRUPOS_MUSCULARES, type Ejercicio as EjercicioCatalogo } from '../services/ejercicioService'
+import { obtenerFicha } from '../services/fichaService'
+
+interface EjercicioItem {
+  nombreEjercicio: string
+  series: number
+  repeticiones: number
+  descansoSeg: number
+  notas?: string
+}
 import {
  PLANTILLAS,
  TREN_LABELS,
@@ -28,8 +38,13 @@ export default function RutinaForm() {
  const [socioSeleccionado, setSocioSeleccionado] = useState<Socio | null>(null)
  const [mostrarBuscador, setMostrarBuscador] = useState(false)
  const [socioIdInput, setSocioIdInput] = useState<number | ''>(socioIdParam ?? '')
- const getSocioId = (): number | null =>
- esAdmin ? (socioSeleccionado?.id ?? (socioIdInput as number) || null) : socioIdAuth
+ const [sinSocio, setSinSocio] = useState(false)
+ const [observacionesSocio, setObservacionesSocio] = useState<string | null>(null)
+ const getSocioId = (): number | null => {
+   if (!esAdmin) return socioIdAuth
+   if (sinSocio) return null
+   return socioSeleccionado?.id ?? (socioIdInput as number) || null
+ }
  useEffect(() => {
  if (mostrarBuscador && socios.length === 0) {
  obtenerTodos().then(setSocios).catch(() => {})
@@ -48,6 +63,18 @@ export default function RutinaForm() {
  setSocioIdInput(s.id!)
  setBusquedaSocio(`${s.nombre} ${s.apellido}`)
  setMostrarBuscador(false)
+ // Cargar observaciones del socio
+ setObservacionesSocio(null)
+ if (s.id) {
+  obtenerFicha(s.id)
+   .then(data => {
+    const obs = data?.observacionesMedicas || ''
+    const ant = data?.lesiones || ''
+    const partes = [obs, ant ? `Antecedentes: ${ant}` : ''].filter(Boolean).join('\n\n')
+    setObservacionesSocio(partes || null)
+   })
+   .catch(() => setObservacionesSocio(null))
+ }
  }
  // Auto-seleccionar socio si viene desde el perfil con ?socioId=X
  useEffect(() => {
@@ -57,8 +84,40 @@ export default function RutinaForm() {
  .catch(() => {})
  }
  }, [socioIdParam])
+ // ── Catálogo de ejercicios ──────────────────────────────────────
+ const [catalogo, setCatalogo] = useState<EjercicioCatalogo[]>([])
+ const [ejPersonalizados, setEjPersonalizados] = useState<EjercicioItem[]>([])
+ const [ejBusqueda, setEjBusqueda] = useState('')
+ const [ejGrupo, setEjGrupo] = useState('')
+ const [ejSeleccionado, setEjSeleccionado] = useState<EjercicioCatalogo | null>(null)
+ const [ejSeries, setEjSeries] = useState(3)
+ const [ejReps, setEjReps] = useState(10)
+ const [ejDescanso, setEjDescanso] = useState(60)
+ const [ejNotas, setEjNotas] = useState('')
+ const [mostrarCatalogo, setMostrarCatalogo] = useState(false)
+ useEffect(() => {
+   listarEjercicios().then(setCatalogo).catch(() => {})
+ }, [])
+ const catalogoFiltrado = catalogo.filter(e => {
+   const matchBusq = e.nombre.toLowerCase().includes(ejBusqueda.toLowerCase())
+   const matchGrupo = !ejGrupo || e.grupoMuscular === ejGrupo
+   return matchBusq && matchGrupo
+ }).slice(0, 30)
+ const agregarDelCatalogo = () => {
+   if (!ejSeleccionado) return
+   setEjPersonalizados(prev => [...prev, {
+     nombreEjercicio: ejSeleccionado.nombre,
+     series: ejSeries, repeticiones: ejReps,
+     descansoSeg: ejDescanso, notas: ejNotas || undefined,
+     ejercicioCatalogoId: ejSeleccionado.id
+   }])
+   setEjSeleccionado(null); setEjBusqueda(''); setEjNotas(''); setEjSeries(3); setEjReps(10); setEjDescanso(60)
+ }
+ const quitarEjercicio = (i: number) =>
+   setEjPersonalizados(prev => prev.filter((_, idx) => idx !== i))
+
  // ── Plantillas ──────────────────────────────────────────────────
- const [mostrarPlantillas, setMostrarPlantillas] = useState(false)
+ const [mostrarPlantillas, setMostrarPlantillas] = useState(!esEdicion)
  const [filtroTren, setFiltroTren] = useState<TrenMuscular | ''>('')
  const [filtroObjetivo, setFiltroObjetivo] = useState<ObjetivoRutina | ''>('')
  const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<RutinaPlantilla | null>(null)
@@ -89,15 +148,18 @@ export default function RutinaForm() {
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault()
  const sid = getSocioId()
- if (!sid) { setError('Seleccioná o ingresá el ID del socio'); return }
+ if (!esAdmin && !sid) { setError('No se pudo obtener el ID del socio'); return }
+ if (esAdmin && !sinSocio && !sid) { setError('Seleccioná un socio o marcá "Sin asignar socio"'); return }
  if (nombre.trim().length < 3) { setError('El nombre debe tener al menos 3 caracteres'); return }
  const datos: RutinaRequestDTO = { nombre: nombre.trim(), descripcion: descripcion.trim() }
  try {
  setGuardando(true)
  setError(null)
+ const esGeneral = searchParams.get('general') === 'true'
  if (esEdicion && id) {
  await actualizarRutina(Number(id), sid, datos)
- navigate(esAdmin ? `/rutinas/${id}?socioId=${sid}` : `/rutinas/${id}`)
+ if (esGeneral) navigate(`/rutinas/${id}?general=true`)
+ else navigate(esAdmin ? `/rutinas/${id}?socioId=${sid}` : `/rutinas/${id}`)
  return
  }
  // Crear rutina nueva
@@ -118,7 +180,16 @@ export default function RutinaForm() {
  })
  }
  }
- navigate(esAdmin ? `/rutinas/${rutinaId}?socioId=${sid}` : `/rutinas/${rutinaId}`)
+ // Agregar ejercicios manuales del catálogo
+ if (ejPersonalizados.length > 0) {
+ const total = ejPersonalizados.length
+ for (let i = 0; i < total; i++) {
+ setProgreso(`Guardando ejercicios… (${i + 1}/${total})`)
+ await agregarEjercicio(rutinaId, sid, ejPersonalizados[i])
+ }
+ }
+ if (sid === null) navigate(`/rutinas/${rutinaId}?general=true`)
+ else navigate(esAdmin ? `/rutinas/${rutinaId}?socioId=${sid}` : `/rutinas/${rutinaId}`)
  } catch {
  setError('Error al guardar la rutina')
  } finally {
@@ -128,18 +199,37 @@ export default function RutinaForm() {
  }
  return (
  <>
- <div className="gt-section-header">
- <h1 className="gt-page-title" style={{ margin: 0 }}>
- {esEdicion ? 'Editar Rutina' : 'Nueva Rutina'}
- </h1>
+ <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+ <div>
+  <h1 className="gt-page-title" style={{ margin: 0 }}>
+   {esEdicion ? 'Editar Rutina' : 'Nueva Rutina'}
+  </h1>
+  {!esEdicion && (
+  <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>
+   {esAdmin ? '1. Elegí plantilla → 2. Asigná socio → 3. Confirmá nombre' : 'Elegí plantilla y configurá tu rutina'}
+  </p>
+  )}
+ </div>
+ <button type="button" className="gt-btn gt-btn-secondary" onClick={() => navigate('/rutinas')}>
+  ← Volver
+ </button>
  </div>
  {/* ── Buscador de socio (ADMIN) ── */}
  {esAdmin && !esEdicion && (
  <div className="gt-card" style={{ marginBottom: 16 }}>
- <p style={{ margin: '0 0 10px', fontWeight: 600, fontSize: 14 }}>
- Socio destinatario
- </p>
- {socioSeleccionado ? (
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+ <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>Socio destinatario</p>
+ <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: sinSocio ? '#7C3AED' : '#374151' }}>
+ <input type="checkbox" checked={sinSocio} onChange={e => { setSinSocio(e.target.checked); if (e.target.checked) { setSocioSeleccionado(null); setSocioIdInput(''); setBusquedaSocio('') } }} />
+ Crear sin asignar a ningún socio
+ </label>
+ </div>
+ {sinSocio && (
+ <div style={{ padding: '8px 12px', background: '#F5F3FF', borderRadius: 6, border: '1px solid #DDD6FE', fontSize: 13, color: '#7C3AED' }}>
+ Rutina general — quedará disponible en el módulo Rutinas para ser asignada después.
+ </div>
+ )}
+ {!sinSocio && (socioSeleccionado ? (
  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
  <span style={{ fontWeight: 700, color: '#2E75B6' }}>#{socioSeleccionado.id}</span>
  <span>{socioSeleccionado.nombre} {socioSeleccionado.apellido}</span>
@@ -209,7 +299,18 @@ export default function RutinaForm() {
  </div>
  )}
  </>
+ ))}
+ </div>
  )}
+ {/* ── Observaciones del socio ── */}
+ {esAdmin && !esEdicion && !sinSocio && socioSeleccionado && observacionesSocio && (
+ <div style={{ marginBottom: 16, padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
+  <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 13, color: '#92400E' }}>
+   ⚠ Observaciones de {socioSeleccionado.nombre} {socioSeleccionado.apellido}
+  </p>
+  <p style={{ margin: 0, fontSize: 13, color: '#78350F', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+   {observacionesSocio}
+  </p>
  </div>
  )}
  {/* ── Selector de plantillas ── */}
@@ -305,6 +406,122 @@ export default function RutinaForm() {
  )}
  </div>
  )}
+ {/* ── Ejercicios del catálogo ── */}
+ {!esEdicion && (
+ <div className="gt-card" style={{ marginBottom: 16 }}>
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+ <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>
+ Agregar ejercicios del catálogo
+ {ejPersonalizados.length > 0 && (
+ <span style={{ marginLeft: 8, fontSize: 12, background: '#EFF6FF', color: '#2E75B6', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
+ {ejPersonalizados.length} agregado{ejPersonalizados.length !== 1 ? 's' : ''}
+ </span>
+ )}
+ </p>
+ <button type="button" className="gt-btn gt-btn-secondary"
+ style={{ fontSize: 12, padding: '4px 12px' }}
+ onClick={() => setMostrarCatalogo(v => !v)}>
+ {mostrarCatalogo ? 'Cerrar' : 'Agregar ejercicio'}
+ </button>
+ </div>
+ {/* Lista de ejercicios ya agregados */}
+ {ejPersonalizados.length > 0 && (
+ <div style={{ marginTop: 12 }}>
+ {ejPersonalizados.map((ej, i) => (
+ <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
+ <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{ej.nombreEjercicio}</span>
+ <span style={{ fontSize: 12, color: '#6B7280' }}>{ej.series}×{ej.repeticiones} · {ej.descansoSeg}s</span>
+ {ej.notas && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{ej.notas}</span>}
+ <button type="button" onClick={() => quitarEjercicio(i)}
+ style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: 14, padding: '0 4px' }}>✕</button>
+ </div>
+ ))}
+ </div>
+ )}
+ {/* Panel de selección */}
+ {mostrarCatalogo && (
+ <div style={{ marginTop: 14, padding: 14, background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+ {/* Filtros */}
+ <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+ <input className="gt-input" style={{ flex: 1, minWidth: 160 }}
+ placeholder="Buscar ejercicio..."
+ value={ejBusqueda} onChange={e => { setEjBusqueda(e.target.value); setEjSeleccionado(null) }} />
+ <select className="gt-select" style={{ width: 'auto' }} value={ejGrupo}
+ onChange={e => setEjGrupo(e.target.value)}>
+ <option value="">Todos los grupos</option>
+ {GRUPOS_MUSCULARES.map(g => <option key={g} value={g}>{g}</option>)}
+ </select>
+ </div>
+ {/* Lista del catálogo */}
+ {catalogo.length === 0 ? (
+ <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
+ El catálogo está vacío. Agregá ejercicios desde el módulo <strong>Ejercicios y Máquinas</strong>.
+ </p>
+ ) : (
+ <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+ {catalogoFiltrado.length === 0 && (
+ <p style={{ fontSize: 13, color: '#6B7280', margin: '8px 0' }}>Sin resultados.</p>
+ )}
+ {catalogoFiltrado.map(e => (
+ <div key={e.id} onClick={() => setEjSeleccionado(e)}
+ style={{
+ padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
+ background: ejSeleccionado?.id === e.id ? '#EFF6FF' : '#fff',
+ border: `1px solid ${ejSeleccionado?.id === e.id ? '#2E75B6' : '#E5E7EB'}`,
+ display: 'flex', gap: 8, alignItems: 'center'
+ }}>
+ {e.imagenUrl ? (
+ <img src={e.imagenUrl} alt={e.nombre} style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+ ) : (
+ <div style={{ width: 36, height: 36, borderRadius: 4, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+ {e.esMaquina ? '⚙' : '💪'}
+ </div>
+ )}
+ <span style={{ flex: 1, fontWeight: ejSeleccionado?.id === e.id ? 700 : 400, fontSize: 13 }}>{e.nombre}</span>
+ {e.grupoMuscular && <span style={{ fontSize: 11, background: '#EFF6FF', color: '#2E75B6', borderRadius: 4, padding: '1px 6px' }}>{e.grupoMuscular}</span>}
+ {e.esMaquina && <span style={{ fontSize: 11, background: '#FEF3C7', color: '#92400E', borderRadius: 4, padding: '1px 6px' }}>Máquina</span>}
+ </div>
+ ))}
+ </div>
+ )}
+ {/* Config del ejercicio seleccionado */}
+ {ejSeleccionado && (
+ <div style={{ marginTop: 12, padding: 12, background: '#EFF6FF', borderRadius: 6, border: '1px solid #BFDBFE' }}>
+ <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: 13, color: '#1D4ED8' }}>
+ Configurar: {ejSeleccionado.nombre}
+ </p>
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+ <div>
+ <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Series</label>
+ <input type="number" className="gt-input" min={1} max={20} value={ejSeries}
+ onChange={e => setEjSeries(Number(e.target.value))} style={{ textAlign: 'center' }} />
+ </div>
+ <div>
+ <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Repeticiones</label>
+ <input type="number" className="gt-input" min={1} max={200} value={ejReps}
+ onChange={e => setEjReps(Number(e.target.value))} style={{ textAlign: 'center' }} />
+ </div>
+ <div>
+ <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Descanso (seg)</label>
+ <input type="number" className="gt-input" min={0} max={600} value={ejDescanso}
+ onChange={e => setEjDescanso(Number(e.target.value))} style={{ textAlign: 'center' }} />
+ </div>
+ </div>
+ <div style={{ marginTop: 8 }}>
+ <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Notas (opcional)</label>
+ <input className="gt-input" value={ejNotas} onChange={e => setEjNotas(e.target.value)} placeholder="Ej: Con agarre neutro, peso moderado..." maxLength={100} />
+ </div>
+ <button type="button" className="gt-btn gt-btn-primary" style={{ marginTop: 10 }}
+ onClick={agregarDelCatalogo}>
+ ✓ Agregar a la rutina
+ </button>
+ </div>
+ )}
+ </div>
+ )}
+ </div>
+ )}
+
  {/* ── Formulario principal ── */}
  <div className="gt-card">
  {error && (
