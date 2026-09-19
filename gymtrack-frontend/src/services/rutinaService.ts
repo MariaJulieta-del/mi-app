@@ -49,6 +49,15 @@ export const agregarEjercicio = async (
  const res = await axiosInstance.post(`${API}/${rutinaId}/ejercicios`, data, { headers: headers(socioId) })
  return res.data
 }
+/** Actualiza series/reps/peso/descanso de un ejercicio en la rutina */
+export const actualizarEjercicioEnRutina = async (
+  rutinaId: number, ejId: number, socioId: number | null,
+  data: { series?: number; repeticiones?: number; descansoSeg?: number; pesoKg?: number; notas?: string }
+): Promise<Ejercicio> => {
+  const res = await axiosInstance.patch(`${API}/${rutinaId}/ejercicios/${ejId}`, data, { headers: headers(socioId) })
+  return res.data
+}
+
 /** Elimina un ejercicio de una rutina */
 export const eliminarEjercicio = async (
  rutinaId: number, ejId: number, socioId: number | null

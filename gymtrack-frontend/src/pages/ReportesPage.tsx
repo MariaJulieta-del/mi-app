@@ -1,21 +1,118 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getIngresos, getAsistencias, getProximosAVencer, getSinAsistencias } from '../services/reporteService'
+import { getIngresos, getAsistencias, getProximosAVencer, getSinAsistencias, getDashboard } from '../services/reporteService'
 interface IngresoMes { mes: string; total: number }
 interface AsistenciaDia { fecha: string; total: number }
 interface ProximoVencer { socioId: number; nombre: string; dni: string; tipoMembresia: string; fechaVencimiento: string; diasRestantes: number }
 interface SinAsistencia { socioId: number; nombre: string; dni: string; ultimaAsistencia: string }
+interface DashboardStats { membresiasActivas: number; membresiasPendientes: number; membresiasVencidas: number; totalRecaudadoMes: number }
+
 // Fecha ISO sin hora para inputs type=date
 function hoy() { return new Date().toISOString().slice(0, 10) }
 function hace30() { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10) }
+
 // Mini barra de progreso proporcional
 function Barra({ valor, max, color }: { valor: number; max: number; color: string }) {
  const pct = max === 0 ? 0 : Math.round((valor / max) * 100)
  return (
- <div style={{ background: '#F3F4F6', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+ <div style={{ background: 'var(--border)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
  <div style={{ width: `${pct}%`, height: '100%', background: color, transition: 'width 0.3s' }} />
  </div>
  )
+}
+
+// SVG Bar Chart
+function BarChart({ data }: { data: IngresoMes[] }) {
+  if (data.length === 0) return <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>Sin datos de ingresos</div>
+  const max = Math.max(...data.map(d => d.total), 1)
+  const W = 560, H = 160, PAD = { left: 64, right: 12, top: 14, bottom: 30 }
+  const chartW = W - PAD.left - PAD.right
+  const chartH = H - PAD.top - PAD.bottom
+  const barW = Math.min(40, (chartW / data.length) - 8)
+  const gap = chartW / data.length
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(p => ({ p, val: max * p }))
+  const fmtMes = (s: string) => {
+    const [y, m] = s.split('-')
+    const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+    return `${meses[parseInt(m)]} ${y.slice(2)}`
+  }
+  const fmtMoney = (n: number) =>
+    n >= 1000000 ? `$${(n/1000000).toFixed(1)}M` : n >= 1000 ? `$${Math.round(n/1000)}k` : `$${n}`
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ overflow: 'visible', display: 'block' }}>
+      {yTicks.map(({ p, val }) => {
+        const y = PAD.top + chartH - p * chartH
+        return (
+          <g key={p}>
+            <line x1={PAD.left} y1={y} x2={PAD.left + chartW} y2={y} stroke="var(--border)" strokeWidth="1" strokeDasharray={p === 0 ? 'none' : '3,3'} />
+            <text x={PAD.left - 6} y={y + 4} textAnchor="end" fontSize="9" fill="var(--text-muted)">{fmtMoney(val)}</text>
+          </g>
+        )
+      })}
+      {data.map((d, i) => {
+        const x = PAD.left + i * gap + gap / 2 - barW / 2
+        const barH = (d.total / max) * chartH
+        const y = PAD.top + chartH - barH
+        const isLast = i === data.length - 1
+        return (
+          <g key={d.mes}>
+            <rect x={x} y={y} width={barW} height={barH} rx="3" fill={isLast ? 'var(--accent)' : 'var(--border)'} opacity={isLast ? 1 : 0.75} />
+            {isLast && (
+              <text x={x + barW / 2} y={y - 5} textAnchor="middle" fontSize="9" fill="var(--accent)" fontWeight="600">{fmtMoney(d.total)}</text>
+            )}
+            <text x={x + barW / 2} y={PAD.top + chartH + 16} textAnchor="middle" fontSize="9" fill={isLast ? 'var(--text-secondary)' : 'var(--text-muted)'} fontWeight={isLast ? '600' : '400'}>{fmtMes(d.mes)}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+// SVG Ring chart membresías
+function RingChart({ activas, pendientes, vencidas }: { activas: number; pendientes: number; vencidas: number }) {
+  const total = activas + pendientes + vencidas || 1
+  const r = 44, cx = 56, cy = 56, stroke = 14
+  const circumference = 2 * Math.PI * r
+  const segments = [
+    { val: activas,    color: 'var(--green-text)', label: 'Activas' },
+    { val: pendientes, color: 'var(--yellow-text)', label: 'Pendientes' },
+    { val: vencidas,   color: 'var(--red)', label: 'Vencidas' },
+  ]
+  let offset = 0
+  const arcs = segments.map(seg => {
+    const frac = seg.val / total
+    const dash = frac * circumference
+    const arc = { ...seg, dash, offset, gap: circumference - dash }
+    offset += dash
+    return arc
+  })
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+      <svg width="112" height="112" viewBox="0 0 112 112" style={{ flexShrink: 0 }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--border)" strokeWidth={stroke} />
+        {arcs.map((arc, i) => (
+          <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+            stroke={arc.color} strokeWidth={stroke}
+            strokeDasharray={`${arc.dash} ${arc.gap}`}
+            strokeDashoffset={circumference / 4 - arc.offset}
+            style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px` }}
+          />
+        ))}
+        <text x={cx} y={cy - 5} textAnchor="middle" fontSize="18" fontWeight="700" fill="var(--text-primary)">{total}</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fill="var(--text-muted)">total</text>
+      </svg>
+      <div style={{ flex: 1 }}>
+        {segments.map(s => (
+          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', flex: 1 }}>{s.label}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{s.val}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>({Math.round(s.val/total*100)}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 export default function ReportesPage() {
  const navigate = useNavigate()
@@ -28,16 +125,17 @@ export default function ReportesPage() {
  const [loadingA, setLoadingA] = useState(false)
  const [errorI, setErrorI] = useState<string | null>(null)
  const [errorA, setErrorA] = useState<string | null>(null)
- // Nuevos reportes operativos
  const [proximos, setProximos] = useState<ProximoVencer[]>([])
  const [diasVencer, setDiasVencer] = useState(15)
  const [sinAsist, setSinAsist] = useState<SinAsistencia[]>([])
  const [diasInactivo, setDiasInactivo] = useState(14)
+ const [dashStats, setDashStats] = useState<DashboardStats | null>(null)
  useEffect(() => { cargarIngresos() }, [meses])
  useEffect(() => { cargarAsistencias() }, [])
  useEffect(() => { cargarProximos() }, [diasVencer])
  useEffect(() => { cargarSinAsistencias() }, [])
  useEffect(() => { cargarSinAsistencias() }, [diasInactivo])
+ useEffect(() => { getDashboard().then(setDashStats).catch(() => {}) }, [])
  const cargarIngresos = async () => {
  setLoadingI(true); setErrorI(null)
  try { setIngresos(await getIngresos(meses)) }
@@ -63,17 +161,38 @@ export default function ReportesPage() {
  return (
  <>
  <h1 className="gt-page-title">Reportes</h1>
- {/* ─── Ingresos por mes ─────────────────── */}
+
+ {/* ─── Gráficos: ingresos + membresías ─── */}
+ <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, marginBottom: 20, alignItems: 'stretch' }}>
+   <div className="gt-card" style={{ minWidth: 0 }}>
+     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+       <p className="gt-card-title" style={{ margin: 0 }}>Ingresos últimos {meses} meses</p>
+       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+         <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>
+           ${ingresos.reduce((s, i) => s + i.total, 0).toLocaleString('es-AR')}
+         </span>
+         <select className="gt-select" style={{ width: 'auto' }} value={meses} onChange={e => setMeses(Number(e.target.value))}>
+           {[3, 6, 9, 12].map(m => <option key={m} value={m}>{m} meses</option>)}
+         </select>
+       </div>
+     </div>
+     <BarChart data={ingresos} />
+   </div>
+   {dashStats && (
+     <div className="gt-card" style={{ minWidth: 240 }}>
+       <p className="gt-card-title" style={{ marginTop: 0, marginBottom: 16 }}>Estado de membresías</p>
+       <RingChart
+         activas={dashStats.membresiasActivas}
+         pendientes={dashStats.membresiasPendientes}
+         vencidas={dashStats.membresiasVencidas}
+       />
+     </div>
+   )}
+ </div>
+
+ {/* ─── Ingresos por mes (tabla detalle) ─ */}
  <div className="gt-card" style={{ marginBottom: 20 }}>
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
- <p className="gt-card-title" style={{ margin: 0 }}> Ingresos por mes</p>
- <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
- <label className="gt-label" style={{ margin: 0 }}>Últimos</label>
- <select className="gt-select" style={{ width: 'auto' }} value={meses} onChange={e => setMeses(Number(e.target.value))}>
- {[3, 6, 9, 12].map(m => <option key={m} value={m}>{m} meses</option>)}
- </select>
- </div>
- </div>
+ <p className="gt-card-title" style={{ marginTop: 0 }}>Detalle de ingresos por mes</p>
  {errorI && <div className="gt-alert gt-alert-error">{errorI}</div>}
  {loadingI ? (
  <p className="gt-text-muted">Cargando...</p>

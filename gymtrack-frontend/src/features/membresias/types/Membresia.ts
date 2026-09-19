@@ -1,0 +1,17 @@
+export type EstadoMembresia = 'PENDIENTE_PAGO' | 'ACTIVA' | 'VENCIDA' | 'CANCELADA'
+export interface Membresia {
+ id?: number
+ socioId: number
+ socioNombreCompleto?: string
+ tipoMembresia: string
+ estadoMembresia?: EstadoMembresia
+ fechaInicio?: string
+ fechaVencimiento?: string
+ precio: number
+ fechaCreacion?: string
+}
+export interface MembresiaRequestDTO {
+ socioId: number
+ tipoMembresia: string
+ fechaInicio?: string
+}

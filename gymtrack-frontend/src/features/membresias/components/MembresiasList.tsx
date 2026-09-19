@@ -1,0 +1,154 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import type { Tarifa } from '../types/Tarifa'
+import { listarTarifas, actualizarTarifa } from '../services/tarifaService'
+import { useAuth } from '../../../shared/context/AuthContext'
+const TIPO_COLOR: Record<string, string> = {
+ MENSUAL: '#2E75B6',
+ TRIMESTRAL: '#7C3AED',
+ SEMESTRAL: '#D97706',
+ ANUAL: '#16A34A',
+}
+function colorPara(tipo: string): string {
+ return TIPO_COLOR[tipo] ?? '#374151'
+}
+export default function MembresiasList() {
+ const { user } = useAuth()
+ const isAdmin = user?.rol === 'ADMIN'
+ const [planes, setPlanes] = useState<Tarifa[]>([])
+ const [cargando, setCargando] = useState(true)
+ const [error, setError] = useState<string | null>(null)
+ // Edición de precio inline
+ const [editandoTipo, setEditandoTipo] = useState<string | null>(null)
+ const [nuevoPrecio, setNuevoPrecio] = useState<number>(0)
+ const [guardando, setGuardando] = useState(false)
+ const [msg, setMsg] = useState<string | null>(null)
+ useEffect(() => {
+ listarTarifas()
+ .then(setPlanes)
+ .catch(() => setError('Error al cargar los planes'))
+ .finally(() => setCargando(false))
+ }, [])
+ const iniciarEdicion = (p: Tarifa) => {
+ setEditandoTipo(p.tipo)
+ setNuevoPrecio(p.precio)
+ setMsg(null)
+ }
+ const guardarPrecio = async (tipo: string) => {
+ if (nuevoPrecio <= 0) return
+ try {
+ setGuardando(true)
+ const actualizado = await actualizarTarifa(tipo, nuevoPrecio)
+ setPlanes(prev => prev.map(p => p.tipo === tipo ? actualizado : p))
+ setEditandoTipo(null)
+ setMsg(`✓ Precio de "${tipo}" actualizado`)
+ setTimeout(() => setMsg(null), 3000)
+ } catch { alert('No se pudo actualizar el precio') }
+ finally { setGuardando(false) }
+ }
+ return (
+ <>
+ <div className="gt-section-header">
+ <h1 className="gt-page-title" style={{ margin: 0 }}>Membresías</h1>
+ {isAdmin && (
+ <Link to="/membresias/nueva" className="gt-btn gt-btn-primary">
+ + Nuevo plan
+ </Link>
+ )}
+ </div>
+ {error && <div className="gt-alert gt-alert-error">{error}</div>}
+ {msg && (
+ <div className="gt-alert gt-alert-success" style={{ marginBottom: 16 }}>
+ {msg}
+ </div>
+ )}
+ {cargando ? (
+ <p className="gt-text-muted">Cargando planes...</p>
+ ) : planes.length === 0 ? (
+ <div className="gt-empty">No hay planes configurados.</div>
+ ) : (
+ <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+ {planes.map(p => (
+ <div key={p.tipo} className="gt-card" style={{
+ borderLeft: `5px solid ${colorPara(p.tipo)}`,
+ padding: 20,
+ }}>
+ {/* Encabezado del plan */}
+ <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+ <div>
+ <p style={{ margin: 0, fontWeight: 700, fontSize: 17, color: colorPara(p.tipo) }}>
+ {p.nombre ?? p.tipo}
+ </p>
+ <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6B7280' }}>
+ {p.duracionDias ? `${p.duracionDias} días` : '—'}
+ </p>
+ </div>
+ {/* Precio + botón de edición */}
+ {editandoTipo === p.tipo ? (
+ <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+ <input
+ type="number"
+ value={nuevoPrecio}
+ onChange={e => setNuevoPrecio(Number(e.target.value))}
+ className="gt-input"
+ style={{ width: 110, padding: '2px 6px', fontSize: 13 }}
+ autoFocus
+ onFocus={e => e.currentTarget.select()}
+ onKeyDown={e => {
+ if (e.key === 'Enter') guardarPrecio(p.tipo)
+ if (e.key === 'Escape') setEditandoTipo(null)
+ }}
+ />
+ <button className="gt-btn gt-btn-primary" style={{ fontSize: 12, padding: '3px 8px' }}
+ onClick={() => guardarPrecio(p.tipo)} disabled={guardando}>✓</button>
+ <button className="gt-btn gt-btn-secondary" style={{ fontSize: 12, padding: '3px 8px' }}
+ onClick={() => setEditandoTipo(null)}></button>
+ </div>
+ ) : (
+ <div style={{ textAlign: 'right' }}>
+ <p style={{ margin: 0, fontWeight: 700, fontSize: 20, color: '#111827' }}>
+ ${Number(p.precio).toLocaleString('es-AR')}
+ </p>
+ {isAdmin && (
+ <button
+ className="gt-btn gt-btn-secondary"
+ style={{ fontSize: 11, marginTop: 4, padding: '2px 8px' }}
+ onClick={() => iniciarEdicion(p)}
+ >
+ Editar precio
+ </button>
+ )}
+ </div>
+ )}
+ </div>
+ {/* Descripción del plan */}
+ {p.incluye && (
+ <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+ {p.incluye}
+ </p>
+ )}
+ {/* Contador de socios */}
+ <div style={{
+ display: 'flex', alignItems: 'center', gap: 8,
+ padding: '8px 12px',
+ background: `${colorPara(p.tipo)}10`,
+ borderRadius: 6,
+ }}>
+ <span style={{ fontSize: 22, fontWeight: 700, color: colorPara(p.tipo) }}>
+ {p.sociosActivos}
+ </span>
+ <span style={{ fontSize: 12, color: '#6B7280' }}>
+ {p.sociosActivos === 1 ? 'socio activo' : 'socios activos'}
+ </span>
+ </div>
+ </div>
+ ))}
+ </div>
+ )}
+ <p style={{ marginTop: 24, fontSize: 13, color: '#9CA3AF' }}>
+ Para asignar un plan a un socio y registrar el pago, usá el módulo{' '}
+ <Link to="/pagos/nuevo" style={{ color: '#2E75B6' }}> Registrar Pago</Link>.
+ </p>
+ </>
+ )
+}

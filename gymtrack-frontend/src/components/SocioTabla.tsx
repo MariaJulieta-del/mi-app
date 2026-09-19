@@ -6,6 +6,7 @@ interface Props {
  onEliminar: (id: number) => void
  onReactivar: (id: number) => void
  onEliminarPermanente: (id: number) => void
+ membresiaMap?: Map<number, string>
 }
 // Formatea "2026-08-22T15:30:00" → "22/08/2026"
 function formatFecha(iso?: string): string {
@@ -13,7 +14,7 @@ function formatFecha(iso?: string): string {
  const d = new Date(iso)
  return d.toLocaleDateString('es-AR')
 }
-const SocioTabla = ({ socios, onEditar, onEliminar, onReactivar, onEliminarPermanente }: Props) => {
+const SocioTabla = ({ socios, onEditar, onEliminar, onReactivar, onEliminarPermanente, membresiaMap }: Props) => {
  if (socios.length === 0) {
  return <div className="gt-empty">No hay socios registrados aún.</div>
  }
@@ -36,6 +37,20 @@ const SocioTabla = ({ socios, onEditar, onEliminar, onReactivar, onEliminarPerma
  <tbody>
  {socios.map(s => {
  const inactivo = s.activo === false || s.estado === 'INACTIVO'
+ const estadoMem = membresiaMap?.get(s.id!) ?? null
+ const memBadge = () => {
+   if (!estadoMem || estadoMem === 'SIN_MEMBRESIA') {
+     return <span className="gt-badge gt-badge-gray" style={{ fontSize: 11 }}>Sin membresía</span>
+   }
+   const cfg: Record<string, { cls: string; label: string }> = {
+     ACTIVA:         { cls: 'gt-badge gt-badge-green', label: '✓ Al día' },
+     PENDIENTE_PAGO: { cls: 'gt-badge gt-badge-yellow', label: '⚠ Pago pendiente' },
+     VENCIDA:        { cls: 'gt-badge gt-badge-red',    label: '✕ Vencida' },
+     CANCELADA:      { cls: 'gt-badge gt-badge-gray',   label: 'Cancelada' },
+   }
+   const c = cfg[estadoMem]
+   return c ? <span className={c.cls} style={{ fontSize: 11 }}>{c.label}</span> : null
+ }
  return (
  <tr key={s.id} style={{ opacity: inactivo ? 0.6 : 1 }}>
  <td style={{ fontWeight: 700, color: '#2E75B6', fontSize: 13 }}>
@@ -48,9 +63,12 @@ const SocioTabla = ({ socios, onEditar, onEliminar, onReactivar, onEliminarPerma
  <td style={{ fontSize: 12, color: '#6B7280' }}>{formatFecha(s.fechaCreacion)}</td>
  <td style={{ fontSize: 12, color: '#6B7280' }}>{formatFecha(s.fechaModificacion)}</td>
  <td>
- <span className={inactivo ? 'gt-badge gt-badge-red' : 'gt-badge gt-badge-green'}>
- {inactivo ? 'INACTIVO' : 'ACTIVO'}
- </span>
+ <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+   <span className={inactivo ? 'gt-badge gt-badge-red' : 'gt-badge gt-badge-green'}>
+     {inactivo ? 'INACTIVO' : 'ACTIVO'}
+   </span>
+   {!inactivo && memBadge()}
+ </div>
  </td>
  <td>
  <div style={{ display: 'flex', gap: 6 }}>

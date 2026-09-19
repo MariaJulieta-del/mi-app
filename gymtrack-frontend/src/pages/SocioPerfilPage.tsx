@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { obtenerPorId } from '../services/socioService'
-import { obtenerPorSocio, crearMembresiaSinPago } from '../services/membresiaService'
+import { obtenerPorSocio, crearMembresiaSinPago, cambiarEstado } from '../services/membresiaService'
 import { obtenerRutinas } from '../services/rutinaService'
 import { listarTarifas } from '../services/tarifaService'
 import { asignarDisciplina } from '../services/ejercicioService'
@@ -10,6 +10,8 @@ import type { Socio } from '../types/Socio'
 import type { Membresia } from '../types/Membresia'
 import type { Rutina } from '../types/Rutina'
 import type { Tarifa } from '../types/Tarifa'
+import ConfirmModal from '../components/ConfirmModal'
+import { useToast } from '../hooks/useToast'
 
 interface Disciplina { id: number; nombre: string; instructor: string; horario: string; activa: boolean; cupoMaximo?: number; inscriptos?: number; disponibles?: number; llena?: boolean }
 function formatFecha(iso?: string) {
@@ -50,6 +52,10 @@ export default function SocioPerfilPage() {
  const [showDisciplina, setShowDisciplina] = useState(false)
  const [disciplinaSelId, setDisciplinaSelId] = useState<string>('')
  const [guardandoDisciplina, setGuardandoDisciplina] = useState(false)
+ // Cancelar membresía
+ const [cancelandoId, setCancelandoId] = useState<number | null>(null)
+ const [confirmarCancelarId, setConfirmarCancelarId] = useState<number | null>(null)
+ const toast = useToast()
  const cargar = async () => {
  if (!id) return
  const [s, mems, ruts, tars, discs] = await Promise.all([
@@ -82,6 +88,22 @@ export default function SocioPerfilPage() {
  setError(e?.response?.data?.error ?? 'Error al asignar el plan')
  } finally {
  setGuardandoFiado(false) }
+ }
+ const handleCancelarMembresia = async (membresiaId: number) => {
+ setCancelandoId(membresiaId)
+ try {
+ await cambiarEstado(membresiaId, 'CANCELADA')
+ toast.success('Membresía cancelada', 'El socio ya no tiene acceso activo.')
+ setMsg(null)
+ await cargar()
+ } catch (e: any) {
+ const msg = e?.response?.data?.error ?? 'No se pudo cancelar la membresía'
+ setError(msg)
+ toast.error('Error al cancelar', msg)
+ } finally {
+ setCancelandoId(null)
+ setConfirmarCancelarId(null)
+ }
  }
  const handleAsignarDisciplina = async () => {
  setGuardandoDisciplina(true)
@@ -304,6 +326,17 @@ export default function SocioPerfilPage() {
  Renovar plan
  </Link>
  )}
+ {(m.estadoMembresia === 'ACTIVA' || m.estadoMembresia === 'PENDIENTE_PAGO') && (
+ <button
+ style={{ fontSize: 12, background: 'none', border: '1px solid #DC2626', color: '#DC2626', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
+ className="gt-btn gt-btn-danger"
+ style={{ height: 28, padding: '0 10px', fontSize: 12 }}
+ onClick={() => setConfirmarCancelarId(m.id!)}
+ disabled={cancelandoId === m.id}
+ >
+ {cancelandoId === m.id ? 'Cancelando...' : 'Cancelar membresía'}
+ </button>
+ )}
  </div>
  </div>
  </div>
@@ -395,6 +428,17 @@ export default function SocioPerfilPage() {
  </div>
  </div>
  )}
+
+ <ConfirmModal
+ open={confirmarCancelarId !== null}
+ title="Cancelar membresía"
+ message="¿Estás seguro de que querés cancelar esta membresía? El socio perderá el acceso al gimnasio de inmediato."
+ confirmLabel="Sí, cancelar membresía"
+ cancelLabel="No, volver"
+ danger
+ onConfirm={() => confirmarCancelarId !== null && handleCancelarMembresia(confirmarCancelarId)}
+ onCancel={() => setConfirmarCancelarId(null)}
+ />
  </>
  )
 }

@@ -7,10 +7,16 @@ export interface Maquina {
   nroMaquina: string
   nombre: string
   descripcion?: string
-  musculosPrincipales?: string
+  /** Lista de grupos musculares (mismo vocabulario que Ejercicio) */
+  grupos?: string[]
   instruccionesUso?: string
   ajustes?: string
   activa: boolean
+}
+
+export const activarMaquina = async (id: number): Promise<Maquina> => {
+  const res = await axiosInstance.patch(`/api/v1/maquinas/${id}/activar`)
+  return res.data
 }
 
 export const listarMaquinas = async (soloActivas = true): Promise<Maquina[]> => {
