@@ -33,6 +33,14 @@ export const actualizarRutina = async (
 export const eliminarRutina = async (id: number, socioId: number | null): Promise<void> => {
  await axiosInstance.delete(`${API}/${id}`, { headers: headers(socioId) })
 }
+export const clonarRutina = async (
+  rutinaId: number,
+  socioId?: number | null,
+  nombre?: string
+): Promise<Rutina> => {
+  const res = await axiosInstance.post(`${API}/${rutinaId}/clonar`, { socioId: socioId ?? null, nombre: nombre ?? null })
+  return res.data
+}
 // ── Ejercicios ────────────────────────────────────────────────────────────
 export const obtenerEjercicios = async (rutinaId: number, socioId: number | null): Promise<Ejercicio[]> => {
  const res = await axiosInstance.get(`${API}/${rutinaId}/ejercicios`, { headers: headers(socioId) })

@@ -1,5 +1,5 @@
 import axiosInstance from '../../../shared/services/axiosInstance'
-import type { Mantenimiento, MantenimientoRequest } from '../types/Mantenimiento'
+import type { Mantenimiento, MantenimientoRequest, MaquinaEstadisticas } from '../types/Mantenimiento'
 
 const API = '/api/v1/mantenimientos'
 
@@ -25,4 +25,9 @@ export const actualizarMantenimiento = async (id: number, data: Partial<Mantenim
 
 export const eliminarMantenimiento = async (id: number): Promise<void> => {
   await axiosInstance.delete(`${API}/${id}`)
+}
+
+export const estadisticasMaquina = async (maquinaId: number): Promise<MaquinaEstadisticas> => {
+  const res = await axiosInstance.get(`${API}/maquina/${maquinaId}/estadisticas`)
+  return res.data
 }

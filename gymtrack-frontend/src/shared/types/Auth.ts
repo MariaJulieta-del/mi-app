@@ -1,3 +1,4 @@
+export type Rol = 'ADMIN' | 'PROFESOR' | 'SOCIO'
 export interface LoginRequest {
  username: string
  password: string
@@ -5,11 +6,11 @@ export interface LoginRequest {
 export interface LoginResponse {
  token: string
  username: string
- rol: 'ADMIN' | 'EMPLEADO' | 'SOCIO'
+ rol: Rol
  socioId: number | null
 }
 export interface AuthUser {
  username: string
- rol: 'ADMIN' | 'EMPLEADO' | 'SOCIO'
+ rol: Rol
  socioId: number | null
 }

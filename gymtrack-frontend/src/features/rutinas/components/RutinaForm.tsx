@@ -1,403 +1,201 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import type { Rutina, RutinaRequestDTO } from '../types/Rutina'
-import {
-  crearRutina, obtenerRutina, actualizarRutina, agregarEjercicio,
-  obtenerRutinasGenerales, obtenerEjercicios,
-} from '../services/rutinaService'
-import { listarTodosEjercicios, type Ejercicio as EjercicioCat } from '../../ejercicios/services/ejercicioService'
-import { listarMaquinas, type Maquina } from '../../maquinas/services/maquinaService'
-import { obtenerTodos, obtenerPorId } from '../../socios/services/socioService'
-import { obtenerFicha } from '../../socios/services/fichaService'
-import { useAuth } from '../../../shared/context/AuthContext'
-import type { Socio } from '../../socios/types/Socio'
-import { NAME_TO_STATIC_IMG } from '../../ejercicios/assets/exercisesCatalog'
+import { NAME_TO_STATIC_IMG } from '../../ejercicios/assets/imagenesEjercicios'
+import { useRutinaForm, TRENES, DIAS } from '../hooks/useRutinaForm'
+import { DIFICULTAD_CONFIG, OBJETIVO_CONFIG } from '../utils/rutinaUtils'
 
-// ── Configuración de trenes musculares ─────────────────────────────
-const TRENES = [
-  { id: 'SUPERIOR',  emoji: '💪', label: 'Tren Superior',  desc: 'Pecho, Espalda, Hombros, Bíceps, Tríceps', grupos: ['Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps', 'Antebrazos'], color: '#2E75B6', bg: '#EFF6FF' },
-  { id: 'INFERIOR',  emoji: '🦵', label: 'Tren Inferior',  desc: 'Cuádriceps, Femoral, Glúteos, Pantorrillas',   grupos: ['Cuádriceps', 'Femoral', 'Glúteos', 'Pantorrillas'],               color: '#16A34A', bg: '#F0FDF4' },
-  { id: 'CORE',      emoji: '🔥', label: 'Core / Abdomen', desc: 'Abdominales, Core, Lumbares',                  grupos: ['Abdominales', 'Core', 'Lumbares'],                                color: '#C2410C', bg: '#FFF7ED' },
-  { id: 'CARDIO',    emoji: '❤️', label: 'Cardio',          desc: 'Actividad aeróbica y resistencia',             grupos: ['Cardio'],                                                         color: '#DC2626', bg: '#FEF2F2' },
-  { id: 'FULL_BODY', emoji: '⚡', label: 'Full Body',       desc: 'Trabajo completo de todo el cuerpo',           grupos: [],                                                                 color: '#7C3AED', bg: '#F5F3FF' },
+const DIFICULTADES = [
+  { val: '', label: 'Sin especificar', bg: 'var(--bg-surface)', color: 'var(--text-muted)', border: 'var(--border)' },
+  ...Object.entries(DIFICULTAD_CONFIG).map(([val, c]) => ({ val, label: c.label, bg: c.bg, color: c.color, border: c.color })),
 ]
-const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
-interface EjItem {
-  catId?: number
-  nombre: string
-  series: number
-  reps: number
-  descanso: number
-  notas: string
-  imagenUrl?: string
+function Paso({ n, titulo, ayuda, children, extra }: {
+  n: number; titulo: string; ayuda?: string; children: React.ReactNode; extra?: React.ReactNode
+}) {
+  return (
+    <div className="gt-card" style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>{n}. {titulo}</p>
+          {ayuda && <p className="gt-text-muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{ayuda}</p>}
+        </div>
+        {extra}
+      </div>
+      {children}
+    </div>
+  )
 }
 
 export default function RutinaForm() {
-  const { id } = useParams<{ id: string }>()
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const { user } = useAuth()
+  const f = useRutinaForm()
 
-  const esAdmin = user?.rol === 'ADMIN' || user?.rol === 'EMPLEADO'
-  const esEdicion = Boolean(id)
-  const socioIdAuth = user?.socioId ?? null
-  const socioIdParam = searchParams.get('socioId') ? Number(searchParams.get('socioId')) : null
-  const esGeneral = searchParams.get('general') === 'true'
+  const elegirParaQuien = f.esAdmin && !f.esEdicion
+  const usarBase = f.esAdmin && !f.esEdicion && !f.esGeneral
+  let paso = 0
+  const sig = () => ++paso
 
-  // ── Form state ─────────────────────────────────────────────────────
-  const [nombre, setNombre] = useState('')
-  const [descripcion, setDescripcion] = useState('')
-  const [trenesSel, setTrenesSel] = useState<string[]>([])
-  const [dias, setDias] = useState<string[]>([])
-  const [dificultad, setDificultad] = useState('')
-  const [ejercicios, setEjercicios] = useState<EjItem[]>([])
+  const cantDias = Math.max(f.dias.length, 1)
+  const etiquetaDia = (n: number) => f.dias[n - 1] ?? `Día ${n}`
+  const ejDelDia = f.ejercicios
+    .map((ej, idx) => ({ ej, idx }))
+    .filter(({ ej }) => cantDias === 1 || (ej.dia ?? 1) === f.diaActivo)
+  const labelsTrenes = f.trenesSel.map(tid => TRENES.find(t => t.id === tid)?.label ?? tid).join(' + ')
 
-  // ── Socio (admin) ──────────────────────────────────────────────────
-  const [sinSocio, setSinSocio] = useState(esGeneral || !esAdmin)
-  const [socios, setSocios] = useState<Socio[]>([])
-  const [busquedaSocio, setBusquedaSocio] = useState('')
-  const [socioSel, setSocioSel] = useState<Socio | null>(null)
-  const [mostrarBuscador, setMostrarBuscador] = useState(false)
-  const [obsMovio, setObsMovio] = useState<string | null>(null)
-
-  // ── Catálogo ───────────────────────────────────────────────────────
-  const [catalogo, setCatalogo] = useState<EjercicioCat[]>([])
-  const [maquinas, setMaquinas] = useState<Maquina[]>([])
-  const [busqEj, setBusqEj] = useState('')
-  const [mostrarCat, setMostrarCat] = useState(false)
-
-  // ── Rutinas generales como base ────────────────────────────────────
-  const [generales, setGenerales] = useState<Rutina[]>([])
-  const [mostrarPicker, setMostrarPicker] = useState(false)
-  const [busqGeneral, setBusqGeneral] = useState('')
-  const [rutinaBaseNombre, setRutinaBaseNombre] = useState<string | null>(null)
-  const [cargandoBase, setCargandoBase] = useState(false)
-
-  // ── UI ─────────────────────────────────────────────────────────────
-  const [error, setError] = useState<string | null>(null)
-  const [guardando, setGuardando] = useState(false)
-  const [progreso, setProgreso] = useState<string | null>(null)
-  const [lightbox, setLightbox] = useState<{ url: string; nombre: string } | null>(null)
-
-  // ── Cargar datos iniciales ─────────────────────────────────────────
-  useEffect(() => {
-    listarTodosEjercicios().then(setCatalogo).catch(() => {})
-    listarMaquinas(true).then(setMaquinas).catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (mostrarBuscador && socios.length === 0) {
-      obtenerTodos().then(setSocios).catch(() => {})
-    }
-  }, [mostrarBuscador])
-
-  useEffect(() => {
-    if (mostrarPicker && generales.length === 0) {
-      obtenerRutinasGenerales().then(setGenerales).catch(() => {})
-    }
-  }, [mostrarPicker])
-
-  // Cargar rutina existente en modo edición
-  useEffect(() => {
-    if (!esEdicion || !id) return
-    const sid = esAdmin ? (esGeneral ? null : socioIdParam) : socioIdAuth
-    obtenerRutina(Number(id), sid)
-      .then(r => {
-        setNombre(r.nombre)
-        setDescripcion(r.descripcion ?? '')
-        setTrenesSel(r.trenes ?? [])
-        setDias(r.diasSemana ?? [])
-        setDificultad(r.dificultad ?? '')
-        if (r.socioId === null) setSinSocio(true)
-      })
-      .catch(() => setError('No se pudo cargar la rutina'))
-  }, [id])
-
-  // Auto-seleccionar socio desde URL param
-  useEffect(() => {
-    if (socioIdParam && esAdmin && !esEdicion) {
-      obtenerPorId(socioIdParam).then(s => seleccionarSocio(s)).catch(() => {})
-    }
-  }, [socioIdParam])
-
-  // ── Helpers ────────────────────────────────────────────────────────
-  const seleccionarSocio = (s: Socio) => {
-    setSocioSel(s)
-    setBusquedaSocio(`${s.nombre} ${s.apellido}`)
-    setMostrarBuscador(false)
-    setObsMovio(null)
-    if (s.id) {
-      obtenerFicha(s.id)
-        .then(data => {
-          const obs = [data?.observacionesMedicas, data?.lesiones ? `Lesiones: ${data.lesiones}` : '']
-            .filter(Boolean).join('\n')
-          setObsMovio(obs || null)
-        })
-        .catch(() => {})
-    }
-  }
-
-  const aplicarRutinaGeneral = async (r: Rutina) => {
-    setCargandoBase(true)
-    setMostrarPicker(false)
-    setBusqGeneral('')
-    setNombre(r.nombre)
-    setDescripcion(r.descripcion ?? '')
-    setTrenesSel(r.trenes ?? [])
-    setDias(r.diasSemana ?? [])
-    setDificultad(r.dificultad ?? '')
-    setRutinaBaseNombre(r.nombre)
-    try {
-      const ejsBase = await obtenerEjercicios(r.id!, null)
-      setEjercicios(ejsBase.map(e => ({
-        catId: e.ejercicioCatalogoId,
-        nombre: e.nombreEjercicio,
-        series: e.series ?? 3,
-        reps: e.repeticiones ?? 10,
-        descanso: e.descansoSeg ?? 60,
-        notas: e.notas ?? '',
-        imagenUrl: e.imagenUrl,
-      })))
-    } catch {
-      setEjercicios([])
-    } finally {
-      setCargandoBase(false)
-    }
-  }
-
-  const getSocioId = (): number | null => {
-    if (!esAdmin) return socioIdAuth
-    if (sinSocio) return null
-    return socioSel?.id ?? null
-  }
-
-  const toggleDia = (dia: string) =>
-    setDias(prev => prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia])
-
-  const toggleTren = (id: string) =>
-    setTrenesSel(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id])
-
-  // Grupos musculares combinados de todos los trenes seleccionados
-  const gruposSeleccionados = Array.from(new Set(
-    trenesSel.flatMap(tid => TRENES.find(t => t.id === tid)?.grupos ?? [])
-  ))
-  const hayFullBody = trenesSel.includes('FULL_BODY')
-
-  // Ejercicios del catálogo filtrados por tren + búsqueda
-  const catalogoFiltrado = catalogo.filter(e => {
-    if (!e.activo) return false
-    const matchBusq = e.nombre.toLowerCase().includes(busqEj.toLowerCase())
-    if (trenesSel.length > 0 && !hayFullBody) {
-      const matchTren = (e.grupos ?? []).some(g => gruposSeleccionados.includes(g))
-      return matchBusq && matchTren
-    }
-    return matchBusq
-  })
-
-  // Máquinas filtradas por los grupos de los trenes seleccionados
-  const maquinasFiltradas = trenesSel.length > 0 && !hayFullBody
-    ? maquinas.filter(m =>
-        gruposSeleccionados.some(g => (m.grupos ?? []).includes(g))
-      )
-    : maquinas
-
-  const agregarEjDesde = (e: EjercicioCat) => {
-    if (ejercicios.some(x => x.catId === e.id)) return
-    setEjercicios(prev => [...prev, {
-      catId: e.id,
-      nombre: e.nombre,
-      series: 3,
-      reps: 10,
-      descanso: 60,
-      notas: '',
-      imagenUrl: e.imagenUrl,
-    }])
-  }
-
-  const quitarEj = (idx: number) => setEjercicios(prev => prev.filter((_, i) => i !== idx))
-
-  const actualizarEj = (idx: number, campo: keyof EjItem, valor: string | number) => {
-    setEjercicios(prev => prev.map((e, i) => i === idx ? { ...e, [campo]: valor } : e))
-  }
-
-  // ── Submit ─────────────────────────────────────────────────────────
-  const handleSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault()
-    if (nombre.trim().length < 3) { setError('El nombre debe tener al menos 3 caracteres'); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
-    if (esAdmin && !sinSocio && !socioSel) { setError('Seleccioná un socio o marcá "Sin asignar a socio"'); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
-
-    const sid = getSocioId()
-    const datos: RutinaRequestDTO = {
-      nombre: nombre.trim(),
-      descripcion: descripcion.trim() || undefined,
-      trenes: trenesSel.length > 0 ? trenesSel : undefined,
-      diasSemana: dias.length > 0 ? dias : undefined,
-      dificultad: dificultad || undefined,
-    }
-
-    setGuardando(true); setError(null); window.scrollTo({ top: 0, behavior: 'smooth' })
-    try {
-      if (esEdicion && id) {
-        await actualizarRutina(Number(id), sid, datos)
-        navigate(esGeneral ? `/rutinas/${id}?general=true` : esAdmin ? `/rutinas/${id}?socioId=${sid}` : `/rutinas/${id}`)
-        return
-      }
-
-      const nueva = await crearRutina(sid, datos)
-      const rutinaId = nueva.id!
-
-      if (ejercicios.length > 0) {
-        for (let i = 0; i < ejercicios.length; i++) {
-          const ej = ejercicios[i]
-          setProgreso(`Guardando ejercicios… (${i + 1}/${ejercicios.length})`)
-          await agregarEjercicio(rutinaId, sid, {
-            nombreEjercicio: ej.nombre,
-            series: ej.series,
-            repeticiones: ej.reps,
-            descansoSeg: ej.descanso,
-            notas: ej.notas || undefined,
-            ejercicioCatalogoId: ej.catId,
-          })
-        }
-      }
-
-      navigate(sid === null ? `/rutinas/${rutinaId}?general=true` : esAdmin ? `/rutinas/${rutinaId}?socioId=${sid}` : `/rutinas/${rutinaId}`)
-    } catch (err: unknown) {
-      const axErr = err as { response?: { data?: { error?: string; campos?: Record<string, string> } } }
-      const serverMsg = axErr?.response?.data?.error
-      const camposMsg = axErr?.response?.data?.campos
-        ? Object.entries(axErr.response.data.campos).map(([k, v]) => `${k}: ${v}`).join(', ')
-        : null
-      setError(camposMsg ?? serverMsg ?? 'Error al guardar la rutina')
-      console.error('Error al guardar rutina:', err)
-    } finally {
-      setGuardando(false); setProgreso(null)
-    }
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 className="gt-page-title" style={{ margin: 0 }}>
-            {esEdicion ? 'Editar Rutina' : 'Nueva Rutina'}
+            {f.esEdicion ? 'Editar rutina' : f.sinSocio && f.esAdmin ? 'Nueva plantilla' : 'Nueva rutina'}
           </h1>
-          {!esEdicion && (
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>
-              Seleccioná el tren muscular, los días y los ejercicios
+          {!f.esEdicion && (
+            <p className="gt-text-muted" style={{ margin: '4px 0 0', fontSize: 13 }}>
+              Completá los pasos en orden. Podés ajustar los ejercicios después desde el detalle.
             </p>
           )}
         </div>
-        <button className="gt-btn gt-btn-secondary" onClick={() => navigate('/rutinas')}>← Volver</button>
+        <button className="gt-btn gt-btn-secondary" onClick={() => f.navigate('/rutinas')}>← Volver</button>
       </div>
 
-      {error && (
+      {f.error && (
         <div className="gt-alert gt-alert-error" style={{ marginBottom: 16 }}>
-          {error}
-          <button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+          {f.error}
+          <button onClick={() => f.setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}>✕</button>
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={f.handleSubmit}>
 
-        {/* ── SECCIÓN 0: Usar rutina general como base (solo admin, solo creación) ── */}
-        {esAdmin && !esEdicion && !esGeneral && (
+        {/* ── ¿Para quién es? ── */}
+        {elegirParaQuien && (
+          <Paso n={sig()} titulo="¿Para quién es esta rutina?">
+            <div className="gt-choice-grid">
+              <button type="button" className={`gt-choice${!f.sinSocio ? ' selected' : ''}`}
+                onClick={() => f.setSinSocio(false)}>
+                <p className="gt-choice-icon">🙋</p>
+                <p className="gt-choice-title">Para un socio</p>
+                <p className="gt-choice-desc">Rutina personalizada. El socio la ve en su perfil y registra su progreso.</p>
+              </button>
+              <button type="button" className={`gt-choice${f.sinSocio ? ' selected' : ''}`}
+                onClick={() => { f.setSinSocio(true); f.setSocioSel(null); f.setBusquedaSocio('') }}>
+                <p className="gt-choice-icon">📋</p>
+                <p className="gt-choice-title">Plantilla</p>
+                <p className="gt-choice-desc">Rutina modelo, sin socio. Después la asignás a quien quieras en un clic.</p>
+              </button>
+            </div>
+
+            {!f.sinSocio && (
+              <div style={{ marginTop: 16 }}>
+                {f.socioSel ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--green-bg)', borderRadius: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--green-text)' }}>✓ {f.socioSel.nombre} {f.socioSel.apellido}</span>
+                    <span className="gt-text-muted" style={{ fontSize: 12 }}>DNI {f.socioSel.dni}</span>
+                    <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" style={{ marginLeft: 'auto' }}
+                      onClick={() => { f.setSocioSel(null); f.setBusquedaSocio(''); f.setMostrarBuscador(true) }}>
+                      Cambiar socio
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="gt-label">Buscar socio</label>
+                    <input className="gt-input" placeholder="Nombre, apellido o DNI…"
+                      value={f.busquedaSocio}
+                      onFocus={() => f.setMostrarBuscador(true)}
+                      onChange={e => { f.setBusquedaSocio(e.target.value); f.setMostrarBuscador(true) }} />
+                    {f.mostrarBuscador && f.busquedaSocio.length >= 1 && (
+                      <div style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-surface)', overflow: 'hidden', marginTop: 6 }}>
+                        {(() => {
+                          const q = f.busquedaSocio.toLowerCase()
+                          const res = f.socios
+                            .filter(s => s.nombre.toLowerCase().includes(q) || s.apellido.toLowerCase().includes(q) || s.dni.includes(q))
+                            .slice(0, 6)
+                          if (res.length === 0) return <p className="gt-text-muted" style={{ margin: 0, padding: '9px 14px', fontSize: 13 }}>Sin resultados</p>
+                          return res.map(s => (
+                            <button type="button" key={s.id} onClick={() => f.seleccionarSocio(s)} className="gt-socio-opcion">
+                              <span style={{ fontWeight: 700, color: 'var(--accent)' }}>#{s.id}</span>
+                              <span>{s.nombre} {s.apellido}</span>
+                              <span className="gt-text-muted" style={{ marginLeft: 'auto', fontSize: 12 }}>DNI {s.dni}</span>
+                            </button>
+                          ))
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {f.obsMovio && f.socioSel && (
+                  <div className="gt-alert gt-alert-warning" style={{ marginTop: 10, marginBottom: 0 }}>
+                    <strong>⚠ Ficha médica de {f.socioSel.nombre}</strong>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, whiteSpace: 'pre-wrap' }}>{f.obsMovio}</p>
+                  </div>
+                )}
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginTop: 12, color: 'var(--text-secondary)' }}>
+                  <input type="checkbox" checked={f.tambienPlantilla} onChange={e => f.setTambienPlantilla(e.target.checked)} />
+                  Guardar también como plantilla para reutilizarla con otros socios
+                </label>
+              </div>
+            )}
+          </Paso>
+        )}
+
+        {/* ── Partir de una plantilla ── */}
+        {usarBase && (
           <div className="gt-card" style={{ marginBottom: 14, border: '1.5px solid var(--accent-border)', background: 'var(--accent-light)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: 'var(--accent)' }}>
-                  Basarse en una rutina general
+                  ¿Querés partir de una plantilla? <span style={{ fontWeight: 400, fontSize: 12 }}>(opcional)</span>
                 </p>
-                {rutinaBaseNombre ? (
-                  <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    Campos pre-cargados desde <strong>{rutinaBaseNombre}</strong> — podés modificarlos antes de guardar.
-                  </p>
-                ) : (
-                  <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    Elegí una rutina general para pre-cargar todos sus datos y ejercicios.
-                  </p>
-                )}
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+                  {f.rutinaBaseNombre
+                    ? <>Datos y ejercicios cargados desde <strong>{f.rutinaBaseNombre}</strong>. Podés modificarlos antes de guardar.</>
+                    : 'Carga los datos y ejercicios de una plantilla para no empezar de cero.'}
+                </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                {rutinaBaseNombre && (
-                  <button type="button" className="gt-btn gt-btn-secondary" style={{ fontSize: 12 }}
-                    onClick={() => {
-                      setRutinaBaseNombre(null)
-                      setNombre(''); setDescripcion(''); setTrenesSel([]); setDias([]); setDificultad(''); setEjercicios([])
-                    }}>
-                    Limpiar
-                  </button>
+                {f.rutinaBaseNombre && (
+                  <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={f.limpiarBase}>Empezar de cero</button>
                 )}
-                <button type="button" className="gt-btn gt-btn-secondary" style={{ fontSize: 12 }}
-                  onClick={() => setMostrarPicker(v => !v)} disabled={cargandoBase}>
-                  {cargandoBase ? 'Cargando…' : mostrarPicker ? 'Cerrar' : rutinaBaseNombre ? 'Cambiar' : 'Elegir rutina'}
+                <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm"
+                  onClick={() => f.setMostrarPicker(v => !v)} disabled={f.cargandoBase}>
+                  {f.cargandoBase ? 'Cargando…' : f.mostrarPicker ? 'Cerrar' : f.rutinaBaseNombre ? 'Cambiar' : 'Elegir plantilla'}
                 </button>
               </div>
             </div>
 
-            {mostrarPicker && (
+            {f.mostrarPicker && (
               <div style={{ marginTop: 12 }}>
                 <input className="gt-input" placeholder="Buscar por nombre…"
-                  value={busqGeneral} onChange={e => setBusqGeneral(e.target.value)}
+                  value={f.busqGeneral} onChange={e => f.setBusqGeneral(e.target.value)}
                   style={{ marginBottom: 8 }} />
-                {generales.length === 0 ? (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                    No hay rutinas generales creadas todavía.
-                  </p>
+                {f.generales.length === 0 ? (
+                  <p className="gt-text-muted" style={{ fontSize: 13, margin: 0 }}>No hay plantillas creadas todavía.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
-                    {generales
-                      .filter(r => r.nombre.toLowerCase().includes(busqGeneral.toLowerCase()))
+                    {f.generales
+                      .filter(r => r.nombre.toLowerCase().includes(f.busqGeneral.toLowerCase()))
                       .map(r => {
-                        const DIFIC: Record<string, { bg: string; color: string; label: string }> = {
-                          BAJA:  { bg: 'var(--green-bg)',  color: 'var(--green-text)',  label: 'Baja' },
-                          MEDIA: { bg: 'var(--yellow-bg)', color: 'var(--yellow-text)', label: 'Media' },
-                          ALTA:  { bg: 'var(--red-light)', color: 'var(--red-text)',    label: 'Alta' },
-                        }
-                        const dif = r.dificultad ? DIFIC[r.dificultad] : null
+                        const dif = r.dificultad ? DIFICULTAD_CONFIG[r.dificultad] : null
                         return (
-                          <div key={r.id} onClick={() => aplicarRutinaGeneral(r)}
-                            style={{
-                              padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
-                              border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                              display: 'flex', alignItems: 'center', gap: 12,
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-surface-2)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-surface)')}>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>
-                                {r.nombre}
-                              </p>
-                              {r.descripcion && (
-                                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-                                  {r.descripcion}
-                                </p>
-                              )}
+                          <button type="button" key={r.id} onClick={() => f.aplicarRutinaGeneral(r)} className="gt-cat-item">
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>{r.nombre}</p>
+                              {r.descripcion && <p className="gt-text-muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{r.descripcion}</p>}
                               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 4 }}>
-                                {(r.trenes ?? []).map(t => (
-                                  <span key={t} style={{ fontSize: 10, background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', borderRadius: 4, padding: '1px 6px', border: '1px solid var(--border)' }}>
-                                    {t}
-                                  </span>
-                                ))}
-                                {(r.diasSemana ?? []).map(d => (
-                                  <span key={d} style={{ fontSize: 10, background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: 4, padding: '1px 6px' }}>
-                                    {d}
-                                  </span>
-                                ))}
-                                {dif && (
-                                  <span style={{ fontSize: 10, borderRadius: 4, padding: '1px 6px', background: dif.bg, color: dif.color, fontWeight: 700 }}>
-                                    {dif.label}
+                                {(r.trenes ?? []).map(t => {
+                                  const tc = TRENES.find(x => x.id === t)
+                                  return <span key={t} className="gt-chip" style={{ background: tc?.bg, color: tc?.color }}>{tc?.label ?? t}</span>
+                                })}
+                                {r.diasSemana && r.diasSemana.length > 0 && (
+                                  <span className="gt-chip" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                                    {r.diasSemana.length} {r.diasSemana.length === 1 ? 'día' : 'días'}
                                   </span>
                                 )}
+                                {dif && <span className="gt-chip" style={{ background: dif.bg, color: dif.color }}>{dif.label}</span>}
                               </div>
                             </div>
-                            <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                              Usar esta →
-                            </span>
-                          </div>
+                            <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, whiteSpace: 'nowrap' }}>Usar esta →</span>
+                          </button>
                         )
                       })}
                   </div>
@@ -407,254 +205,163 @@ export default function RutinaForm() {
           </div>
         )}
 
-        {/* ── SECCIÓN 1: Tren muscular (multi-select) ── */}
-        <div className="gt-card" style={{ marginBottom: 14 }}>
-          <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 15, color: '#111827' }}>
-            1. ¿Qué trenes musculares trabaja esta rutina?
-          </p>
-          <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6B7280' }}>
-            Podés seleccionar más de uno
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
-            {TRENES.map(t => {
-              const sel = trenesSel.includes(t.id)
+        {/* ── Objetivo ── */}
+        <Paso n={sig()} titulo="¿Cuál es el objetivo?"
+          ayuda="Define series, repeticiones y descanso sugeridos, y cómo se progresa en el modo entrenamiento.">
+          <div className="gt-objetivo-grid">
+            {Object.entries(OBJETIVO_CONFIG).map(([id, o]) => {
+              const sel = f.objetivo === id
               return (
-                <button key={t.id} type="button" onClick={() => toggleTren(t.id)}
-                  style={{
-                    padding: '14px 12px', borderRadius: 10, border: `2px solid`,
-                    cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s',
-                    borderColor: sel ? t.color : '#E5E7EB',
-                    background: sel ? t.bg : '#FAFAFA',
-                    transform: sel ? 'scale(1.03)' : 'scale(1)',
-                    position: 'relative',
-                  }}>
-                  {sel && (
-                    <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 13, color: t.color, fontWeight: 700 }}>✓</span>
-                  )}
-                  <p style={{ fontSize: 28, margin: '0 0 6px' }}>{t.emoji}</p>
-                  <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 13, color: sel ? t.color : '#374151' }}>{t.label}</p>
-                  <p style={{ margin: 0, fontSize: 10, color: '#9CA3AF', lineHeight: 1.3 }}>{t.desc}</p>
+                <button key={id} type="button" aria-pressed={sel} onClick={() => f.setObjetivo(sel ? '' : id)}
+                  className={`gt-objetivo${sel ? ' selected' : ''}`} style={sel ? { borderColor: o.color, background: o.bg } : undefined}>
+                  <span style={{ fontSize: 22 }}>{o.emoji}</span>
+                  <span style={{ fontWeight: 700, color: sel ? o.color : 'var(--text-primary)' }}>{o.label}</span>
+                  <span className="gt-text-muted" style={{ fontSize: 11, lineHeight: 1.35 }}>{o.desc}</span>
+                  <span className="gt-chip" style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', alignSelf: 'flex-start' }}>
+                    {o.esquema.series}×{o.esquema.reps} · {o.esquema.descanso}s
+                  </span>
                 </button>
               )
             })}
           </div>
-        </div>
+          {f.objetivo && !f.esEdicion && f.ejercicios.length > 0 && (
+            <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" style={{ marginTop: 12 }} onClick={f.aplicarEsquema}>
+              Aplicar {OBJETIVO_CONFIG[f.objetivo].esquema.series}×{OBJETIVO_CONFIG[f.objetivo].esquema.reps} · {OBJETIVO_CONFIG[f.objetivo].esquema.descanso}s a los {f.ejercicios.length} ejercicios
+            </button>
+          )}
+        </Paso>
 
-        {/* ── SECCIÓN 2: Nombre, descripción y días ── */}
-        <div className="gt-card" style={{ marginBottom: 14 }}>
-          <p style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 15, color: '#111827' }}>
-            2. Datos de la rutina
-          </p>
+        {/* ── Trenes musculares ── */}
+        <Paso n={sig()} titulo="¿Qué trabaja esta rutina?" ayuda="Podés elegir más de uno. Filtra el catálogo de ejercicios.">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+            {TRENES.map(t => {
+              const sel = f.trenesSel.includes(t.id)
+              return (
+                <button key={t.id} type="button" onClick={() => f.toggleTren(t.id)} aria-pressed={sel}
+                  style={{ padding: '14px 12px', borderRadius: 10, border: '2px solid', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s', font: 'inherit',
+                    borderColor: sel ? t.color : 'var(--border)', background: sel ? t.bg : 'var(--bg-surface)', position: 'relative' }}>
+                  {sel && <span style={{ position: 'absolute', top: 6, right: 8, fontSize: 13, color: t.color, fontWeight: 700 }}>✓</span>}
+                  <p style={{ fontSize: 28, margin: '0 0 6px' }}>{t.emoji}</p>
+                  <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 13, color: sel ? t.color : 'var(--text-primary)' }}>{t.label}</p>
+                  <p style={{ margin: 0, fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.3 }}>{t.desc}</p>
+                </button>
+              )
+            })}
+          </div>
+        </Paso>
+
+        {/* ── Datos y días ── */}
+        <Paso n={sig()} titulo="Datos de la rutina">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="gt-form-group" style={{ margin: 0 }}>
               <label className="gt-label">Nombre *</label>
-              <input className="gt-input" value={nombre}
-                onChange={e => setNombre(e.target.value)}
-                placeholder="Ej: Rutina de fuerza superior"
-                maxLength={50} required />
+              <input className="gt-input" value={f.nombre} onChange={e => f.setNombre(e.target.value)} placeholder="Ej: Fuerza tren superior" maxLength={50} required />
             </div>
             <div className="gt-form-group" style={{ margin: 0 }}>
               <label className="gt-label">Descripción (opcional)</label>
-              <textarea className="gt-textarea" value={descripcion}
-                onChange={e => setDescripcion(e.target.value)}
-                placeholder="Objetivo, nivel, notas generales..."
-                rows={2} maxLength={300} />
+              <textarea className="gt-textarea" value={f.descripcion} onChange={e => f.setDescripcion(e.target.value)} placeholder="Objetivo, nivel, notas generales…" rows={2} maxLength={300} />
             </div>
             <div className="gt-form-group" style={{ margin: 0 }}>
-              <label className="gt-label">Días de la semana</label>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+              <label className="gt-label">¿Qué días entrena?</label>
+              <p className="gt-text-muted" style={{ margin: '0 0 6px', fontSize: 12 }}>
+                Cada día marcado es un día de la rutina (Día 1, Día 2…), siempre de lunes a domingo.
+              </p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {DIAS.map(dia => {
-                  const sel = dias.includes(dia)
-                  const fin = dia === 'Sábado' || dia === 'Domingo'
+                  const sel = f.dias.includes(dia)
                   return (
-                    <button key={dia} type="button" onClick={() => toggleDia(dia)}
-                      style={{
-                        padding: '6px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
-                        border: '1.5px solid', fontWeight: sel ? 700 : 400, transition: 'all 0.12s',
-                        borderColor: sel ? (fin ? 'var(--yellow-text)' : 'var(--accent)') : 'var(--border)',
-                        background: sel ? (fin ? 'var(--yellow-bg)' : 'var(--accent-light)') : 'var(--bg-surface)',
-                        color: sel ? (fin ? 'var(--yellow-text)' : 'var(--accent)') : 'var(--text-secondary)',
-                      }}>
+                    <button key={dia} type="button" onClick={() => f.toggleDia(dia)} aria-pressed={sel}
+                      className={`gt-day-tab${sel ? ' activo' : ''}`}>
                       {dia}
                     </button>
                   )
                 })}
               </div>
             </div>
-
             <div className="gt-form-group" style={{ margin: 0 }}>
-              <label className="gt-label">Nivel de dificultad</label>
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                {[
-                  { val: '', label: 'Sin especificar', bg: 'var(--bg-surface)', color: 'var(--text-muted)', border: 'var(--border)' },
-                  { val: 'BAJA',  label: 'Baja',  bg: 'var(--green-bg)',   color: 'var(--green-text)', border: 'var(--green-text)' },
-                  { val: 'MEDIA', label: 'Media', bg: 'var(--yellow-bg)',  color: 'var(--yellow-text)', border: 'var(--yellow-text)' },
-                  { val: 'ALTA',  label: 'Alta',  bg: 'var(--red-light)',  color: 'var(--red-text)',    border: 'var(--red)' },
-                ].map(opt => (
-                  <button key={opt.val} type="button"
-                    onClick={() => setDificultad(opt.val)}
-                    style={{
-                      padding: '6px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
-                      border: `1.5px solid ${dificultad === opt.val ? opt.border : 'var(--border)'}`,
-                      background: dificultad === opt.val ? opt.bg : 'var(--bg-surface)',
-                      color: dificultad === opt.val ? opt.color : 'var(--text-secondary)',
-                      fontWeight: dificultad === opt.val ? 700 : 400,
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
+              <label className="gt-label">Nivel</label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                {DIFICULTADES.map(opt => {
+                  const sel = f.dificultad === opt.val
+                  return (
+                    <button key={opt.val} type="button" onClick={() => f.setDificultad(opt.val)} aria-pressed={sel}
+                      style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer', font: 'inherit',
+                        border: `1.5px solid ${sel ? opt.border : 'var(--border)'}`, background: sel ? opt.bg : 'var(--bg-surface)',
+                        color: sel ? opt.color : 'var(--text-secondary)', fontWeight: sel ? 700 : 400 }}>
+                      {opt.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
-        </div>
+        </Paso>
 
-        {/* ── SECCIÓN 3: Ejercicios ── */}
-        {!esEdicion && (
-          <div className="gt-card" style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: '#111827' }}>
-                  3. Ejercicios
-                  {ejercicios.length > 0 && (
-                    <span style={{ marginLeft: 8, fontSize: 12, background: '#F3F4F6', color: '#374151', borderRadius: 10, padding: '2px 9px', fontWeight: 700 }}>
-                      {ejercicios.length} agregado{ejercicios.length !== 1 ? 's' : ''}
+        {/* ── Ejercicios por día ── */}
+        {!f.esEdicion && (
+          <Paso n={sig()} titulo="Ejercicios"
+            ayuda={cantDias > 1
+              ? 'Elegí un día en las pestañas y agregá sus ejercicios desde el catálogo.'
+              : 'Agregá ejercicios desde el catálogo. También podés hacerlo después.'}
+            extra={
+              <button type="button" className={f.mostrarCat ? 'gt-btn gt-btn-secondary gt-btn-sm' : 'gt-btn gt-btn-primary gt-btn-sm'}
+                onClick={() => f.setMostrarCat(v => !v)}>
+                {f.mostrarCat ? 'Cerrar catálogo' : '+ Agregar ejercicio'}
+              </button>
+            }>
+
+            {cantDias > 1 && (
+              <div className="gt-day-tabs" role="tablist">
+                {Array.from({ length: cantDias }, (_, i) => i + 1).map(n => {
+                  const cuenta = f.ejercicios.filter(e => (e.dia ?? 1) === n).length
+                  return (
+                    <button key={n} type="button" role="tab" aria-selected={f.diaActivo === n}
+                      className={`gt-day-tab${f.diaActivo === n ? ' activo' : ''}`}
+                      onClick={() => f.setDiaActivo(n)}>
+                      Día {n} · {etiquetaDia(n)}<span className="cuenta">({cuenta})</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {f.mostrarCat && (
+              <div style={{ marginBottom: 14, background: 'var(--bg-surface-2)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                <div style={{ padding: '10px 14px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 16 }}>🔍</span>
+                  <input className="gt-input" style={{ flex: 1, minWidth: 140 }}
+                    placeholder={f.trenesSel.length > 0 && !f.hayFullBody ? `Buscar en ${labelsTrenes}…` : 'Buscar ejercicio…'}
+                    value={f.busqEj} onChange={e => f.setBusqEj(e.target.value)} />
+                  {cantDias > 1 && (
+                    <span className="gt-chip" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                      Se agregan a: Día {f.diaActivo} · {etiquetaDia(f.diaActivo)}
                     </span>
                   )}
-                </p>
-                {trenesSel.length > 0 && (
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9CA3AF' }}>
-                    Mostrando ejercicios de {trenesSel.map(id => TRENES.find(t => t.id === id)?.label ?? id).join(' + ')}
-                  </p>
-                )}
-              </div>
-              <button type="button" className="gt-btn gt-btn-secondary"
-                style={{ fontSize: 12 }}
-                onClick={() => setMostrarCat(v => !v)}>
-                {mostrarCat ? 'Cerrar catálogo' : '+ Agregar ejercicio'}
-              </button>
-            </div>
-
-            {/* Catálogo desplegable */}
-            {mostrarCat && (
-              <div style={{ marginBottom: 14, background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-
-                {/* Barra de búsqueda */}
-                <div style={{ padding: '12px 14px', background: '#fff', borderBottom: '1px solid #E5E7EB', display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 16 }}>🔍</span>
-                  <input className="gt-input" style={{ flex: 1, border: 'none', outline: 'none', padding: '0', background: 'transparent', fontSize: 14 }}
-                    placeholder={trenesSel.length > 0 && !hayFullBody
-                      ? `Buscar en ${trenesSel.map(tid => TRENES.find(t => t.id === tid)?.label ?? tid).join(' + ')}…`
-                      : 'Buscar ejercicio…'}
-                    value={busqEj}
-                    onChange={e => setBusqEj(e.target.value)} />
-                  {busqEj && (
-                    <button type="button" onClick={() => setBusqEj('')}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#9CA3AF' }}>✕</button>
-                  )}
-                  <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap' }}>
-                    {catalogoFiltrado.length} ejercicio{catalogoFiltrado.length !== 1 ? 's' : ''}
+                  <span className="gt-text-muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                    {f.catalogoFiltrado.length} ejercicio{f.catalogoFiltrado.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-
-                {/* Grid de cards */}
-                <div style={{ maxHeight: 420, overflowY: 'auto', padding: 14 }}>
-                  {catalogoFiltrado.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px 0', color: '#9CA3AF' }}>
-                      <p style={{ fontSize: 24, margin: '0 0 6px' }}>🔍</p>
-                      <p style={{ margin: 0, fontSize: 13 }}>
-                        {catalogo.length === 0
-                          ? 'El catálogo está vacío. Primero agregá ejercicios en la sección Ejercicios.'
-                          : 'Sin coincidencias para esa búsqueda.'}
-                      </p>
-                    </div>
+                <div style={{ maxHeight: 380, overflowY: 'auto', padding: 12 }}>
+                  {f.catalogoFiltrado.length === 0 ? (
+                    <p className="gt-text-muted" style={{ textAlign: 'center', padding: '20px 0', margin: 0, fontSize: 13 }}>
+                      {f.catalogo.length === 0 ? 'El catálogo está vacío. Primero agregá ejercicios en la sección Ejercicios.' : 'Sin coincidencias para esa búsqueda.'}
+                    </p>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
-                      {catalogoFiltrado.map(e => {
-                        const yaAgregado = ejercicios.some(x => x.catId === e.id)
-                        // Máquinas compatibles con este ejercicio
-                        const maqEj = maquinas.filter(m =>
-                          (m.grupos ?? []).some(g => (e.grupos ?? []).includes(g))
-                        )
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
+                      {f.catalogoFiltrado.map(e => {
+                        const yaEnDia = f.ejercicios.some(x => x.catId === e.id && (cantDias === 1 || (x.dia ?? 1) === f.diaActivo))
                         return (
-                          <div key={e.id}
-                            onClick={() => !yaAgregado && agregarEjDesde(e)}
-                            style={{
-                              borderRadius: 10, border: '1.5px solid',
-                              borderColor: yaAgregado ? '#BBF7D0' : '#E5E7EB',
-                              background: yaAgregado ? '#F0FDF4' : '#fff',
-                              cursor: yaAgregado ? 'default' : 'pointer',
-                              overflow: 'hidden', transition: 'all 0.15s',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                            }}
-                            onMouseEnter={ev => { if (!yaAgregado) { ev.currentTarget.style.borderColor = '#93C5FD'; ev.currentTarget.style.boxShadow = '0 4px 12px rgba(46,117,182,0.12)'; ev.currentTarget.style.transform = 'translateY(-1px)' } }}
-                            onMouseLeave={ev => { if (!yaAgregado) { ev.currentTarget.style.borderColor = '#E5E7EB'; ev.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; ev.currentTarget.style.transform = 'none' } }}>
-
-                            {/* Header de la card */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderBottom: maqEj.length > 0 ? '1px solid #F3F4F6' : 'none' }}>
-                              {/* Ícono */}
-                              <div style={{
-                                width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                                background: yaAgregado ? '#DCFCE7' : (e.esMaquina ? '#FEF3C7' : '#EFF6FF'),
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-                              }}>
-                                {e.imagenUrl
-                                  ? <img src={e.imagenUrl} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6 }} />
-                                  : (yaAgregado ? '✓' : e.esMaquina ? '⚙️' : '💪')}
-                              </div>
-
-                              {/* Nombre + grupos */}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{
-                                  margin: '0 0 3px', fontWeight: 700, fontSize: 13,
-                                  color: yaAgregado ? '#16A34A' : '#111827',
-                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                }}>
-                                  {e.nombre}
-                                </p>
-                                <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                                  {(e.grupos ?? []).slice(0, 2).map(g => (
-                                    <span key={g} style={{
-                                      fontSize: 10, borderRadius: 4, padding: '1px 5px', fontWeight: 600,
-                                      background: yaAgregado ? '#DCFCE7' : '#EFF6FF',
-                                      color: yaAgregado ? '#16A34A' : '#2E75B6',
-                                    }}>{g}</span>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Badge estado */}
-                              {yaAgregado && (
-                                <span style={{ fontSize: 10, background: '#16A34A', color: '#fff', borderRadius: 6, padding: '2px 7px', fontWeight: 700, flexShrink: 0 }}>
-                                  ✓ En rutina
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Máquinas recomendadas */}
-                            {maqEj.length > 0 && (
-                              <div style={{ padding: '7px 12px 9px' }}>
-                                <p style={{ margin: '0 0 5px', fontSize: 9, fontWeight: 700, color: '#D97706', textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                                  ⚙️ Máquinas disponibles
-                                </p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                                  {maqEj.slice(0, 3).map(m => (
-                                    <span key={m.id} style={{
-                                      fontSize: 10, background: '#FFFBEB', color: '#92400E',
-                                      border: '1px solid #FDE68A', borderRadius: 5,
-                                      padding: '2px 7px', fontWeight: 600,
-                                      whiteSpace: 'nowrap', maxWidth: 160,
-                                      overflow: 'hidden', textOverflow: 'ellipsis',
-                                    }}>
-                                      {m.nroMaquina ? `${m.nroMaquina} · ` : ''}{m.nombre}
-                                    </span>
-                                  ))}
-                                  {maqEj.length > 3 && (
-                                    <span style={{ fontSize: 10, color: '#9CA3AF', padding: '2px 4px' }}>+{maqEj.length - 3}</span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          <button type="button" key={e.id} className="gt-cat-item" disabled={yaEnDia}
+                            onClick={() => f.agregarEjDesde(e)}>
+                            {e.imagenUrl
+                              ? <img src={e.imagenUrl} alt="" className="gt-ej-thumb" style={{ width: 36, height: 36 }} />
+                              : <span style={{ fontSize: 20, width: 36, textAlign: 'center' }}>{e.esMaquina ? '⚙️' : '💪'}</span>}
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ display: 'block', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.nombre}</span>
+                              <span className="gt-text-muted" style={{ fontSize: 11 }}>{(e.grupos ?? []).slice(0, 2).join(' · ')}</span>
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{yaEnDia ? '✓' : '+'}</span>
+                          </button>
                         )
                       })}
                     </div>
@@ -663,215 +370,117 @@ export default function RutinaForm() {
               </div>
             )}
 
-            {/* Lista de ejercicios agregados con config inline */}
-            {ejercicios.length === 0 ? (
-              <p style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', margin: '8px 0 0' }}>
-                Podés agregar ejercicios ahora o después desde el detalle de la rutina.
-              </p>
+            {ejDelDia.length === 0 ? (
+              <div className="gt-empty" style={{ padding: '18px 0' }}>
+                {cantDias > 1 ? `Todavía no hay ejercicios para el Día ${f.diaActivo}.` : 'Todavía no agregaste ejercicios.'}
+                {!f.mostrarCat && (
+                  <div style={{ marginTop: 8 }}>
+                    <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => f.setMostrarCat(true)}>Abrir catálogo</button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {ejercicios.map((ej, idx) => {
-                  // Máquinas recomendadas para este ejercicio (por grupos compartidos)
-                  const ejCat = catalogo.find(c => c.id === ej.catId)
-                  const ejGrupos = ejCat?.grupos ?? []
-                  const maqParaEj = maquinas.filter(m =>
-                    (m.grupos ?? []).some(g => ejGrupos.includes(g))
-                  )
+                {ejDelDia.map(({ ej, idx }, pos) => {
+                  const ejCat = f.catalogo.find(c => c.id === ej.catId)
+                  const maqParaEj = f.maquinas.filter(m => (m.grupos ?? []).some(g => (ejCat?.grupos ?? []).includes(g)))
+                  const imgUrl = ej.imagenUrl || NAME_TO_STATIC_IMG[ej.nombre.toLowerCase()]
                   return (
-                  <div key={idx} style={{ background: '#F9FAFB', borderRadius: 10, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#fff', borderBottom: '1px solid #F3F4F6' }}>
-                      {(() => {
-                        const imgUrl = ej.imagenUrl || NAME_TO_STATIC_IMG[ej.nombre.toLowerCase()]
-                        return imgUrl ? (
-                          <button type="button"
-                            onClick={() => setLightbox({ url: imgUrl, nombre: ej.nombre })}
-                            title="Ver imagen completa"
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'zoom-in', flexShrink: 0, position: 'relative' }}>
-                            <img src={imgUrl} alt={ej.nombre}
-                              style={{ width: 52, height: 52, objectFit: 'contain', borderRadius: 8, background: '#F3F4F6', display: 'block' }}
-                              onError={e => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }} />
-                            <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 9, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 3, padding: '0 3px', lineHeight: '14px' }}>🔍</span>
+                    <div key={idx} className="gt-ej-item">
+                      <div className="gt-ej-item-head">
+                        <span className="gt-dia-dot on">{pos + 1}</span>
+                        {imgUrl ? (
+                          <button type="button" onClick={() => f.setLightbox({ url: imgUrl, nombre: ej.nombre })} title="Ver imagen"
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'zoom-in' }}>
+                            <img src={imgUrl} alt={ej.nombre} className="gt-ej-thumb"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                           </button>
                         ) : (
-                          <div style={{ width: 52, height: 52, borderRadius: 8, background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>💪</div>
-                        )
-                      })()}
-                      <span style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{ej.nombre}</span>
-                      <button type="button" onClick={() => quitarEj(idx)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: 16, padding: '0 4px' }}>✕</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: 8, padding: '10px 14px', alignItems: 'center' }}>
-                      <div>
-                        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Series</label>
-                        <input type="number" className="gt-input" min={1} max={20}
-                          value={ej.series}
-                          onChange={e => actualizarEj(idx, 'series', Number(e.target.value))}
-                          style={{ textAlign: 'center' }} />
+                          <span className="gt-ej-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>💪</span>
+                        )}
+                        <span style={{ flex: 1, fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{ej.nombre}</span>
+                        {cantDias > 1 && (
+                          <select className="gt-input" value={ej.dia ?? 1} title="Mover a otro día"
+                            onChange={e => f.actualizarEj(idx, 'dia', Number(e.target.value))}
+                            style={{ width: 'auto', fontSize: 12, padding: '3px 6px' }}>
+                            {Array.from({ length: cantDias }, (_, i) => i + 1).map(n => (
+                              <option key={n} value={n}>Día {n} · {etiquetaDia(n)}</option>
+                            ))}
+                          </select>
+                        )}
+                        <button type="button" onClick={() => f.quitarEj(idx)} title="Quitar"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontSize: 16, padding: '0 4px' }}>✕</button>
                       </div>
-                      <div>
-                        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Repeticiones</label>
-                        <input type="number" className="gt-input" min={1} max={200}
-                          value={ej.reps}
-                          onChange={e => actualizarEj(idx, 'reps', Number(e.target.value))}
-                          style={{ textAlign: 'center' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Descanso (s)</label>
-                        <input type="number" className="gt-input" min={0} max={600}
-                          value={ej.descanso}
-                          onChange={e => actualizarEj(idx, 'descanso', Number(e.target.value))}
-                          style={{ textAlign: 'center' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Notas</label>
-                        <input className="gt-input" value={ej.notas}
-                          onChange={e => actualizarEj(idx, 'notas', e.target.value)}
-                          placeholder="Con agarre neutro..." maxLength={80} />
-                      </div>
-                    </div>
-                    {/* Máquinas recomendadas para este ejercicio */}
-                    {maqParaEj.length > 0 && (
-                      <div style={{ padding: '6px 14px 10px', borderTop: '1px solid #F3F4F6', background: '#FFFDF8' }}>
-                        <p style={{ margin: '0 0 5px', fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                          ⚙️ Máquinas recomendadas
-                        </p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {maqParaEj.map(m => (
-                            <span key={m.id} style={{
-                              fontSize: 11, background: '#FEF3C7', color: '#92400E',
-                              borderRadius: 5, padding: '2px 8px', fontWeight: 600,
-                              border: '1px solid #FDE68A',
-                            }}>
-                              {m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}
-                            </span>
-                          ))}
+                      <div className="gt-ej-item-body">
+                        {[
+                          { label: 'Series',       field: 'series'   as const, min: 1, max: 20 },
+                          { label: 'Repeticiones', field: 'reps'     as const, min: 1, max: 200 },
+                          { label: 'Descanso (s)', field: 'descanso' as const, min: 0, max: 600 },
+                        ].map(({ label, field, min, max }) => (
+                          <div key={field}>
+                            <label>{label}</label>
+                            <input type="number" className="gt-input" min={min} max={max}
+                              value={ej[field]}
+                              onChange={e => f.actualizarEj(idx, field, Number(e.target.value))}
+                              style={{ textAlign: 'center' }} />
+                          </div>
+                        ))}
+                        <div>
+                          <label>Notas</label>
+                          <input className="gt-input" value={ej.notas} onChange={e => f.actualizarEj(idx, 'notas', e.target.value)} placeholder="Ej: agarre neutro" maxLength={80} />
                         </div>
                       </div>
-                    )}
-                  </div>
+                      {maqParaEj.length > 0 && (
+                        <div style={{ padding: '6px 12px 10px', borderTop: '1px solid var(--border-light)', display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                          <span className="gt-text-muted" style={{ fontSize: 11, fontWeight: 700 }}>⚙️ Máquinas:</span>
+                          {maqParaEj.slice(0, 4).map(m => (
+                            <span key={m.id} className="gt-chip" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-text)' }}>
+                              {m.nroMaquina ? `${m.nroMaquina} · ` : ''}{m.nombre}
+                            </span>
+                          ))}
+                          {maqParaEj.length > 4 && <span className="gt-text-muted" style={{ fontSize: 11 }}>+{maqParaEj.length - 4}</span>}
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>
             )}
-          </div>
+          </Paso>
         )}
 
-        {/* ── SECCIÓN 4: Asignación de socio (admin) ── */}
-        {esAdmin && !esEdicion && (
-          <div className="gt-card" style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: '#111827' }}>
-                4. Asignación
-              </p>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                <input type="checkbox" checked={sinSocio}
-                  onChange={e => { setSinSocio(e.target.checked); if (e.target.checked) { setSocioSel(null); setBusquedaSocio('') } }} />
-                Guardar como rutina general (sin socio)
-              </label>
-            </div>
-
-            {sinSocio ? (
-              <div style={{ padding: '10px 14px', background: '#F5F3FF', borderRadius: 8, border: '1px solid #DDD6FE', fontSize: 13, color: '#7C3AED' }}>
-                📋 Rutina general — estará disponible para asignar a cualquier socio después.
-              </div>
-            ) : socioSel ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
-                <span style={{ fontWeight: 700, color: '#16A34A' }}>✓ {socioSel.nombre} {socioSel.apellido}</span>
-                <span style={{ fontSize: 12, color: '#6B7280' }}>DNI {socioSel.dni}</span>
-                <button type="button" className="gt-btn gt-btn-secondary" style={{ fontSize: 12, marginLeft: 'auto' }}
-                  onClick={() => { setSocioSel(null); setBusquedaSocio('') }}>
-                  Cambiar socio
-                </button>
-              </div>
-            ) : (
-              <div>
-                <button type="button" className="gt-btn gt-btn-secondary" style={{ fontSize: 12, marginBottom: 10 }}
-                  onClick={() => setMostrarBuscador(v => !v)}>
-                  {mostrarBuscador ? 'Cerrar buscador' : 'Buscar socio'}
-                </button>
-                {mostrarBuscador && (
-                  <div>
-                    <input className="gt-input" placeholder="Nombre, apellido o DNI..."
-                      value={busquedaSocio} onChange={e => setBusquedaSocio(e.target.value)}
-                      style={{ marginBottom: 6 }} />
-                    {busquedaSocio.length >= 1 && (
-                      <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, background: '#fff', overflow: 'hidden' }}>
-                        {socios
-                          .filter(s => {
-                            const q = busquedaSocio.toLowerCase()
-                            return s.nombre.toLowerCase().includes(q) || s.apellido.toLowerCase().includes(q) || s.dni.includes(q)
-                          })
-                          .slice(0, 6)
-                          .map(s => (
-                            <div key={s.id} onClick={() => seleccionarSocio(s)}
-                              style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: '1px solid #F3F4F6', display: 'flex', gap: 10, alignItems: 'center' }}
-                              onMouseEnter={e => (e.currentTarget.style.background = '#F0FDF4')}
-                              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
-                              <span style={{ fontWeight: 700, color: '#1B5E44' }}>#{s.id}</span>
-                              <span>{s.nombre} {s.apellido}</span>
-                              <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>DNI {s.dni}</span>
-                            </div>
-                          ))
-                        }
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Observaciones del socio */}
-            {obsMovio && socioSel && (
-              <div style={{ marginTop: 10, padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 12, color: '#92400E' }}>
-                  ⚠ Observaciones de {socioSel.nombre}
-                </p>
-                <p style={{ margin: 0, fontSize: 12, color: '#78350F', whiteSpace: 'pre-wrap' }}>{obsMovio}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Botón submit ── */}
-        {progreso && (
-          <div className="gt-alert" style={{ background: '#EFF6FF', borderColor: '#BFDBFE', color: '#1D4ED8', marginBottom: 12 }}>
-            {progreso}
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando} style={{ minWidth: 160, fontSize: 15 }}>
-            {guardando ? (progreso ?? 'Guardando…') : esEdicion ? 'Guardar cambios' : 'Crear rutina'}
+        {/* ── Guardar ── */}
+        {f.progreso && <div className="gt-alert gt-alert-info" style={{ marginBottom: 12 }}>{f.progreso}</div>}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button type="submit" className="gt-btn gt-btn-primary" disabled={f.guardando} style={{ minWidth: 160, fontSize: 15 }}>
+            {f.guardando ? (f.progreso ?? 'Guardando…')
+              : f.esEdicion ? 'Guardar cambios'
+              : f.esAdmin && f.sinSocio ? 'Crear plantilla'
+              : f.socioSel ? `Asignar a ${f.socioSel.nombre}`
+              : 'Crear rutina'}
           </button>
-          <button type="button" className="gt-btn gt-btn-secondary" onClick={() => navigate('/rutinas')}>
-            Cancelar
-          </button>
+          <button type="button" className="gt-btn gt-btn-secondary" onClick={() => f.navigate('/rutinas')}>Cancelar</button>
+          {!f.esEdicion && f.ejercicios.length > 0 && (
+            <span className="gt-text-muted" style={{ fontSize: 12 }}>
+              {f.ejercicios.length} ejercicio{f.ejercicios.length !== 1 ? 's' : ''}
+              {cantDias > 1 && ` en ${cantDias} días`}
+            </span>
+          )}
         </div>
-
       </form>
 
-      {/* ── Lightbox ── */}
-      {lightbox && (
-        <div
-          onClick={() => setLightbox(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0,0,0,0.82)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            cursor: 'zoom-out',
-          }}>
-          <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 14, textAlign: 'center', padding: '0 20px' }}>
-            {lightbox.nombre}
-          </p>
-          <img src={lightbox.url} alt={lightbox.nombre}
-            style={{ maxWidth: '90vw', maxHeight: '75vh', borderRadius: 12, objectFit: 'contain', background: '#1a1a1a' }} />
-          <button
-            onClick={() => setLightbox(null)}
+      {/* Lightbox */}
+      {f.lightbox && (
+        <div onClick={() => f.setLightbox(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
+          <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 14, textAlign: 'center', padding: '0 20px' }}>{f.lightbox.nombre}</p>
+          <img src={f.lightbox.url} alt={f.lightbox.nombre} style={{ maxWidth: '90vw', maxHeight: '75vh', borderRadius: 12, objectFit: 'contain', background: '#1a1a1a' }} />
+          <button onClick={() => f.setLightbox(null)}
             style={{ marginTop: 18, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 8, padding: '8px 24px', cursor: 'pointer', fontSize: 14 }}>
             Cerrar
           </button>
         </div>
       )}
-
     </div>
   )
 }

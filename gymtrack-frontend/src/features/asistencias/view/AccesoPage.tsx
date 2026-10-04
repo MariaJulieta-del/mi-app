@@ -1,149 +1,88 @@
-import { useState, useEffect, useRef } from 'react'
-import { registrarCheckin, listarHoy } from '../services/asistenciaService'
+import { Link } from 'react-router-dom'
+import { useAcceso } from '../hooks/useAcceso'
+import { PasesMeter } from '../../membresias/components/MembresiaResumen'
+import { formatFecha } from '../../../shared/utils/fechas'
+import { SEMAFORO } from '../utils/semaforo'
 
-interface CheckinResultado {
-  id: number
-  socioId: number
-  socioNombre: string
-  socioDni: string
-  fecha: string
-  hora: string
-  tipo: string
-  permitido: boolean
-  observacion?: string
-  conDeuda?: boolean
-  fechaVencimiento?: string
-  tipoMembresia?: string
-  entradasDisponibles?: number
-  entradasUsadas?: number
-  entradasRestantes?: number
-}
-
-interface Asistencia {
-  id: number
-  socioNombre: string
-  socioDni: string
-  hora: string
-  tipo: string
-  permitido: boolean
-  observacion?: string
-  conDeuda?: boolean
-}
-
-function diasHastaVencer(fechaVencimiento?: string): number | null {
-  if (!fechaVencimiento) return null
-  const [y, m, d] = fechaVencimiento.split('-').map(Number)
-  const vence = new Date(y, m - 1, d)
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
-  return Math.ceil((vence.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
-}
 
 export default function AccesoPage() {
-  const [busqueda, setBusqueda]     = useState('')
-  const tipo = 'ENTRADA'
-  const [resultado, setResultado]   = useState<CheckinResultado | null>(null)
-  const [error, setError]           = useState<string | null>(null)
-  const [loading, setLoading]       = useState(false)
-  const [historial, setHistorial]   = useState<Asistencia[]>([])
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => { cargarHoy() }, [])
-
-  const cargarHoy = async () => {
-    try { setHistorial(await listarHoy()) } catch {}
-  }
-
-  const handleCheckin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!busqueda.trim()) { setError('Ingresá el DNI o ID del socio'); return }
-    setError(null)
-    setResultado(null)
-    setLoading(true)
-    const trimmed = busqueda.trim()
-    const isId = /^\d{1,5}$/.test(trimmed)
-    const payload = isId ? { socioId: parseInt(trimmed), tipo } : { dni: trimmed, tipo }
-    try {
-      const data = await registrarCheckin(payload)
-      setResultado(data)
-      setBusqueda('')
-      cargarHoy()
-      setTimeout(() => inputRef.current?.focus(), 100)
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Error al registrar el acceso')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const dias = resultado ? diasHastaVencer(resultado.fechaVencimiento) : null
-  const esPunchCard = resultado?.entradasDisponibles != null
+  const { inputRef, ...a } = useAcceso()
 
   return (
     <>
       <div className="gt-section-header">
         <h1 className="gt-page-title" style={{ margin: 0 }}>🚪 Control de Acceso</h1>
+        <Link to="/qr-ingreso" className="gt-btn gt-btn-primary">📱 Mostrar QR de ingreso</Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, marginBottom: 24 }}>
         <div className="gt-card">
           <p className="gt-card-title">Registrar ingreso</p>
-          <form onSubmit={handleCheckin}>
+          <form onSubmit={a.handleCheckin}>
             <div className="gt-form-group" style={{ marginBottom: 16 }}>
               <label className="gt-label">DNI o ID del socio</label>
-              <input ref={inputRef} className="gt-input" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Ej: 38.112.445 o 7" autoFocus style={{ fontSize: 18, padding: '10px 12px', letterSpacing: 1 }} />
+              <input ref={inputRef} className="gt-input" value={a.busqueda} onChange={e => a.setBusqueda(e.target.value)}
+                placeholder="Ej: 38.112.445 o 7" autoFocus style={{ fontSize: 18, padding: '10px 12px', letterSpacing: 1 }} />
             </div>
-            <button type="submit" className="gt-btn gt-btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '10px 0' }}>
-              {loading ? '⏳ Verificando...' : '✅ Registrar ingreso'}
+            <button type="submit" className="gt-btn gt-btn-primary" disabled={a.loading}
+              style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '10px 0' }}>
+              {a.loading ? '⏳ Verificando...' : '✅ Registrar ingreso'}
             </button>
           </form>
 
-          {error && <div className="gt-alert gt-alert-error" style={{ marginTop: 16 }}>{error}</div>}
+          {a.error && <div className="gt-alert gt-alert-error" style={{ marginTop: 16 }}>{a.error}</div>}
 
-          {resultado && (
-            <div style={{ marginTop: 16, borderRadius: 10, overflow: 'hidden', border: `2px solid ${resultado.permitido ? '#16A34A' : '#DC2626'}` }}>
-              <div style={{ padding: '14px 18px', background: resultado.permitido ? '#DCFCE7' : '#FEE2E2', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 32 }}>{resultado.permitido ? '✅' : '🚫'}</span>
+          {a.resultado && a.semaforo && (
+            <div className="gt-acceso-result" style={{ borderColor: SEMAFORO[a.semaforo].color }}>
+              <div className="gt-acceso-head" style={{ background: SEMAFORO[a.semaforo].bg }}>
+                <span style={{ fontSize: 32 }}>{SEMAFORO[a.semaforo].icono}</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: resultado.permitido ? '#166534' : '#991B1B' }}>
-                    {resultado.permitido ? 'ACCESO PERMITIDO' : 'ACCESO DENEGADO'}
+                  <div style={{ fontWeight: 700, fontSize: 16, color: SEMAFORO[a.semaforo].color }}>
+                    {SEMAFORO[a.semaforo].titulo}
                   </div>
-                  <div style={{ fontSize: 14, color: '#374151', marginTop: 2 }}>
-                    <strong>{resultado.socioNombre}</strong>
-                    <span style={{ color: '#6B7280', marginLeft: 8 }}>DNI: {resultado.socioDni}</span>
+                  <div style={{ fontSize: 14, color: 'var(--text-primary)', marginTop: 2 }}>
+                    <strong>{a.resultado.socioNombre}</strong>
+                    <span className="gt-text-muted" style={{ marginLeft: 8 }}>DNI: {a.resultado.socioDni}</span>
                   </div>
                 </div>
               </div>
-              <div style={{ background: '#fff', padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {resultado.tipoMembresia && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: '#6B7280' }}>Plan</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, background: '#EFF6FF', color: '#1D4ED8', borderRadius: 6, padding: '2px 8px' }}>{resultado.tipoMembresia}</span>
+              <div className="gt-acceso-body">
+                {a.resultado.tipoMembresia && (
+                  <div className="gt-acceso-row">
+                    <span className="gt-text-muted gt-text-sm">Plan</span>
+                    <span className="gt-badge gt-badge-blue">{a.resultado.tipoMembresia}</span>
                   </div>
                 )}
-                {esPunchCard && resultado.entradasDisponibles != null && (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, color: '#6B7280' }}>Entradas</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: (resultado.entradasRestantes ?? 0) <= 2 ? '#DC2626' : (resultado.entradasRestantes ?? 0) <= 5 ? '#D97706' : '#166534' }}>
-                        {resultado.entradasRestantes ?? 0} / {resultado.entradasDisponibles} restantes
-                      </span>
-                    </div>
-                    <div style={{ background: '#F3F4F6', borderRadius: 4, height: 8, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: 4, width: `${Math.round(((resultado.entradasRestantes ?? 0) / resultado.entradasDisponibles!) * 100)}%`, background: (resultado.entradasRestantes ?? 0) <= 2 ? '#DC2626' : (resultado.entradasRestantes ?? 0) <= 5 ? '#D97706' : '#16A34A', transition: 'width 0.4s ease' }} />
-                    </div>
-                  </div>
-                )}
-                {!esPunchCard && resultado.fechaVencimiento && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: '#6B7280' }}>Vence</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: dias !== null && dias <= 7 ? '#D97706' : '#374151' }}>
-                      {resultado.fechaVencimiento.slice(0, 10)}
-                      {dias !== null && <span style={{ marginLeft: 6, color: dias <= 3 ? '#DC2626' : dias <= 7 ? '#D97706' : '#6B7280', fontWeight: 400, fontSize: 11 }}>({dias <= 0 ? 'vencida' : dias === 1 ? 'mañana' : `en ${dias} días`})</span>}
+                {a.resultado.fechaVencimiento && (
+                  <div className="gt-acceso-row">
+                    <span className="gt-text-muted gt-text-sm">Vence</span>
+                    <span className="gt-text-sm" style={{ fontWeight: 700, color: a.dias !== null && a.dias <= 5 ? 'var(--yellow-text)' : 'var(--text-primary)' }}>
+                      {formatFecha(a.resultado.fechaVencimiento)}
+                      {a.dias !== null && <span style={{ marginLeft: 6, fontWeight: 400, color: a.dias <= 0 ? 'var(--red)' : a.dias <= 5 ? 'var(--yellow-text)' : 'var(--text-muted)' }}>
+                        ({a.dias < 0 ? 'vencida' : a.dias === 0 ? 'hoy' : a.dias === 1 ? 'mañana' : `en ${a.dias} días`})
+                      </span>}
                     </span>
                   </div>
                 )}
-                {resultado.observacion && <div style={{ fontSize: 12, color: resultado.permitido ? '#92400E' : '#991B1B', background: resultado.permitido ? '#FFFBEB' : '#FFF5F5', borderRadius: 6, padding: '6px 10px', marginTop: 4 }}>{resultado.observacion}</div>}
+                {a.resultado.pasesUsados != null && (
+                  <PasesMeter compacto m={{
+                    paseLibre: !!a.resultado.paseLibre,
+                    pasesMensuales: a.resultado.pasesMensuales ?? null,
+                    pasesUsados: a.resultado.pasesUsados,
+                    pasesRestantes: a.resultado.pasesRestantes ?? null,
+                    cicloFin: '',
+                  }} />
+                )}
+                {a.resultado.observacion && (
+                  <div className="gt-text-sm" style={{ color: SEMAFORO[a.semaforo].color, background: SEMAFORO[a.semaforo].bg, borderRadius: 6, padding: '6px 10px' }}>
+                    {a.resultado.observacion}
+                  </div>
+                )}
+                {a.semaforo === 'ROJO' && (
+                  <Link to={`/socios/${a.resultado.socioId}/perfil`} className="gt-btn gt-btn-secondary gt-btn-sm" style={{ alignSelf: 'flex-start' }}>
+                    Ver perfil del socio →
+                  </Link>
+                )}
               </div>
             </div>
           )}
@@ -151,13 +90,13 @@ export default function AccesoPage() {
 
         <div className="gt-card">
           <p className="gt-card-title">Asistentes hoy — {new Date().toLocaleDateString('es-AR')}</p>
-          <div style={{ fontSize: 56, fontWeight: 800, color: '#1B5E44', textAlign: 'center', padding: '20px 0 8px' }}>
-            {historial.filter(a => a.tipo === 'ENTRADA' && a.permitido).length}
+          <div style={{ fontSize: 56, fontWeight: 800, color: 'var(--accent)', textAlign: 'center', padding: '20px 0 8px' }}>
+            {a.historial.filter(h => h.tipo === 'ENTRADA' && h.permitido).length}
           </div>
-          <p style={{ textAlign: 'center', color: '#6B7280', fontSize: 13, margin: '0 0 16px' }}>ingresos registrados</p>
-          {historial.filter(a => !a.permitido).length > 0 && (
-            <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 12px', textAlign: 'center', fontSize: 13 }}>
-              ⚠️ {historial.filter(a => !a.permitido).length} acceso{historial.filter(a => !a.permitido).length !== 1 ? 's' : ''} denegado{historial.filter(a => !a.permitido).length !== 1 ? 's' : ''}
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px' }}>ingresos registrados</p>
+          {a.historial.filter(h => !h.permitido).length > 0 && (
+            <div style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 8, padding: '8px 12px', textAlign: 'center', fontSize: 13 }}>
+              ⚠️ {a.historial.filter(h => !h.permitido).length} acceso{a.historial.filter(h => !h.permitido).length !== 1 ? 's' : ''} denegado{a.historial.filter(h => !h.permitido).length !== 1 ? 's' : ''}
             </div>
           )}
         </div>
@@ -165,26 +104,25 @@ export default function AccesoPage() {
 
       <div className="gt-card">
         <p className="gt-card-title">Registro del día</p>
-        {historial.length === 0 ? (
+        {a.historial.length === 0 ? (
           <div className="gt-empty">No hay registros para hoy todavía.</div>
         ) : (
           <div className="gt-table-wrap">
             <table className="gt-table">
               <thead><tr><th>Hora</th><th>Socio</th><th>DNI</th><th>Tipo</th><th>Acceso</th><th>Observación</th></tr></thead>
               <tbody>
-                {historial.map(a => (
-                  <tr key={a.id}>
-                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{String(a.hora).slice(0, 5)}</td>
-                    <td className="gt-fw-600">{a.socioNombre}</td>
-                    <td>{a.socioDni}</td>
-                    <td><span className={a.tipo === 'ENTRADA' ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-blue'}>{a.tipo}</span></td>
+                {a.historial.map(h => (
+                  <tr key={h.id}>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{String(h.hora).slice(0, 5)}</td>
+                    <td className="gt-fw-600">{h.socioNombre}</td>
+                    <td>{h.socioDni}</td>
+                    <td><span className={h.tipo === 'ENTRADA' ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-blue'}>{h.tipo}</span></td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span className={a.permitido ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-red'}>{a.permitido ? '✓ Permitido' : '✗ Denegado'}</span>
-                        {a.conDeuda && <span className="gt-badge gt-badge-yellow">CON DEUDA</span>}
+                        <span className={h.permitido ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-red'}>{h.permitido ? '✓ Permitido' : '✗ Denegado'}</span>
                       </div>
                     </td>
-                    <td style={{ fontSize: 12, color: '#6B7280', maxWidth: 200 }}>{a.observacion ?? '—'}</td>
+                    <td style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 200 }}>{h.observacion ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -10,7 +10,7 @@ Sistema de gestión de gimnasios desarrollado con **Spring Boot** (backend) y **
 |------|-----------|
 | Backend | Java 21 · Spring Boot 4 · Spring Data JPA |
 | Base de datos | PostgreSQL 17 |
-| Frontend | React 18 · TypeScript · Vite |
+| Frontend | React 19 · TypeScript · Vite · React Router 7 |
 | HTTP client | Axios |
 | Estilos | CSS custom (design system propio) |
 | Build tool | Maven (backend) · npm (frontend) |
@@ -137,14 +137,21 @@ npm run dev
 
 ## Variables de entorno
 
-`gymtrack-backend/src/main/resources/application.properties`:
+Los secretos **no** van en el código. El backend lee estas variables (entre paréntesis, el default para desarrollo local):
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/gymtrack_db
-spring.datasource.username=postgres
-spring.datasource.password=TU_PASSWORD
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+| Variable | Uso |
+|----------|-----|
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Conexión a PostgreSQL (`gymtrack_db`, `postgres`, `1234`) |
+| `JWT_SECRET` | Clave de firma de tokens. **Obligatoria en producción** (mín. 32 caracteres) |
+| `MAIL_PASSWORD` | API key de Resend |
+| `MAIL_ENABLED` | `true` para enviar emails (`false`) |
+
+Frontend: copiar `gymtrack-frontend/.env.example` a `.env.local` y ajustar `VITE_API_URL` (default `http://localhost:8080`).
+
+Base de datos con Docker:
+
+```bash
+docker compose -f docker.yml up -d
 ```
 
 ---

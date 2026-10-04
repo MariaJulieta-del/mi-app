@@ -16,3 +16,20 @@ export const listarPorRango = async (desde: string, hasta: string) => {
  const res = await axiosInstance.get(API, { params: { desde, hasta } })
  return res.data
 }
+
+export interface CodigoQr { codigo: string; expiraEnSeg: number; ventanaSeg: number }
+
+/** Código vigente para la pantalla de recepción (staff) */
+export const obtenerQrActual = async (): Promise<CodigoQr> => {
+ const res = await axiosInstance.get(`${API}/qr-actual`)
+ return res.data
+}
+/** El socio registra su ingreso con el código escaneado. Recién acá se consume el pase. */
+export const ingresoPorQr = async (codigo: string) => {
+ const res = await axiosInstance.post(`${API}/qr`, { codigo })
+ return res.data
+}
+
+/** Últimos ingresos del día (un renglón por socio, solo nombre e inicial) */
+export const obtenerUltimosIngresos = async (): Promise<{ nombre: string; hora: string; permitido: boolean }[]> =>
+ (await axiosInstance.get('/api/v1/kiosco/ultimos')).data

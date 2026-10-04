@@ -1,444 +1,243 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { obtenerPorId } from '../services/socioService'
-import { obtenerPorSocio, crearMembresiaSinPago, cambiarEstado } from '../../membresias/services/membresiaService'
-import { obtenerRutinas } from '../../rutinas/services/rutinaService'
-import { listarTarifas } from '../../membresias/services/tarifaService'
-import { asignarDisciplina } from '../../ejercicios/services/ejercicioService'
-import axiosInstance from '../../../shared/services/axiosInstance'
-import type { Socio } from '../types/Socio'
-import type { Membresia } from '../../membresias/types/Membresia'
-import type { Rutina } from '../../rutinas/types/Rutina'
-import type { Tarifa } from '../../membresias/types/Tarifa'
-import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../../../shared/context/AuthContext'
 import { useToast } from '../../../shared/hooks/useToast'
+import { generarPin, cambiarMiPin } from '../services/socioService'
+import { PinEntregaModal, CambiarPinModal } from '../components/PinModales'
+import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { useSocioPerfil } from '../hooks/useSocioPerfil'
+import EstadoBadge from '../components/EstadoBadge'
+import MiSemanaView from '../components/MiSemanaView'
+import MembresiaResumen from '../../membresias/components/MembresiaResumen'
+import ProgresoSocio from '../../seguimiento/components/ProgresoSocio'
+import SocioInicio from '../components/SocioInicio'
+import RutinaCard from '../../rutinas/components/RutinaCard'
+import { linkEditarRutina } from '../../rutinas/utils/rutinaUtils'
 
-interface Disciplina { id: number; nombre: string; instructor: string; horario: string; activa: boolean; cupoMaximo?: number; inscriptos?: number; disponibles?: number; llena?: boolean }
-function formatFecha(iso?: string) {
- if (!iso) return '—'
- return new Date(iso).toLocaleDateString('es-AR')
-}
-function EstadoBadge({ activo, estado }: { activo?: boolean; estado?: string }) {
- const inactivo = activo === false || estado === 'INACTIVO'
- return (
- <span className={inactivo ? 'gt-badge gt-badge-red' : 'gt-badge gt-badge-green'}>
- {inactivo ? 'INACTIVO' : 'ACTIVO'}
- </span>
- )
-}
-const MEMBRESIA_COLORES: Record<string, string> = {
- ACTIVA: '#16A34A',
- PENDIENTE_PAGO: '#D97706',
- VENCIDA: '#DC2626',
- CANCELADA: '#6B7280',
-}
 export default function SocioPerfilPage() {
- const { socioId } = useParams<{ socioId: string }>()
- const navigate = useNavigate()
- const id = Number(socioId)
- const [socio, setSocio] = useState<Socio | null>(null)
- const [membresias, setMembresias] = useState<Membresia[]>([])
- const [rutinas, setRutinas] = useState<Rutina[]>([])
- const [planes, setPlanes] = useState<Tarifa[]>([])
- const [cargando, setCargando] = useState(true)
- const [error, setError] = useState<string | null>(null)
- const [msg, setMsg] = useState<string | null>(null)
- // Modal fiado
- const [showFiado, setShowFiado] = useState(false)
- const [planFiado, setPlanFiado] = useState('')
- const [guardandoFiado, setGuardandoFiado] = useState(false)
- // Disciplina
- const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
- const [showDisciplina, setShowDisciplina] = useState(false)
- const [disciplinaSelId, setDisciplinaSelId] = useState<string>('')
- const [guardandoDisciplina, setGuardandoDisciplina] = useState(false)
- // Cancelar membresía
- const [cancelandoId, setCancelandoId] = useState<number | null>(null)
- const [confirmarCancelarId, setConfirmarCancelarId] = useState<number | null>(null)
- const toast = useToast()
- const cargar = async () => {
- if (!id) return
- const [s, mems, ruts, tars, discs] = await Promise.all([
- obtenerPorId(id),
- obtenerPorSocio(id).catch(() => [] as Membresia[]),
- obtenerRutinas(id).catch(() => [] as Rutina[]),
- listarTarifas().catch(() => [] as Tarifa[]),
- axiosInstance.get('/api/v1/socios/disciplinas-cupo').then(r => r.data as Disciplina[]).catch(() => [] as Disciplina[]),
- ])
- setSocio(s); setMembresias(mems); setRutinas(ruts); setPlanes(tars)
- setDisciplinas(discs)
- // Pre-cargar la disciplina actual del socio si tiene
- if ((s as any).disciplina?.id) setDisciplinaSelId(String((s as any).disciplina.id))
- }
- useEffect(() => {
- cargar()
- .catch(() => setError('No se pudo cargar la información del socio'))
- .finally(() => setCargando(false))
- }, [id])
- const handleAsignarFiado = async () => {
- if (!planFiado) return
- setGuardandoFiado(true)
- try {
- await crearMembresiaSinPago(id, planFiado)
- setMsg('Plan asignado sin pago. El socio puede ingresar 1 vez antes de ser bloqueado.')
- setShowFiado(false)
- setPlanFiado('')
- await cargar()
- } catch (e: any) {
- setError(e?.response?.data?.error ?? 'Error al asignar el plan')
- } finally {
- setGuardandoFiado(false) }
- }
- const handleCancelarMembresia = async (membresiaId: number) => {
- setCancelandoId(membresiaId)
- try {
- await cambiarEstado(membresiaId, 'CANCELADA')
- toast.success('Membresía cancelada', 'El socio ya no tiene acceso activo.')
- setMsg(null)
- await cargar()
- } catch (e: any) {
- const msg = e?.response?.data?.error ?? 'No se pudo cancelar la membresía'
- setError(msg)
- toast.error('Error al cancelar', msg)
- } finally {
- setCancelandoId(null)
- setConfirmarCancelarId(null)
- }
- }
- const handleAsignarDisciplina = async () => {
- setGuardandoDisciplina(true)
- try {
- await asignarDisciplina(id, disciplinaSelId ? Number(disciplinaSelId) : null)
- setMsg(disciplinaSelId ? 'Disciplina asignada correctamente.' : 'Disciplina eliminada.')
- setShowDisciplina(false)
- await cargar()
- } catch (e: any) {
- setError(e?.response?.data?.error ?? 'No se pudo asignar la disciplina')
- } finally { setGuardandoDisciplina(false) }
- }
+  const p = useSocioPerfil()
+  const { login } = useAuth()
+  const toast = useToast()
+  // PIN de acceso a la app
+  const [confirmarPin, setConfirmarPin] = useState(false)
+  const [pinNuevo, setPinNuevo] = useState<string | null>(null)
+  const [cambiandoPin, setCambiandoPin] = useState(false)
 
- if (cargando) return <p className="gt-text-muted">Cargando perfil...</p>
- if (error || !socio) return <div className="gt-alert gt-alert-error">{error ?? 'Socio no encontrado.'}</div>
- const inactivo = socio.activo === false || socio.estado === 'INACTIVO'
- const membresiaActiva = membresias.find(m => m.estadoMembresia === 'ACTIVA')
- const membresiaPendiente = membresias.find(m => m.estadoMembresia === 'PENDIENTE_PAGO')
- return (
- <>
- {/* ── Botón volver ── */}
- <button className="gt-btn gt-btn-secondary" style={{ marginBottom: 16 }} onClick={() => navigate('/socios')}>
- ← Volver a Socios
- </button>
- {msg && (
- <div className="gt-alert gt-alert-success" style={{ marginBottom: 12 }}>
- {msg}
- <button onClick={() => setMsg(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button>
- </div>
- )}
- {error && (
- <div className="gt-alert gt-alert-error" style={{ marginBottom: 12 }}>
- {error}
- <button onClick={() => setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}></button>
- </div>
- )}
- {/* ── Banner de deuda pendiente ── */}
- {membresiaPendiente && (
- <div style={{
- background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8,
- padding: '12px 16px', marginBottom: 16,
- display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12
- }}>
- <div>
- <strong style={{ color: '#92400E' }}> Deuda pendiente</strong>
- <span style={{ marginLeft: 8, color: '#78350F', fontSize: 14 }}>
- Plan {membresiaPendiente.tipoMembresia} — ${Number(membresiaPendiente.precio).toLocaleString('es-AR')} sin abonar
- </span>
- </div>
- <Link
- to={`/pagos/saldar?membresiaId=${membresiaPendiente.id}`}
- className="gt-btn gt-btn-primary"
- style={{ fontSize: 13, background: '#D97706', borderColor: '#D97706' }}
- >
- Saldar deuda
- </Link>
- </div>
- )}
- {/* ── Header del socio ── */}
- <div className="gt-card" style={{ marginBottom: 16 }}>
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
- <div>
- <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
- <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 700 }}>#{socio.id}</span>
- <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
- {socio.nombre} {socio.apellido}
- </h1>
- <EstadoBadge activo={socio.activo} estado={socio.estado} />
- </div>
- <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 14, color: '#374151' }}>
- <span> DNI: <strong>{socio.dni}</strong></span>
- {socio.email && <span> {socio.email}</span>}
- {socio.telefono && <span> {socio.telefono}</span>}
- </div>
- <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 12, color: '#6B7280', marginTop: 6 }}>
- <span>Alta: {formatFecha(socio.fechaCreacion)}</span>
- <span>Últ. modificación: {formatFecha(socio.fechaModificacion)}</span>
- {socio.fechaNacimiento && <span>Nacimiento: {formatFecha(socio.fechaNacimiento)}</span>}
- </div>
- </div>
- {/* Acciones rápidas */}
- <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
- <Link to={`/socios/${id}/ficha`} className="gt-btn gt-btn-secondary" style={{ fontSize: 13 }}>
- Observaciones
- </Link>
- {!membresiaActiva && !membresiaPendiente && (
- <button
- className="gt-btn gt-btn-secondary"
- style={{ fontSize: 13, color: '#D97706', borderColor: '#D97706' }}
- onClick={() => setShowFiado(true)}
- >
- Asignar plan sin pago
- </button>
- )}
- <Link to={`/rutinas/nueva?socioId=${id}`} className="gt-btn gt-btn-secondary" style={{ fontSize: 13 }}>
- Nueva rutina
- </Link>
- <button
- className="gt-btn gt-btn-secondary"
- style={{ fontSize: 13, color: '#7C3AED', borderColor: '#7C3AED' }}
- onClick={() => setShowDisciplina(v => !v)}
- >
- {(socio as any).disciplina ? 'Cambiar disciplina' : 'Asignar disciplina'}
- </button>
- </div>
- </div>
- {/* Disciplina actual */}
- {(socio as any).disciplina && (
- <div style={{ marginTop: 10, padding: '8px 12px', background: '#F5F3FF', borderRadius: 6, border: '1px solid #DDD6FE', fontSize: 13 }}>
- <span style={{ color: '#6B7280' }}>Disciplina: </span>
- <strong style={{ color: '#7C3AED' }}>{(socio as any).disciplina.nombre}</strong>
- <span style={{ marginLeft: 8, color: '#9CA3AF' }}>· {(socio as any).disciplina.instructor} · {(socio as any).disciplina.horario}</span>
- </div>
- )}
- {/* Panel asignar disciplina */}
- {showDisciplina && (
- <div style={{ marginTop: 12, padding: 14, background: '#F5F3FF', borderRadius: 8, border: '1px solid #DDD6FE' }}>
- <p style={{ margin: '0 0 10px', fontWeight: 600, fontSize: 13, color: '#7C3AED' }}>Asignar disciplina</p>
- <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
- <select className="gt-select" style={{ flex: 1, minWidth: 200 }}
- value={disciplinaSelId} onChange={e => setDisciplinaSelId(e.target.value)}>
- <option value="">— Sin disciplina —</option>
- {disciplinas.map(d => (
- <option key={d.id} value={d.id} disabled={!!d.llena && String(d.id) !== disciplinaSelId}>
- {d.nombre} · {d.instructor} · {d.horario}
- {d.cupoMaximo != null ? ` (${d.inscriptos}/${d.cupoMaximo} cupos${d.llena ? ' — LLENA' : ''})` : ''}
- </option>
- ))}
- </select>
- <button className="gt-btn gt-btn-primary" style={{ background: '#7C3AED', borderColor: '#7C3AED' }}
- onClick={handleAsignarDisciplina} disabled={guardandoDisciplina}>
- {guardandoDisciplina ? 'Guardando...' : 'Confirmar'}
- </button>
- <button className="gt-btn gt-btn-secondary" onClick={() => setShowDisciplina(false)}>Cancelar</button>
- </div>
- </div>
- )}
- </div>
- {/* ── Resumen rápido ── */}
- <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
- <div className="gt-card" style={{ textAlign: 'center', padding: 16 }}>
- <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#2E75B6' }}>{membresias.length}</p>
- <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>Membresías totales</p>
- </div>
- <div className="gt-card" style={{ textAlign: 'center', padding: 16 }}>
- <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#16A34A' }}>
- {membresiaActiva ? '✓' : '—'}
- </p>
- <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>
- {membresiaActiva ? 'Membresía activa' : 'Sin membresía activa'}
- </p>
- </div>
- <div className="gt-card" style={{ textAlign: 'center', padding: 16 }}>
- <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#7C3AED' }}>{rutinas.length}</p>
- <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6B7280' }}>Rutinas asignadas</p>
- </div>
- </div>
- {/* ── Membresías ── */}
- <h2 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 10px' }}>
- Membresías <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280' }}>({membresias.length})</span>
- </h2>
- {membresias.length === 0 ? (
- <div className="gt-empty" style={{ marginBottom: 20 }}>
- <p>Este socio no tiene membresías registradas.</p>
- <Link
- to={`/pagos/nuevo?socioId=${id}`}
- className="gt-btn gt-btn-primary"
- style={{ marginTop: 10 }}
- >
- Asignar plan y registrar pago
- </Link>
- </div>
- ) : (
- <div style={{ marginBottom: 20 }}>
- {/* Botón para asignar nuevo plan si no hay activa */}
- {!membresiaActiva && (
- <Link
- to={`/pagos/nuevo?socioId=${id}`}
- className="gt-btn gt-btn-primary"
- style={{ marginBottom: 12, display: 'inline-block', fontSize: 13 }}
- >
- Asignar nuevo plan
- </Link>
- )}
- {membresias.map(m => (
- <div key={m.id} className="gt-list-card" style={{ marginBottom: 8 }}>
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
- <div>
- <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
- <span style={{ fontWeight: 700, color: '#2E75B6', fontSize: 13 }}>#{m.id}</span>
- <span style={{ fontWeight: 600 }}>{m.tipoMembresia}</span>
- <span style={{
- fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
- background: `${MEMBRESIA_COLORES[m.estadoMembresia ?? ''] ?? '#6B7280'}20`,
- color: MEMBRESIA_COLORES[m.estadoMembresia ?? ''] ?? '#6B7280',
- }}>
- {m.estadoMembresia ?? '—'}
- </span>
- </div>
- <p style={{ margin: 0, fontSize: 13, color: '#6B7280' }}>
- {formatFecha(m.fechaInicio)} → {formatFecha(m.fechaVencimiento)}
- {' · '}
- <strong style={{ color: '#374151' }}>${Number(m.precio).toLocaleString('es-AR')}</strong>
- </p>
- </div>
- <div style={{ display: 'flex', gap: 6 }}>
- <Link
- to={`/membresias/${m.id}`}
- className="gt-btn gt-btn-secondary"
- style={{ fontSize: 12 }}
- >
- Ver detalle
- </Link>
- {m.estadoMembresia === 'ACTIVA' && (
- <Link
- to={`/pagos/nuevo?socioId=${id}`}
- className="gt-btn gt-btn-secondary"
- style={{ fontSize: 12 }}
- >
- Renovar plan
- </Link>
- )}
- {(m.estadoMembresia === 'ACTIVA' || m.estadoMembresia === 'PENDIENTE_PAGO') && (
- <button
- style={{ fontSize: 12, background: 'none', border: '1px solid #DC2626', color: '#DC2626', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
- className="gt-btn gt-btn-danger"
- style={{ height: 28, padding: '0 10px', fontSize: 12 }}
- onClick={() => setConfirmarCancelarId(m.id!)}
- disabled={cancelandoId === m.id}
- >
- {cancelandoId === m.id ? 'Cancelando...' : 'Cancelar membresía'}
- </button>
- )}
- </div>
- </div>
- </div>
- ))}
- </div>
- )}
- {/* ── Rutinas ── */}
- <h2 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 10px' }}>
- Rutinas <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280' }}>({rutinas.length})</span>
- </h2>
- {rutinas.length === 0 ? (
- <div className="gt-empty" style={{ marginBottom: 20 }}>
- <p>Este socio no tiene rutinas asignadas.</p>
- <Link
- to={`/rutinas/nueva?socioId=${id}`}
- className="gt-btn gt-btn-primary"
- style={{ marginTop: 10 }}
- >
- Crear rutina
- </Link>
- </div>
- ) : (
- <div style={{ marginBottom: 20 }}>
- {rutinas.map(r => (
- <div key={r.id} className="gt-list-card" style={{ marginBottom: 8 }}>
- <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
- <div>
- <p style={{ margin: '0 0 2px', fontWeight: 600 }}>{r.nombre}</p>
- {r.descripcion && (
- <p style={{ margin: 0, fontSize: 13, color: '#6B7280' }}>{r.descripcion}</p>
- )}
- <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9CA3AF' }}>
- Creada: {r.fechaCreacion?.slice(0, 10)}
- </p>
- </div>
- <Link
- to={`/rutinas/${r.id}?socioId=${id}`}
- className="gt-btn gt-btn-secondary"
- style={{ fontSize: 12, flexShrink: 0 }}
- >
- Ver rutina
- </Link>
- </div>
- </div>
- ))}
- </div>
- )}
- {/* ── Modal: asignar plan sin pago ── */}
- {showFiado && (
- <div style={{
- position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
- display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999
- }}>
- <div className="gt-card" style={{ width: 360, padding: 24 }}>
- <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Asignar plan sin pago</h3>
- <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B7280' }}>
- El socio podrá ingresar <strong>1 vez</strong> antes de quedar bloqueado hasta saldar la deuda.
- </p>
- <label className="gt-label">Plan</label>
- <select
- className="gt-select"
- value={planFiado}
- onChange={e => setPlanFiado(e.target.value)}
- style={{ marginBottom: 16 }}
- >
- <option value="">— Seleccioná un plan —</option>
- {planes.map(p => (
- <option key={p.tipo} value={p.tipo}>
- {p.nombre} — {p.duracionDias} días — ${Number(p.precio).toLocaleString('es-AR')}
- </option>
- ))}
- </select>
- <div style={{ display: 'flex', gap: 8 }}>
- <button
- className="gt-btn gt-btn-primary"
- disabled={!planFiado || guardandoFiado}
- onClick={handleAsignarFiado}
- style={{ background: '#D97706', borderColor: '#D97706' }}
- >
- {guardandoFiado ? 'Asignando...' : 'Confirmar'}
- </button>
- <button
- className="gt-btn gt-btn-secondary"
- onClick={() => { setShowFiado(false); setPlanFiado('') }}
- >
- Cancelar
- </button>
- </div>
- </div>
- </div>
- )}
+  const regenerarPin = async () => {
+    setConfirmarPin(false)
+    try { setPinNuevo(await generarPin(Number(p.id))) }
+    catch { toast.error('Error', 'No se pudo generar el PIN') }
+  }
+  const cambiarPin = async (actual: string, nuevo: string) => {
+    login(await cambiarMiPin(actual, nuevo))   // la sesión anterior deja de valer: se reemplaza por la nueva
+    setCambiandoPin(false)
+    toast.success('PIN cambiado', 'Usá el nuevo PIN la próxima vez que entres')
+  }
 
- <ConfirmModal
- open={confirmarCancelarId !== null}
- title="Cancelar membresía"
- message="¿Estás seguro de que querés cancelar esta membresía? El socio perderá el acceso al gimnasio de inmediato."
- confirmLabel="Sí, cancelar membresía"
- cancelLabel="No, volver"
- danger
- onConfirm={() => confirmarCancelarId !== null && handleCancelarMembresia(confirmarCancelarId)}
- onCancel={() => setConfirmarCancelarId(null)}
- />
- </>
- )
+  if (p.cargando) return <p className="gt-text-muted">Cargando perfil...</p>
+  if (!p.socio) return <div className="gt-alert gt-alert-error">{p.error ?? 'Socio no encontrado.'}</div>
+
+  const { socio, membresia, rutinas, id, esSocio } = p
+  const vigente = membresia?.estadoMembresia === 'ACTIVA' && (membresia.diasRestantes ?? 0) >= 0
+
+  return (
+    <>
+      {!esSocio && (
+        <button className="gt-btn gt-btn-secondary" style={{ marginBottom: 16 }} onClick={() => p.navigate('/socios')}>
+          ← Volver a Socios
+        </button>
+      )}
+
+      {p.error && (
+        <div className="gt-alert gt-alert-error">
+          {p.error}
+          <button onClick={() => p.setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}>✕</button>
+        </div>
+      )}
+
+      {/* ── Ingreso con QR (solo el socio): recién al escanear se descuenta el pase ── */}
+      {esSocio && (
+        <Link to="/ingreso" className="gt-ingreso-cta">
+          <span className="gt-ingreso-cta-icono">📷</span>
+          <span style={{ flex: 1 }}>
+            <strong>Escanear QR de ingreso</strong>
+            <span className="gt-ingreso-cta-sub">Al llegar al gimnasio, escaneá el código de recepción</span>
+          </span>
+          <span aria-hidden>›</span>
+        </Link>
+      )}
+      {esSocio && <SocioInicio membresia={membresia} rutinas={rutinas} />}
+
+      {/* ── Encabezado ── */}
+      <div className="gt-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'var(--text-primary)' }}>{socio.nombre} {socio.apellido}</h1>
+              <EstadoBadge activo={socio.activo} estado={socio.estado} />
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14, color: 'var(--text-secondary)' }}>
+              <span>DNI <strong>{socio.dni}</strong></span>
+              {socio.email && <span>✉ {socio.email}</span>}
+              {socio.telefono && <span>📞 {socio.telefono}</span>}
+              {socio.disciplina && <span className="gt-chip" style={{ background: 'var(--purple-bg)', color: 'var(--purple-text)' }}>{socio.disciplina.nombre}</span>}
+            </div>
+          </div>
+          {esSocio ? (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="gt-btn gt-btn-secondary" onClick={() => setCambiandoPin(true)}>🔑 Cambiar PIN</button>
+              <button className="gt-btn gt-btn-secondary" onClick={() => p.setConfirmLogout(true)}>Cerrar sesión</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-btn gt-btn-primary">Asignar rutina</Link>
+              <Link to={`/socios/${id}/ficha`} className="gt-btn gt-btn-secondary">Ficha médica</Link>
+              {socio.activo !== false && (
+                <button className="gt-btn gt-btn-secondary" onClick={() => setConfirmarPin(true)} title="Para que entre a la app con DNI + PIN">🔑 Generar PIN</button>
+              )}
+              <button className="gt-btn gt-btn-secondary" onClick={() => p.setShowDisciplina(v => !v)}>
+                {socio.disciplina ? 'Cambiar disciplina' : 'Asignar disciplina'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {!esSocio && p.observacionesMedicas && (
+          <div className="gt-alert gt-alert-warning" style={{ marginTop: 12, marginBottom: 0 }}>
+            <strong>⚠ Ficha médica:</strong> {p.observacionesMedicas}
+          </div>
+        )}
+
+        {p.showDisciplina && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select className="gt-select" style={{ flex: 1, minWidth: 200 }} value={p.disciplinaSelId} onChange={e => p.setDisciplinaSelId(e.target.value)}>
+              <option value="">— Sin disciplina —</option>
+              {p.disciplinas.map(d => (
+                <option key={d.id} value={d.id} disabled={!!d.llena && String(d.id) !== p.disciplinaSelId}>
+                  {d.nombre} · {d.instructor} · {d.horario}{d.cupoMaximo != null ? ` (${d.inscriptos}/${d.cupoMaximo}${d.llena ? ' — LLENA' : ''})` : ''}
+                </option>
+              ))}
+            </select>
+            <button className="gt-btn gt-btn-primary" onClick={p.handleAsignarDisciplina} disabled={p.guardandoDisciplina}>
+              {p.guardandoDisciplina ? 'Guardando...' : 'Confirmar'}
+            </button>
+            <button className="gt-btn gt-btn-secondary" onClick={() => p.setShowDisciplina(false)}>Cancelar</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Membresía (una sola por socio) ── */}
+      <MembresiaResumen m={membresia} acciones={!esSocio && (
+        <>
+          <Link to={`/pagos/nuevo?socioId=${id}`} className="gt-btn gt-btn-primary">
+            {!membresia ? 'Cobrar plan' : vigente ? 'Renovar / cambiar plan' : 'Renovar'}
+          </Link>
+          {membresia && p.esAdmin && <Link to={`/membresias/${membresia.id}`} className="gt-btn gt-btn-secondary">Ver pagos</Link>}
+          {p.esAdmin && membresia?.estadoMembresia === 'ACTIVA' && (
+            <button className="gt-btn gt-btn-danger" onClick={() => p.setConfirmarCancelar(true)}>Cancelar membresía</button>
+          )}
+        </>
+      )} />
+
+      {/* ── Mi semana ── */}
+      {rutinas.length > 0 && (
+        <MiSemanaView
+          rutinas={rutinas}
+          ejerciciosPorRutina={p.ejerciciosPorRutina}
+          cargandoEjs={p.cargandoEjs}
+          maquinas={p.maquinas}
+          socioId={id}
+          diaSeleccionado={p.diaSeleccionado}
+          setDiaSeleccionado={p.setDiaSeleccionado}
+          expandedEjs={p.expandedEjs}
+          toggleExpandedEj={p.toggleExpandedEj}
+          progresoHoy={p.progresoHoy}
+          setProgresoHoy={p.setProgresoHoy}
+          guardandoProgreso={p.guardandoProgreso}
+          onGuardarProgreso={p.handleGuardarProgreso}
+        />
+      )}
+
+      {/* ── Rutinas ── */}
+      <div className="gt-section-header" style={{ marginTop: 8 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>
+          Rutinas <span className="gt-text-muted" style={{ fontSize: 13, fontWeight: 400 }}>({rutinas.length})</span>
+        </h2>
+        {!esSocio && rutinas.length > 0 && <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-btn gt-btn-secondary">+ Asignar otra</Link>}
+      </div>
+
+      {rutinas.length === 0 ? (
+        esSocio ? <div className="gt-empty">Todavía no tenés rutinas asignadas. Consultá con tu profesor.</div> : (
+          <div className="gt-choice-grid" style={{ marginBottom: 20 }}>
+            <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-choice" style={{ textDecoration: 'none' }}>
+              <p className="gt-choice-icon">📋</p>
+              <p className="gt-choice-title">Asignar una plantilla</p>
+              <p className="gt-choice-desc">Elegí una rutina modelo y se copia a {socio.nombre}.</p>
+            </Link>
+            <Link to={`/rutinas/nueva?socioId=${id}`} className="gt-choice" style={{ textDecoration: 'none' }}>
+              <p className="gt-choice-icon">✏️</p>
+              <p className="gt-choice-title">Crear personalizada</p>
+              <p className="gt-choice-desc">Armala a medida con ejercicios del catálogo.</p>
+            </Link>
+          </div>
+        )
+      ) : (
+        <div className="gt-rutina-grid" style={{ marginBottom: 20 }}>
+          {rutinas.map(r => (
+            <RutinaCard key={r.id} rutina={r} acciones={
+              <>
+                <Link to={`/rutinas/${r.id}?socioId=${id}`}>Abrir</Link>
+                {!esSocio && <Link to={linkEditarRutina(r, true)}>Editar</Link>}
+                {!esSocio && (
+                  <button type="button" className="peligro" disabled={p.eliminandoRutinaId === r.id}
+                    onClick={() => p.setConfirmarEliminarRutinaId(r.id!)} aria-label={`Eliminar ${r.nombre}`}>🗑</button>
+                )}
+              </>
+            } />
+          ))}
+        </div>
+      )}
+
+      {/* ── Progreso: cargas y asistencia ── */}
+      <div style={{ marginTop: 16 }}>
+        <ProgresoSocio socioId={Number(id)} titulo={esSocio ? 'Mi progreso' : 'Progreso del socio'} />
+      </div>
+
+      <ConfirmModal
+        open={confirmarPin}
+        title="Generar un PIN nuevo"
+        message={`Se va a generar un PIN nuevo para ${socio.nombre}. El anterior deja de funcionar y se cierran las sesiones que tenga abiertas en su celular.`}
+        confirmLabel="Generar PIN"
+        cancelLabel="Cancelar"
+        onConfirm={regenerarPin}
+        onCancel={() => setConfirmarPin(false)}
+      />
+      {pinNuevo && <PinEntregaModal nombre={`${socio.nombre} ${socio.apellido}`} dni={socio.dni} pin={pinNuevo} onCerrar={() => setPinNuevo(null)} />}
+      {cambiandoPin && <CambiarPinModal onGuardar={cambiarPin} onCerrar={() => setCambiandoPin(false)} />}
+
+      <ConfirmModal
+        open={p.confirmarEliminarRutinaId !== null}
+        title="Eliminar rutina"
+        message="¿Eliminar esta rutina? Se borran sus ejercicios y el progreso registrado."
+        confirmLabel="Sí, eliminar" cancelLabel="Cancelar" danger
+        onConfirm={() => p.confirmarEliminarRutinaId !== null && p.handleEliminarRutina(p.confirmarEliminarRutinaId)}
+        onCancel={() => p.setConfirmarEliminarRutinaId(null)}
+      />
+      <ConfirmModal
+        open={p.confirmarCancelar}
+        title="Cancelar membresía"
+        message={`${socio.nombre} pierde el acceso al gimnasio hasta que le cobres un plan nuevo. ¿Continuar?`}
+        confirmLabel="Cancelar membresía" cancelLabel="Volver" danger
+        onConfirm={p.handleCancelarMembresia}
+        onCancel={() => p.setConfirmarCancelar(false)}
+      />
+      <ConfirmModal
+        open={p.confirmLogout}
+        title="Cerrar sesión" message="¿Estás seguro que querés cerrar sesión?"
+        confirmLabel="Cerrar sesión" cancelLabel="Cancelar" danger
+        onConfirm={() => { p.setConfirmLogout(false); p.logout() }}
+        onCancel={() => p.setConfirmLogout(false)}
+      />
+    </>
+  )
 }

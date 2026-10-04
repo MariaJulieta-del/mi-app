@@ -1,14 +1,11 @@
 import axiosInstance from '../../../shared/services/axiosInstance'
-import type { Pago, PagoRequestDTO } from '../types/Pago'
+import type { Pago, MetodoPago } from '../types/Pago'
 const API = '/api/v1/pagos'
-export const registrarPago = async (data: PagoRequestDTO): Promise<Pago> => {
- const res = await axiosInstance.post(API, data)
- return res.data
-}
+/** Cobra un plan: crea o renueva la membresía del socio y registra el pago */
 export const registrarConMembresia = async (data: {
  socioId: number
  planTipo: string
- metodoPago: string
+ metodoPago: MetodoPago
  observaciones?: string
 }): Promise<Pago> => {
  const res = await axiosInstance.post(`${API}/con-membresia`, data)
@@ -20,13 +17,5 @@ export const listarPagos = async (): Promise<Pago[]> => {
 }
 export const pagosPorMembresia = async (membresiaId: number): Promise<Pago[]> => {
  const res = await axiosInstance.get(`${API}/membresia/${membresiaId}`)
- return res.data
-}
-export const saldarDeuda = async (data: {
- membresiaId: number
- metodoPago: string
- observaciones?: string
-}): Promise<Pago> => {
- const res = await axiosInstance.post(`${API}/saldar-deuda`, data)
  return res.data
 }

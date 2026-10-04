@@ -1,17 +1,8 @@
 import axiosInstance from '../../../shared/services/axiosInstance'
+export type { Maquina } from '../types/Maquina'
+import type { Maquina } from '../types/Maquina'
 
 const API = '/api/v1/maquinas'
-
-export interface Maquina {
-  id?: number
-  nroMaquina: string
-  nombre: string
-  descripcion?: string
-  grupos?: string[]
-  instruccionesUso?: string
-  ajustes?: string
-  activa: boolean
-}
 
 export const activarMaquina = async (id: number): Promise<Maquina> => {
   const res = await axiosInstance.patch(`/api/v1/maquinas/${id}/activar`)

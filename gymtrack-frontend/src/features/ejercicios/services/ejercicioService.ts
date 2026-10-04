@@ -80,14 +80,15 @@ export const browseCatalogo = async (
   const params: Record<string, string | number> = { limit, offset }
   if (bodyPart) params.bodyPart = bodyPart
   if (q) params.q = q
-  const res = await axiosInstance.get<any>(`${API}/catalogo`, { params })
+  // El backend puede devolver la lista en distintas formas según la versión de la API externa
+  const res = await axiosInstance.get<unknown>(`${API}/catalogo`, { params })
   const raw = res.data
-  console.log('[browseCatalogo] q=', q, 'raw response:', raw)
-
-  if (raw?.data?.exercises && Array.isArray(raw.data.exercises)) return raw.data.exercises
-  if (Array.isArray(raw?.data)) return raw.data
-  if (Array.isArray(raw)) return raw
-  if (raw?.exercises && Array.isArray(raw.exercises)) return raw.exercises
+  if (Array.isArray(raw)) return raw as ExDBExercise[]
+  const obj = (raw ?? {}) as { data?: unknown; exercises?: unknown }
+  if (Array.isArray(obj.data)) return obj.data as ExDBExercise[]
+  const anidado = (obj.data ?? {}) as { exercises?: unknown }
+  if (Array.isArray(anidado.exercises)) return anidado.exercises as ExDBExercise[]
+  if (Array.isArray(obj.exercises)) return obj.exercises as ExDBExercise[]
   console.warn('[browseCatalogo] formato inesperado, retornando []', raw)
   return []
 }

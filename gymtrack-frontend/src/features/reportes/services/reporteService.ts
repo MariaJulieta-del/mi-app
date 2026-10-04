@@ -24,3 +24,20 @@ export const getSinAsistencias = async (dias = 14) => {
  const res = await axiosInstance.get(`${API}/sin-asistencias`, { params: { dias } })
  return res.data
 }
+export const getEdades = async () => {
+ const res = await axiosInstance.get(`${API}/edades`)
+ return res.data as { rango: string; cantidad: number }[]
+}
+
+export interface SocioEnRiesgo {
+ socioId: number; nombre: string; telefono: string | null; ultimaVisita: string | null
+ diasSinVenir: number | null; diasParaVencer: number; motivos: ('NUNCA_VINO' | 'NO_VIENE' | 'VENCE_SIN_VENIR')[]
+}
+export const getEnRiesgo = async (): Promise<SocioEnRiesgo[]> => (await axiosInstance.get(`${API}/en-riesgo`)).data
+
+export interface Metricas {
+ sociosVigentes: number; recaudadoMes: number; ingresoPromedioPorSocio: number
+ meses: { mes: string; base: number; retenidos: number; porcentaje: number | null; nuevos: number; recaudado: number }[]
+ ocupacion: number[][]; semanasOcupacion: number
+}
+export const getMetricas = async (): Promise<Metricas> => (await axiosInstance.get(`${API}/metricas`)).data

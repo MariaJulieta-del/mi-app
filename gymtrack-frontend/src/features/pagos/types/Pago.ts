@@ -13,9 +13,3 @@ export interface Pago {
  fechaPago?: string
  observaciones?: string
 }
-export interface PagoRequestDTO {
- membresiaId: number
- monto: number
- metodoPago: MetodoPago
- observaciones?: string
-}

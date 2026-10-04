@@ -1,10 +1,11 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import type { ReactNode } from 'react'
+import type { Rol } from '../types/Auth'
 interface Props {
  children: ReactNode
  /** Roles permitidos. Si se omite, cualquier usuario autenticado puede acceder. */
- roles?: Array<'ADMIN' | 'EMPLEADO' | 'SOCIO'>
+ roles?: Rol[]
 }
 /**
  * Ruta protegida: redirige a /login si el usuario no está autenticado.
@@ -12,8 +13,10 @@ interface Props {
  */
 export default function ProtectedRoute({ children, roles }: Props) {
  const { isAuthenticated, user } = useAuth()
+ const location = useLocation()
  if (!isAuthenticated) {
- return <Navigate to="/login" replace />
+ // Recordar a dónde iba (ej. /ingreso?c=… al escanear el QR con la cámara del celular)
+ return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
  }
  if (roles && user && !roles.includes(user.rol)) {
  return (

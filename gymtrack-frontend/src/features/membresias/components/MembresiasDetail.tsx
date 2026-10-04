@@ -1,100 +1,72 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import type { Membresia, EstadoMembresia } from '../types/Membresia'
-import type { Pago } from '../../pagos/types/Pago'
-import { obtenerMembresia, cambiarEstado } from '../services/membresiaService'
-import { pagosPorMembresia } from '../../pagos/services/pagoService'
-const BADGE_COLOR: Record<EstadoMembresia, string> = {
- ACTIVA: 'green', PENDIENTE_PAGO: 'orange', VENCIDA: 'gray', CANCELADA: 'red',
-}
-/**
- * Detalle de una membresía con el historial completo de pagos.
- */
+import { Link } from 'react-router-dom'
+import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { formatFecha } from '../../../shared/utils/fechas'
+import { useMembresiasDetail } from '../hooks/useMembresiasDetail'
+import MembresiaResumen from './MembresiaResumen'
+
 export default function MembresiasDetail() {
- const { id } = useParams<{ id: string }>()
- const navigate = useNavigate()
- const [membresia, setMembresia] = useState<Membresia | null>(null)
- const [pagos, setPagos] = useState<Pago[]>([])
- const [error, setError] = useState<string | null>(null)
- const [cargando, setCargando] = useState(true)
- useEffect(() => {
- if (!id) return
- const nId = Number(id)
- Promise.all([obtenerMembresia(nId), pagosPorMembresia(nId)])
- .then(([mem, pgs]) => { setMembresia(mem); setPagos(pgs) })
- .catch(() => setError('No se pudo cargar la membresía'))
- .finally(() => setCargando(false))
- }, [id])
- const handleCancelar = async () => {
- if (!membresia?.id || !confirm('¿Cancelar esta membresía?')) return
- try {
- const actualizada = await cambiarEstado(membresia.id, 'CANCELADA')
- setMembresia(actualizada)
- } catch {
- alert('No se pudo cancelar')
- }
- }
- // Suma total de pagos mostrados
- const totalPagado = pagos.reduce((sum, p) => sum + p.monto, 0)
- if (cargando) return <p>Cargando...</p>
- if (error || !membresia) return <p style={{ color: 'red' }}>{error ?? 'No encontrada'}</p>
- return (
- <div>
- <button onClick={() => navigate('/membresias')}>← Volver</button>
- <h2>Membresía #{membresia.id}</h2>
- <p><strong>Socio:</strong> {membresia.socioNombreCompleto}</p>
- <p><strong>Tipo:</strong> {membresia.tipoMembresia}</p>
- <p>
- <strong>Estado: </strong>
- <span style={{
- background: BADGE_COLOR[membresia.estadoMembresia!] ?? 'gray',
- color: 'white', padding: '2px 8px', borderRadius: '12px'
- }}>
- {membresia.estadoMembresia}
- </span>
- </p>
- <p><strong>Período:</strong> {membresia.fechaInicio} → {membresia.fechaVencimiento}</p>
- <p><strong>Precio:</strong> ${membresia.precio}</p>
- <div>
- {/* Registrar nuevo pago para esta membresía */}
- <Link to={`/pagos/nuevo?membresiaId=${membresia.id}`}>
- <button>+ Registrar Pago</button>
- </Link>
- {(membresia.estadoMembresia === 'ACTIVA' || membresia.estadoMembresia === 'PENDIENTE_PAGO') && (
- <button onClick={handleCancelar}>Cancelar Membresía</button>
- )}
- </div>
- {/* Historial de pagos */}
- <h3>Historial de Pagos</h3>
- {pagos.length === 0 ? (
- <p>Sin pagos registrados.</p>
- ) : (
- <>
- <table>
- <thead>
- <tr>
- <th>Fecha</th>
- <th>Monto</th>
- <th>Método</th>
- <th>Estado</th>
- <th>Observaciones</th>
- </tr>
- </thead>
- <tbody>
- {pagos.map(p => (
- <tr key={p.id}>
- <td>{p.fechaPago?.slice(0, 16).replace('T', ' ')}</td>
- <td>${p.monto}</td>
- <td>{p.metodoPago}</td>
- <td>{p.estadoPago}</td>
- <td>{p.observaciones ?? '-'}</td>
- </tr>
- ))}
- </tbody>
- </table>
- <p><strong>Total pagado: ${totalPagado.toFixed(2)}</strong></p>
- </>
- )}
- </div>
- )
+  const d = useMembresiasDetail()
+
+  if (d.cargando) return <p className="gt-text-muted">Cargando...</p>
+  if (d.error || !d.membresia) return <div className="gt-alert gt-alert-error">{d.error ?? 'Membresía no encontrada'}</div>
+
+  const m = d.membresia
+  return (
+    <>
+      <div className="gt-section-header">
+        <h1 className="gt-page-title" style={{ margin: 0 }}>{m.socioNombreCompleto}</h1>
+        <button className="gt-btn gt-btn-secondary" onClick={() => d.navigate(-1)}>← Volver</button>
+      </div>
+
+      <MembresiaResumen m={m} acciones={
+        <>
+          {d.puedeCobrar && (
+            <Link to={`/pagos/nuevo?socioId=${m.socioId}`} className="gt-btn gt-btn-primary">
+              {m.estadoMembresia === 'ACTIVA' ? 'Renovar / cambiar plan' : 'Cobrar y reactivar'}
+            </Link>
+          )}
+          <Link to={`/socios/${m.socioId}/perfil`} className="gt-btn gt-btn-secondary">Ver perfil del socio</Link>
+          {d.esAdmin && m.estadoMembresia === 'ACTIVA' && (
+            <button className="gt-btn gt-btn-danger" onClick={() => d.setConfirmarCancelar(true)}>Cancelar membresía</button>
+          )}
+        </>
+      } />
+
+      {d.esAdmin && <div className="gt-card">
+        <p className="gt-card-title">Historial de pagos</p>
+        {d.pagos.length === 0 ? <p className="gt-text-muted">Sin pagos registrados.</p> : (
+          <div className="gt-table-wrap">
+            <table className="gt-table">
+              <thead><tr><th>Fecha</th><th>Plan</th><th>Monto</th><th>Método</th><th>Observaciones</th></tr></thead>
+              <tbody>
+                {d.pagos.map(p => (
+                  <tr key={p.id}>
+                    <td>{formatFecha(p.fechaPago)}</td>
+                    <td>{p.tipoMembresia ?? '—'}</td>
+                    <td style={{ fontWeight: 600 }}>${Number(p.monto).toLocaleString('es-AR')}</td>
+                    <td>{p.metodoPago}</td>
+                    <td>{p.observaciones ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {d.pagos.length > 0 && (
+          <p style={{ margin: '12px 0 0', fontWeight: 700 }}>Total pagado: ${d.totalPagado.toLocaleString('es-AR')}</p>
+        )}
+      </div>}
+
+      <ConfirmModal
+        open={d.confirmarCancelar}
+        title="Cancelar membresía"
+        message={`${m.socioNombreCompleto} no va a poder ingresar hasta que le cobres un plan nuevo. ¿Continuar?`}
+        confirmLabel="Cancelar membresía"
+        cancelLabel="Volver"
+        danger
+        onConfirm={d.handleCancelar}
+        onCancel={() => d.setConfirmarCancelar(false)}
+      />
+    </>
+  )
 }

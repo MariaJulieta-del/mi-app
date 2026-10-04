@@ -4,7 +4,9 @@ export const listarNotificaciones = async () => {
  const res = await axiosInstance.get(API)
  return res.data
 }
-export const crearNotificacion = async (data: any) => {
+export interface NotificacionRequest { socioId?: number | null; mensaje: string; tipo?: string; titulo?: string }
+
+export const crearNotificacion = async (data: NotificacionRequest) => {
  const res = await axiosInstance.post(API, data)
  return res.data
 }

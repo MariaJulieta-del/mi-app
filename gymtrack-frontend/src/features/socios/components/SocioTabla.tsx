@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Socio } from '../types/Socio'
+import { formatFecha } from '../../../shared/utils/fechas'
 interface Props {
  socios: Socio[]
  onEditar: (socio: Socio) => void
@@ -7,11 +8,6 @@ interface Props {
  onReactivar: (id: number) => void
  onEliminarPermanente: (id: number) => void
  membresiaMap?: Map<number, string>
-}
-function formatFecha(iso?: string): string {
- if (!iso) return '—'
- const d = new Date(iso)
- return d.toLocaleDateString('es-AR')
 }
 const SocioTabla = ({ socios, onEditar, onEliminar, onReactivar, onEliminarPermanente, membresiaMap }: Props) => {
  if (socios.length === 0) {
@@ -43,7 +39,6 @@ const SocioTabla = ({ socios, onEditar, onEliminar, onReactivar, onEliminarPerma
    }
    const cfg: Record<string, { cls: string; label: string }> = {
      ACTIVA:         { cls: 'gt-badge gt-badge-green', label: '✓ Al día' },
-     PENDIENTE_PAGO: { cls: 'gt-badge gt-badge-yellow', label: '⚠ Pago pendiente' },
      VENCIDA:        { cls: 'gt-badge gt-badge-red',    label: '✕ Vencida' },
      CANCELADA:      { cls: 'gt-badge gt-badge-gray',   label: 'Cancelada' },
    }

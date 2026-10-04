@@ -33,6 +33,8 @@
   --yellow-text:#92400E;
   --blue-bg:    #DBEAFE;
   --blue-text:  #1E40AF;
+  --purple-bg:  #F3E8FF;
+  --purple-text:#6B21A8;
 
   /* Sombras */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
@@ -41,34 +43,38 @@
   color-scheme: light;
 }
 
-/* ── Variables de color (modo oscuro) ───────────────────────── */
+/* ── Variables de color (modo oscuro — Charcoal) ────────────── */
 .dark {
-  --bg-base:        #0F172A;
-  --bg-surface:     #1E293B;
-  --bg-surface-2:   #263142;
-  --bg-surface-3:   #1E293B;
-  --border:         #334155;
-  --border-light:   #1E293B;
-  --text-primary:   #F1F5F9;
-  --text-secondary: #CBD5E1;
-  --text-muted:     #94A3B8;
-  --text-xmuted:    #64748B;
-  --accent:         #34D399;
-  --accent-hover:   #10B981;
-  --accent-light:   #064E3B;
-  --accent-border:  #065F46;
+  --bg-base:        #111111;
+  --bg-surface:     #1C1C1E;
+  --bg-surface-2:   #2C2C2E;
+  --bg-surface-3:   #3A3A3C;
+  --border:         #3A3A3C;
+  --border-light:   #2C2C2E;
+  --text-primary:   #F5F5F7;
+  --text-secondary: #D1D1D6;
+  --text-muted:     #98989F;
+  --text-xmuted:    #636366;
+  --accent:         #30D158;
+  --accent-hover:   #25A244;
+  --accent-light:   #0A2E16;
+  --accent-border:  #1A5C30;
 
-  --red-light:  #450A0A;
-  --red-text:   #FCA5A5;
-  --green-bg:   #064E3B;
-  --green-text: #6EE7B7;
-  --yellow-bg:  #451A03;
-  --yellow-text:#FCD34D;
-  --blue-bg:    #1E3A5F;
-  --blue-text:  #93C5FD;
+  --red:        #FF453A;
+  --red-hover:  #CC3530;
+  --red-light:  #2D0F0E;
+  --red-text:   #FF6B63;
+  --green-bg:   #0A2E16;
+  --green-text: #30D158;
+  --yellow-bg:  #1E1A00;
+  --yellow-text:#FACC15;
+  --blue-bg:    #0A1929;
+  --blue-text:  #64D2FF;
+  --purple-bg:  #1A0A2E;
+  --purple-text:#C084FC;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.30);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.40);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.40);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.60);
 
   color-scheme: dark;
 }
@@ -80,7 +86,7 @@ body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 15px;
   line-height: 1.5;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   background: var(--bg-base);
   -webkit-font-smoothing: antialiased;
   transition: background 0.2s, color 0.2s;
@@ -112,8 +118,8 @@ body {
 }
 
 .dark .gt-topbar {
-  background: #0F2D1E;
-  border-bottom: 1px solid #1B5E44;
+  background: #0A0A0A;
+  border-bottom: 1px solid #2C2C2E;
 }
 
 .gt-topbar-brand {
@@ -191,6 +197,13 @@ body {
   transition: background 0.2s;
 }
 
+.gt-content.gt-content-socio {
+  margin-left: 0;
+  max-width: 900px;
+  margin-right: auto;
+  padding: 32px 36px 80px; /* bottom para que el btn fixed no tape contenido */
+}
+
 .gt-page-title {
   font-size: 21px;
   font-weight: 600;
@@ -204,7 +217,7 @@ body {
 
 .gt-stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -215,13 +228,19 @@ body {
   border-radius: 8px;
   padding: 16px 20px;
   transition: background 0.2s, border-color 0.2s;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .gt-stat-number {
-  font-size: 32px;
+  font-size: clamp(18px, 3.5vw, 32px);
   font-weight: 700;
   color: var(--accent);
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .gt-stat-label {
@@ -798,4 +817,372 @@ body {
   background: transparent;
   font-size: 15px;
   color: var(--text-primary);
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤640px)
+   ============================================================ */
+
+@media (max-width: 640px) {
+  /* Topbar */
+  .gt-topbar {
+    padding: 0 12px;
+  }
+  .gt-topbar-brand {
+    font-size: 15px;
+  }
+  .gt-topbar-user {
+    font-size: 12px;
+  }
+
+  /* Contenido general */
+  .gt-content {
+    padding: 20px 16px;
+  }
+
+  /* Vista socio */
+  .gt-content.gt-content-socio {
+    padding: 20px 16px 96px;
+  }
+
+  /* Modal */
+  .gt-modal-overlay {
+    padding: 12px;
+    align-items: flex-end; /* sheet en mobile */
+  }
+  .gt-modal {
+    padding: 20px 16px;
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Login card */
+  .gt-login-card {
+    padding: 28px 20px;
+  }
+
+  /* Botones — área táctil mínima */
+  .gt-btn {
+    min-height: 38px;
+  }
+
+  /* Topbar dark-toggle — ocultar label en mobile */
+  .gt-dark-toggle span:last-child {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Membresía y pases
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-membresia-card { border-left: 5px solid var(--accent); }
+.gt-membresia-grid { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 14px; }
+.gt-membresia-grid .gt-stat-label { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+
+.gt-pases { display: flex; align-items: baseline; gap: 8px; }
+.gt-pases-num { font-size: 28px; font-weight: 800; line-height: 1; }
+.gt-pases-dots { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; max-width: 360px; }
+.gt-pase-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--accent); background: transparent;
+}
+.gt-pase-dot.usado { background: var(--border); border-color: var(--border); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Tarjetas seleccionables (planes, métodos de pago, plantillas)
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.gt-option {
+  text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 10px;
+  border: 2px solid var(--border); background: var(--bg-surface); color: var(--text-secondary);
+  transition: border-color .12s, background .12s, transform .12s; font: inherit;
+}
+.gt-option:hover { border-color: var(--accent-border); transform: translateY(-1px); }
+.gt-option.selected { border-color: var(--accent); background: var(--accent-light); }
+.gt-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gt-option-title { margin: 0; font-weight: 700; color: var(--text-primary); }
+.gt-option-sub { margin: 2px 0 0; font-size: 12px; color: var(--text-muted); }
+.gt-option-price { margin: 6px 0 0; font-weight: 800; font-size: 18px; color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Asistente por pasos
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-steps { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+.gt-step {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px;
+  border-radius: 999px; background: var(--bg-surface-2); color: var(--text-muted);
+  font-size: 13px; font-weight: 600; border: 1px solid var(--border);
+}
+.gt-step-num {
+  width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--border); color: var(--text-secondary); font-size: 12px;
+}
+.gt-step.activo { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+.gt-step.activo .gt-step-num { background: var(--accent); color: #fff; }
+.gt-step.hecho .gt-step-num { background: var(--green-bg); color: var(--green-text); }
+.gt-step-section { margin-bottom: 22px; }
+.gt-step-section > .gt-label { display: block; margin-bottom: 8px; font-size: 14px; }
+.gt-hint { font-size: 12px; color: var(--text-muted); margin: 4px 0 0; }
+.gt-hint-box {
+  display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 8px;
+  background: var(--blue-bg); color: var(--blue-text); font-size: 13px; margin-bottom: 16px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Rutinas: tarjetas, chips, días
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-rutina-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.gt-rutina-card {
+  background: var(--bg-surface); border-radius: 12px; border: 2px solid var(--border);
+  overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-sm);
+  transition: box-shadow .15s, border-color .15s;
+}
+.gt-rutina-card:hover { box-shadow: var(--shadow-md); }
+.gt-rutina-card.selected { border-color: var(--accent); background: var(--accent-light); }
+.gt-rutina-card-actions { display: flex; border-top: 1px solid var(--border-light); }
+.gt-rutina-card-actions > a,
+.gt-rutina-card-actions > button {
+  flex: 1; padding: 10px 4px; border: none; background: none; font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--accent); cursor: pointer; text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.gt-rutina-card-actions > * + * { border-left: 1px solid var(--border-light); }
+.gt-rutina-card-actions > a:hover,
+.gt-rutina-card-actions > button:hover { background: var(--accent-light); }
+.gt-rutina-card-actions .peligro { color: var(--red); }
+.gt-rutina-card-actions .peligro:hover { background: var(--red-light); }
+.gt-rutina-preview { padding: 10px 16px; background: var(--bg-surface-2); border-top: 1px solid var(--border-light); }
+.gt-preview-dia { margin: 0 0 2px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
+
+.gt-chip { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.gt-dia-dot {
+  width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; background: var(--bg-surface-2); color: var(--text-xmuted);
+}
+.gt-dia-dot.on { background: var(--accent); color: #fff; }
+
+/* Selector grande de dos opciones (plantilla / personalizada) */
+.gt-choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.gt-choice {
+  text-align: left; padding: 20px; border-radius: 14px; border: 2px solid var(--border);
+  background: var(--bg-surface); cursor: pointer; font: inherit; color: var(--text-secondary);
+  transition: border-color .12s, transform .12s, background .12s;
+}
+.gt-choice:hover { border-color: var(--accent); transform: translateY(-2px); }
+.gt-choice.selected { border-color: var(--accent); background: var(--accent-light); }
+.gt-choice-icon { font-size: 30px; margin: 0 0 8px; }
+.gt-choice-title { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.gt-choice-desc { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+
+/* Pestañas de días en el constructor */
+.gt-day-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.gt-day-tab {
+  padding: 7px 14px; border-radius: 999px; border: 2px solid var(--border); background: var(--bg-surface);
+  color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.gt-day-tab.activo { border-color: var(--accent); background: var(--accent); color: #fff; }
+.gt-day-tab .cuenta { font-weight: 500; opacity: .8; margin-left: 4px; }
+
+/* Ejercicio dentro del constructor */
+.gt-ej-item { background: var(--bg-surface-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.gt-ej-item-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); }
+.gt-ej-item-body { display: grid; grid-template-columns: repeat(3, minmax(70px, 1fr)) 2fr; gap: 8px; padding: 10px 12px; align-items: end; }
+.gt-ej-item-body label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 3px; }
+.gt-ej-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: contain; background: var(--bg-surface-3); flex-shrink: 0; }
+.gt-cat-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; text-align: left;
+  border: 1.5px solid var(--border); background: var(--bg-surface); cursor: pointer; font: inherit; color: var(--text-primary);
+}
+.gt-cat-item:hover:not(:disabled) { border-color: var(--accent); }
+.gt-cat-item:disabled { cursor: default; border-color: var(--accent-border); background: var(--accent-light); }
+@media (max-width: 640px) {
+  .gt-ej-item-body { grid-template-columns: repeat(3, 1fr); }
+  .gt-ej-item-body > :last-child { grid-column: 1 / -1; }
+}
+
+/* ── Control de acceso: resultado del check-in ── */
+.gt-acceso-result { margin-top: 16px; border-radius: 10px; overflow: hidden; border: 2px solid var(--border); }
+.gt-acceso-head { padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+.gt-acceso-body { background: var(--bg-surface); padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; }
+.gt-acceso-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* ── Utilidades ── */
+.gt-btn-sm { padding: 5px 10px; font-size: 12px; }
+.gt-alert-info { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue-bg); }
+.gt-socio-opcion {
+  width: 100%; padding: 9px 14px; display: flex; gap: 10px; align-items: center; text-align: left;
+  border: none; border-bottom: 1px solid var(--border-light); background: var(--bg-surface);
+  color: var(--text-primary); font: inherit; font-size: 14px; cursor: pointer;
+}
+.gt-socio-opcion:last-child { border-bottom: none; }
+.gt-socio-opcion:hover { background: var(--accent-light); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Ingreso con QR
+   ══════════════════════════════════════════════════════════════════════ */
+/* Botón del socio */
+.gt-ingreso-cta {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 16px 18px;
+  border-radius: 14px; background: var(--accent); color: #fff; text-decoration: none;
+  box-shadow: var(--shadow-md); font-size: 16px;
+}
+.gt-ingreso-cta:hover { background: var(--accent-hover); color: #fff; }
+.gt-ingreso-cta > span:last-child { font-size: 28px; opacity: .8; }
+.gt-ingreso-cta-icono { font-size: 30px; }
+.gt-ingreso-cta-sub { display: block; font-size: 13px; opacity: .85; font-weight: 400; }
+
+/* Visor de la cámara del socio */
+.gt-qr-visor { position: relative; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 1 / 1; }
+.gt-qr-visor video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Pantalla de recepción */
+.gt-qr-kiosco { background: var(--bg-base); min-height: calc(100vh - 120px); padding: 8px; overflow: auto; }
+.gt-qr-kiosco-barra { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+.gt-qr-kiosco-main { display: flex; gap: 32px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.gt-qr-marco { display: inline-block; padding: 16px; background: #fff; border-radius: 20px; box-shadow: var(--shadow-md); }
+.gt-qr-marco canvas { display: block; max-width: 72vw; height: auto !important; }
+.gt-qr-progreso { width: 340px; max-width: 72vw; height: 6px; margin: 14px auto 0; border-radius: 3px; background: var(--border); overflow: hidden; }
+.gt-qr-progreso > div { height: 100%; background: var(--accent); transition: width .25s linear; }
+.gt-qr-ultimos { width: 300px; max-width: 100%; }
+.gt-qr-ultimo { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+.gt-qr-ultimo:last-child { border-bottom: none; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Navegación del staff en el celular: barra inferior + menú deslizable
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-bottom-nav { display: none; }
+.gt-sidebar-backdrop { display: none; }
+
+@media (max-width: 768px) {
+  .gt-sidebar {
+    transform: translateX(-100%); transition: transform .22s ease; width: 260px; min-width: 260px;
+    z-index: 120; box-shadow: var(--shadow-md);
+  }
+  .gt-sidebar.abierto { transform: none; }
+  .gt-sidebar-backdrop { display: block; position: fixed; inset: 52px 0 0 0; background: rgba(0,0,0,.4); z-index: 110; }
+  .gt-content { margin-left: 0; }
+  .gt-content.gt-content-staff { padding: 18px 14px calc(84px + env(safe-area-inset-bottom)); }
+
+  .gt-bottom-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+    background: var(--bg-surface); border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .gt-bottom-link {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 2px 10px; font: inherit; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); text-decoration: none; background: none; border: none; cursor: pointer;
+  }
+  .gt-bottom-link > span { font-size: 20px; line-height: 1; }
+  .gt-bottom-link.active { color: var(--accent); }
+
+  /* Tablas anchas: scroll horizontal dentro de la tarjeta, no de la página */
+  .gt-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Hoy (profesor) y progreso
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-hoy-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.gt-hoy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.gt-hoy-socio { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-surface); }
+.gt-hoy-fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+.gt-hoy-fila:last-child { border-bottom: none; }
+
+.gt-progreso-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.gt-progreso-stats > div { background: var(--bg-surface-2); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; }
+.gt-progreso-num { font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.gt-progreso-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.gt-progreso-ej { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.gt-chart-tip {
+  position: absolute; top: -6px; transform: translate(-50%, -100%); pointer-events: none; white-space: nowrap;
+  background: var(--text-primary); color: var(--bg-surface); font-size: 12px; padding: 4px 8px; border-radius: 6px; z-index: 5;
+}
+@media (max-width: 480px) {
+  .gt-progreso-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .gt-progreso-num { font-size: 20px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Modo entrenamiento
+   ══════════════════════════════════════════════════════════════════════ */
+.gt-entreno { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 110px; }
+.gt-entreno-avance { display: flex; gap: 4px; }
+.gt-entreno-avance > span { flex: 1; height: 5px; border-radius: 3px; background: var(--border); }
+.gt-entreno-avance > span.hecho { background: var(--accent-border); }
+.gt-entreno-avance > span.actual { background: var(--accent); }
+.gt-entreno-img { width: 100%; max-height: 220px; object-fit: contain; background: var(--bg-surface-2); display: block; }
+.gt-entreno-ultima {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; padding: 8px 10px;
+  border-radius: 8px; background: var(--bg-surface-2); font-size: 13px; color: var(--text-secondary);
+}
+.gt-entreno-series { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.gt-entreno-serie { display: grid; grid-template-columns: 44px 1fr 1fr 52px; gap: 8px; align-items: center; }
+.gt-entreno-serie.cabecera { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.gt-entreno-serie input { text-align: center; font-size: 18px; font-weight: 700; padding: 10px 6px; }
+.gt-entreno-n { text-align: center; font-weight: 800; color: var(--text-muted); }
+.gt-entreno-check {
+  height: 46px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-surface);
+  color: var(--text-muted); font-size: 20px; font-weight: 800; cursor: pointer;
+}
+.gt-entreno-serie.hecha .gt-entreno-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gt-entreno-serie.hecha input { background: var(--accent-light); }
+.gt-entreno-nav { display: flex; gap: 8px; }
+.gt-entreno-nav .gt-btn { min-height: 48px; font-size: 16px; }
+.gt-descanso {
+  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 130;
+  max-width: 496px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: 14px; background: var(--accent); color: #fff; box-shadow: var(--shadow-md);
+}
+.gt-entrenar-cta { background: var(--bg-surface); color: var(--text-primary); border: 2px solid var(--accent); box-shadow: var(--shadow-sm); }
+.gt-entrenar-cta:hover { background: var(--accent-light); color: var(--text-primary); }
+.gt-btn-wa { color: #128C4A; border-color: #25D366; white-space: nowrap; }
+:root.dark .gt-btn-wa { color: #4ADE80; }
+
+/* Métricas: barra de porcentaje y mapa de calor (una sola escala de color) */
+.gt-barra-pct { flex: 1; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+.gt-barra-pct > div { height: 100%; border-radius: 4px; background: var(--accent); }
+.gt-heatmap { display: grid; gap: 2px; overflow-x: auto; }
+.gt-heatmap-h { font-size: 9px; color: var(--text-muted); text-align: center; }
+.gt-heatmap-d { font-size: 11px; color: var(--text-muted); align-self: center; }
+.gt-heatmap-c { height: 20px; border-radius: 3px; background: var(--bg-surface-2); cursor: default; }
+.gt-heatmap-c.n1 { background: color-mix(in srgb, var(--accent) 18%, var(--bg-surface)); }
+.gt-heatmap-c.n2 { background: color-mix(in srgb, var(--accent) 36%, var(--bg-surface)); }
+.gt-heatmap-c.n3 { background: color-mix(in srgb, var(--accent) 56%, var(--bg-surface)); }
+.gt-heatmap-c.n4 { background: color-mix(in srgb, var(--accent) 78%, var(--bg-surface)); }
+.gt-heatmap-c.n5 { background: var(--accent); }
+.gt-heatmap-c.activo { outline: 2px solid var(--text-primary); outline-offset: -1px; }
+
+/* Objetivo de la rutina */
+.gt-objetivo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.gt-objetivo {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--bg-surface); font: inherit; cursor: pointer;
+  transition: border-color .12s, transform .12s;
+}
+.gt-objetivo:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+/* PIN de acceso del socio */
+.gt-pin-input { font-size: 22px; letter-spacing: 10px; text-align: center; font-weight: 700; }
+.gt-pin-grande {
+  margin: 14px 0; padding: 18px; text-align: center; border-radius: 14px; background: var(--accent-light);
+  color: var(--accent); font-family: monospace; font-size: 44px; font-weight: 800; letter-spacing: 14px;
+}
+/* Al imprimir la lista de PIN, solo la lista */
+@media print {
+  body * { visibility: hidden; }
+  .gt-pines-imprimible, .gt-pines-imprimible * { visibility: visible; }
+  .gt-pines-imprimible { position: absolute; left: 0; top: 0; width: 100%; }
+  .gt-pines-imprimible .gt-table-wrap { max-height: none !important; overflow: visible !important; }
+}
+
+/* Pantalla de recepción vinculada (sin barra lateral ni superior) */
+.gt-kiosco-solo { min-height: 100vh; padding: 16px; }
+.gt-pantalla-nueva { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 12px; border-radius: 12px; background: var(--bg-surface-2); }
+.gt-pantalla-nueva img { background: #fff; padding: 6px; border-radius: 10px; }
+
+/* Barra superior en el celular: solo lo esencial */
+@media (max-width: 640px) {
+  .gt-topbar-usuario, .gt-topbar-kbd { display: none; }
 }
