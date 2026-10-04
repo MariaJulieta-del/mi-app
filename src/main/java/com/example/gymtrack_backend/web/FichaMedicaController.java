@@ -15,13 +15,14 @@ public class FichaMedicaController {
 
     private final FichaMedicaService service;
 
+    @PreAuthorize("@acceso.puedeVerSocio(#socioId)")
     @GetMapping("/socio/{socioId}")
     public ResponseEntity<FichaMedica> obtener(@PathVariable Long socioId) {
         return ResponseEntity.ok(service.obtenerPorSocio(socioId));
     }
 
     @PutMapping("/socio/{socioId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<FichaMedica> guardar(@PathVariable Long socioId,
                                                 @RequestBody FichaMedicaRequestDTO dto) {
         return ResponseEntity.ok(service.guardar(socioId, dto));

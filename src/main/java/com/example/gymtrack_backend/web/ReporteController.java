@@ -6,12 +6,15 @@ import com.example.gymtrack_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Endpoints de reportes y estadísticas para el Dashboard.
@@ -19,12 +22,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/reportes")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class ReporteController {
 
     private final SocioRepository      socioRepo;
     private final MembresiaRepository  membresiaRepo;
     private final PagoRepository       pagoRepo;
     private final AsistenciaRepository asistenciaRepo;
+    private final com.example.gymtrack_backend.service.MetricasService metricasService;
 
     /**
      * Estadísticas principales del Dashboard:
@@ -42,7 +47,6 @@ public class ReporteController {
         long totalSocios      = socioRepo.countByActivoTrue();
         long membresiasActivas = membresiaRepo.findByEstadoMembresia(EstadoMembresia.ACTIVA).size();
         long membresiasVencidas = membresiaRepo.findByEstadoMembresia(EstadoMembresia.VENCIDA).size();
-        long membresiasPendientes = membresiaRepo.findByEstadoMembresia(EstadoMembresia.PENDIENTE_PAGO).size();
 
         // Total recaudado este mes (pagos COMPLETADOS)
         double recaudadoMes = pagoRepo.findAll().stream()
@@ -57,7 +61,6 @@ public class ReporteController {
                 "totalSociosActivos",    totalSocios,
                 "membresiasActivas",     membresiasActivas,
                 "membresiasVencidas",    membresiasVencidas,
-                "membresiasPendientes",  membresiasPendientes,
                 "totalRecaudadoMes",     recaudadoMes,
                 "asistentesHoy",         asistentesHoy,
                 "mesReporte",            hoy.getMonth().toString() + " " + hoy.getYear()
@@ -151,12 +154,12 @@ public class ReporteController {
     }
 
     /**
-     * Socios morosos: membresía VENCIDA o PENDIENTE_PAGO.
+     * Socios con la membresía VENCIDA (tienen que renovar).
      */
     @GetMapping("/morosos")
     public ResponseEntity<List<Map<String, Object>>> morosos() {
         var resultado = membresiaRepo
-                .findByEstadoMembresiaIn(List.of(EstadoMembresia.VENCIDA, EstadoMembresia.PENDIENTE_PAGO))
+                .findByEstadoMembresiaIn(List.of(EstadoMembresia.VENCIDA))
                 .stream()
                 .map(m -> {
                     Map<String, Object> item = new java.util.LinkedHashMap<>();
@@ -172,6 +175,40 @@ public class ReporteController {
                 .toList();
 
         return ResponseEntity.ok(resultado);
+    }
+
+    /**
+     * Distribución de edades de los socios activos, agrupadas en rangos de 10 años.
+     * Devuelve [ {rango, cantidad} ] — solo socios con fechaNacimiento cargada.
+     */
+    @GetMapping("/edades")
+    public ResponseEntity<List<Map<String, Object>>> distribucionEdades() {
+        LocalDate hoy = LocalDate.now();
+
+        // Calcular edad de cada socio activo que tenga fechaNacimiento
+        Map<String, Long> porRango = new TreeMap<>();
+
+        socioRepo.findAll().stream()
+                .filter(s -> s.getActivo() != null && s.getActivo())
+                .filter(s -> s.getFechaNacimiento() != null)
+                .forEach(s -> {
+                    int edad = Period.between(s.getFechaNacimiento(), hoy).getYears();
+                    // Agrupar en rangos: "10-19", "20-29", etc.
+                    int base = (edad / 10) * 10;
+                    String rango = base + "-" + (base + 9);
+                    porRango.merge(rango, 1L, Long::sum);
+                });
+
+        var lista = porRango.entrySet().stream()
+                .map(e -> {
+                    Map<String, Object> item = new java.util.LinkedHashMap<>();
+                    item.put("rango", e.getKey());
+                    item.put("cantidad", e.getValue());
+                    return item;
+                })
+                .toList();
+
+        return ResponseEntity.ok(lista);
     }
 
     /**
@@ -200,5 +237,17 @@ public class ReporteController {
                 .toList();
 
         return ResponseEntity.ok(resultado);
+    }
+
+    /** Socios con membresía vigente que dejaron de venir o están por vencer sin venir */
+    @GetMapping("/en-riesgo")
+    public ResponseEntity<List<com.example.gymtrack_backend.service.MetricasService.SocioEnRiesgo>> enRiesgo() {
+        return ResponseEntity.ok(metricasService.enRiesgo());
+    }
+
+    /** Retención mensual, ingreso promedio por socio y ocupación por horario */
+    @GetMapping("/metricas")
+    public ResponseEntity<com.example.gymtrack_backend.service.MetricasService.Metricas> metricas() {
+        return ResponseEntity.ok(metricasService.metricas());
     }
 }

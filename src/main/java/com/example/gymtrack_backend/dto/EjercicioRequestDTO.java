@@ -31,4 +31,10 @@ public class EjercicioRequestDTO {
 
     /** ID del ejercicio en el catálogo (opcional — para vincular descripción y máquina) */
     private Long ejercicioCatalogoId;
+
+    /** Si true, el ejercicio forma parte del bloque inamovible de Entrada en Calor. */
+    private Boolean esCalentamiento;
+
+    /** Día al que pertenece este ejercicio (Día 1, Día 2, etc.). Default 1. */
+    private Integer dia;
 }

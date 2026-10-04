@@ -2,12 +2,14 @@ package com.example.gymtrack_backend.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.BatchSize;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "ejercicios_catalogo")
+@BatchSize(size = 30)   // batch-load cuando se accede lazily desde RutinaEjercicio.ejercicioCatalogo
 public class Ejercicio {
 
     @Id
@@ -24,6 +26,7 @@ public class Ejercicio {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "ejercicio_grupos", joinColumns = @JoinColumn(name = "ejercicio_id"))
     @Column(name = "grupo")
+    @BatchSize(size = 30)
     private List<String> grupos = new ArrayList<>();
 
     @Column(name = "es_maquina", nullable = false)
@@ -43,5 +46,6 @@ public class Ejercicio {
         joinColumns = @JoinColumn(name = "ejercicio_id")
     )
     @Column(name = "maquina_id")
+    @BatchSize(size = 30)
     private List<Long> maquinaIds = new ArrayList<>();
 }

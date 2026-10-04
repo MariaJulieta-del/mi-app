@@ -39,12 +39,17 @@ public class TarifaMembresiaService {
         return toDTO(repository.save(plan));
     }
 
-    /** Actualiza el precio de un plan existente */
+    /**
+     * Actualiza precio y/o pases mensuales de un plan.
+     * Los cambios aplican a los socios cuando renuevan (la membresía guarda los valores pagados).
+     */
     @Transactional
-    public TarifaMembresiaResponseDTO actualizarPrecio(String tipo, BigDecimal nuevoPrecio) {
+    public TarifaMembresiaResponseDTO actualizar(String tipo, BigDecimal nuevoPrecio,
+                                                 boolean cambiaPases, Integer pasesMensuales) {
         TarifaMembresia tarifa = repository.findById(tipo.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + tipo));
-        tarifa.setPrecio(nuevoPrecio);
+        if (nuevoPrecio != null) tarifa.setPrecio(nuevoPrecio);
+        if (cambiaPases) tarifa.setPasesMensuales(pasesMensuales);
         return toDTO(repository.save(tarifa));
     }
 
@@ -61,6 +66,7 @@ public class TarifaMembresiaService {
         dto.setNombre(t.getNombre() != null ? t.getNombre() : t.getTipo());
         dto.setPrecio(t.getPrecio());
         dto.setDuracionDias(t.getDuracionDias());
+        dto.setPasesMensuales(t.getPasesMensuales());
         dto.setDescripcion(t.getDescripcion());
         dto.setIncluye(t.getIncluye());
         dto.setSociosActivos(membresiaRepository.countActivosByTipo(t.getTipo()));

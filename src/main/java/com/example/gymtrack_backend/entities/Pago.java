@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * Registro de un pago asociado a una membresía.
- * Al registrar un pago COMPLETADO, el servicio activa la membresía
- * si ésta estaba en estado PENDIENTE_PAGO.
+ * Cada pago renueva la membresía del socio (MembresiaService.renovar).
  */
 @Data
 @Entity

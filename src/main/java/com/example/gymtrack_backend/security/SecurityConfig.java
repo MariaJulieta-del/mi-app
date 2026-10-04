@@ -1,5 +1,9 @@
 package com.example.gymtrack_backend.security;
 
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +47,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService      userDetailsService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins}")
+    private String corsOrigins;
+
     // ── SecurityFilterChain ──────────────────────────────────────────────────
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -56,8 +63,16 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/auth/**").permitAll()
                     // Solo ADMIN puede registrar nuevos usuarios
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").hasRole("ADMIN")
-                    // El resto requiere autenticación
-                    .anyRequest().authenticated()
+                    // Profesores: solo ADMIN
+                    .requestMatchers("/api/v1/profesores", "/api/v1/profesores/**").hasRole("ADMIN")
+                    // Pantalla de recepción (ROLE_KIOSCO): solo el QR vigente y los últimos ingresos
+                    .requestMatchers(HttpMethod.GET, "/api/v1/asistencias/qr-actual", "/api/v1/kiosco/ultimos").authenticated()
+                    // Salud del servicio (lo consulta Render)
+                    .requestMatchers(HttpMethod.GET, "/api/v1/salud").permitAll()
+                    // El resto requiere un usuario autenticado que NO sea una pantalla de recepción
+                    .anyRequest().access(AuthorizationManagers.allOf(
+                            AuthenticatedAuthorizationManager.authenticated(),
+                            AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("KIOSCO"))))
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -69,10 +84,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        // Solo los orígenes del frontend (CORS_ORIGINS, separados por coma)
+        config.setAllowedOrigins(java.util.Arrays.stream(corsOrigins.split(","))
+                .map(String::trim).filter(o -> !o.isEmpty()).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Socio-Id"));
+        // El token viaja en el header Authorization, no en cookies
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

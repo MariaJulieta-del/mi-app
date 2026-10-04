@@ -4,10 +4,7 @@ import com.example.gymtrack_backend.dto.PagoConMembresiaRequestDTO;
 import com.example.gymtrack_backend.dto.PagoResponseDTO;
 import com.example.gymtrack_backend.entities.Membresia;
 import com.example.gymtrack_backend.entities.Pago;
-import com.example.gymtrack_backend.entities.enums.EstadoMembresia;
 import com.example.gymtrack_backend.entities.enums.EstadoPago;
-import com.example.gymtrack_backend.entities.enums.MetodoPago;
-import com.example.gymtrack_backend.repository.MembresiaRepository;
 import com.example.gymtrack_backend.repository.PagoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,24 +19,19 @@ public class PagoService {
     private PagoRepository pagoRepository;
 
     @Autowired
-    private MembresiaRepository membresiaRepository;
-
-    @Autowired
     private MembresiaService membresiaService;
 
     // ──────────────────────────────────────────────
-    // REGISTRAR PAGO + CREAR MEMBRESÍA (flujo principal desde Pagos)
+    // COBRAR PLAN = crear o renovar la membresía del socio
     // ──────────────────────────────────────────────
 
     /**
-     * Crea una membresía ACTIVA para el socio y registra el pago en una
-     * única transacción. El precio y la duración salen del tarifario.
+     * Renueva (o crea) la membresía del socio con el plan elegido y registra
+     * el pago en una única transacción. El precio y los pases salen del tarifario.
      */
     @Transactional
     public PagoResponseDTO registrarConMembresia(PagoConMembresiaRequestDTO dto) {
-        // Crea la membresía activa (valida socio activo único, busca tarifa)
-        Membresia membresia = membresiaService.crearMembresiaActiva(
-                dto.getSocioId(), dto.getPlanTipo(), null);
+        Membresia membresia = membresiaService.renovar(dto.getSocioId(), dto.getPlanTipo());
 
         // Registra el pago asociado
         Pago pago = new Pago();
@@ -49,39 +41,10 @@ public class PagoService {
         pago.setEstadoPago(EstadoPago.COMPLETADO);
         pago.setObservaciones(dto.getObservaciones());
 
-        return mapearAResponseDTO(pagoRepository.save(pago));
-    }
-
-    // ──────────────────────────────────────────────
-    // SALDAR DEUDA (pagar membresía PENDIENTE_PAGO existente)
-    // ──────────────────────────────────────────────
-
-    /**
-     * Registra el pago de una membresía que estaba en PENDIENTE_PAGO
-     * y la activa. Usado para saldar deudas de "fiado".
-     */
-    @Transactional
-    public PagoResponseDTO saldarDeuda(Long membresiaId, MetodoPago metodoPago, String observaciones) {
-        Membresia membresia = membresiaRepository.findById(membresiaId)
-            .orElseThrow(() -> new RuntimeException("Membresía no encontrada: " + membresiaId));
-
-        if (membresia.getEstadoMembresia() != EstadoMembresia.PENDIENTE_PAGO) {
-            throw new RuntimeException("La membresía no está en estado PENDIENTE_PAGO (estado actual: "
-                + membresia.getEstadoMembresia() + ")");
-        }
-
-        // Activar la membresía
-        membresia.setEstadoMembresia(EstadoMembresia.ACTIVA);
-        membresiaRepository.save(membresia);
-
-        // Registrar el pago
-        Pago pago = new Pago();
-        pago.setMembresia(membresia);
-        pago.setMonto(membresia.getPrecio());
-        pago.setMetodoPago(metodoPago);
-        pago.setEstadoPago(EstadoPago.COMPLETADO);
-        pago.setObservaciones(observaciones);
-
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(dto.getSocioId());
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle(
+                membresia.getTipoMembresia() + " · $" + membresia.getPrecio() + " · " + dto.getMetodoPago()
+                + " · vence " + membresia.getFechaVencimiento());
         return mapearAResponseDTO(pagoRepository.save(pago));
     }
 

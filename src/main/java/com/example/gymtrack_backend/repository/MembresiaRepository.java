@@ -9,12 +9,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MembresiaRepository extends JpaRepository<Membresia, Long> {
 
-    /** Todas las membresías de un socio */
-    List<Membresia> findBySocioId(Long socioId);
+    /** La membresía del socio (cada socio tiene una sola) */
+    Optional<Membresia> findBySocioId(Long socioId);
 
     /** Membresías de un socio filtradas por estado */
     List<Membresia> findBySocioIdAndEstadoMembresia(Long socioId, EstadoMembresia estado);

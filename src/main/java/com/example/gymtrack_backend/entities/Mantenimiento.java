@@ -47,6 +47,14 @@ public class Mantenimiento {
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
+    /** Fecha en que la máquina volvió a estar operativa (calculado: fechaAlta - fechaMantenimiento = inactividad) */
+    @Column(name = "fecha_alta")
+    private LocalDate fechaAlta;
+
+    /** Teléfono o contacto del técnico */
+    @Column(name = "telefono_tecnico", length = 60)
+    private String telefonoTecnico;
+
     @CreationTimestamp
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;

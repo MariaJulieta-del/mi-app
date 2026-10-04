@@ -27,6 +27,26 @@ public class JwtUtil {
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
+    @Value("${app.produccion:false}")
+    private boolean produccion;
+
+    /** Secreto de ejemplo que trae el repo: sirve solo para desarrollo local */
+    private static final String SECRETO_DE_EJEMPLO = "GymTrackSecretKey2026SpringBoot4JJWT012xMuyLargoParaHMACSHA256Seguridad";
+
+    @jakarta.annotation.PostConstruct
+    void validarSecreto() {
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalStateException("JWT_SECRET debe tener al menos 32 caracteres");
+        }
+        if (SECRETO_DE_EJEMPLO.equals(secret)) {
+            if (produccion) {
+                throw new IllegalStateException("En producción hay que definir JWT_SECRET con un valor propio");
+            }
+            org.slf4j.LoggerFactory.getLogger(JwtUtil.class)
+                    .warn("Usando el JWT_SECRET de ejemplo. Definí JWT_SECRET antes de publicar la app.");
+        }
+    }
+
     // ── Clave de firma ───────────────────────────────────────────────────────
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -34,12 +54,31 @@ public class JwtUtil {
 
     // ── Generación ───────────────────────────────────────────────────────────
     public String generateToken(UserDetails userDetails, String rol) {
+        return generateToken(userDetails, rol, expirationMs);
+    }
+
+    /** Token con una duración propia (ej. socios: sesión larga en su celular) */
+    public String generateToken(UserDetails userDetails, String rol, long expirationMs) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
 
         return Jwts.builder()
                 .claims(claims)
                 .subject(userDetails.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /** Prefijo del "usuario" de las pantallas de recepción: kiosco:{id} */
+    public static final String PREFIJO_KIOSCO = "kiosco:";
+
+    /** Token de una pantalla de recepción (no corresponde a ningún usuario) */
+    public String generateKioscoToken(Long dispositivoId, long expirationMs) {
+        return Jwts.builder()
+                .claims(Map.of("rol", "KIOSCO"))
+                .subject(PREFIJO_KIOSCO + dispositivoId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey())
@@ -53,6 +92,10 @@ public class JwtUtil {
 
     public String extractRol(String token) {
         return extractClaim(token, claims -> claims.get("rol", String.class));
+    }
+
+    public Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
     }
 
     public Date extractExpiration(String token) {

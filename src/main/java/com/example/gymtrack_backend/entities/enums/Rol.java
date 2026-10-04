@@ -2,6 +2,6 @@ package com.example.gymtrack_backend.entities.enums;
 
 public enum Rol {
     ADMIN,      // Acceso total al sistema
-    EMPLEADO,   // Gestión de socios, membresías y pagos
-    SOCIO       // Solo ve sus propias rutinas y membresías
+    PROFESOR,   // Gestión de socios, rutinas y disciplinas — sin reportes, pagos/membresías solo lectura
+    SOCIO       // Solo ve su propio perfil, rutinas y membresía
 }

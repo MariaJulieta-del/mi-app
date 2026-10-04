@@ -32,7 +32,7 @@ public class MaquinaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<?> crear(@Valid @RequestBody MaquinaRequestDTO dto) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(dto));
@@ -42,7 +42,7 @@ public class MaquinaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<?> actualizar(@PathVariable Long id,
                                          @Valid @RequestBody MaquinaRequestDTO dto) {
         try {
@@ -53,14 +53,14 @@ public class MaquinaController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Void> desactivar(@PathVariable Long id) {
         service.desactivar(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/activar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Maquina> activar(@PathVariable Long id) {
         return ResponseEntity.ok(service.activar(id));
     }

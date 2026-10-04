@@ -14,8 +14,8 @@ import java.util.Map;
 
 /**
  * REST Controller para el módulo de Membresías.
- * La creación de membresías se realiza desde PagoController (POST /pagos/con-membresia),
- * que registra el pago y activa la membresía en una única operación.
+ * Cada socio tiene una sola membresía; se crea/renueva desde PagoController
+ * (POST /pagos/con-membresia), que registra el pago en la misma operación.
  */
 @RestController
 @RequestMapping("/api/v1/membresias")
@@ -26,12 +26,14 @@ public class MembresiaController {
     private MembresiaService membresiaService;
 
     // GET /api/v1/membresias → listar todas
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping
     public ResponseEntity<List<MembresiaResponseDTO>> listar() {
         return ResponseEntity.ok(membresiaService.listarTodas());
     }
 
     // GET /api/v1/membresias/{id} → detalle
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/{id}")
     public ResponseEntity<MembresiaResponseDTO> obtener(@PathVariable Long id) {
         try {
@@ -41,44 +43,33 @@ public class MembresiaController {
         }
     }
 
-    // GET /api/v1/membresias/socio/{socioId} → membresías de un socio
+    // GET /api/v1/membresias/socio/{socioId} → la membresía del socio (204 si nunca pagó un plan)
+    @PreAuthorize("@acceso.puedeVerSocio(#socioId)")
     @GetMapping("/socio/{socioId}")
-    public ResponseEntity<List<MembresiaResponseDTO>> listarPorSocio(@PathVariable Long socioId) {
-        return ResponseEntity.ok(membresiaService.listarPorSocio(socioId));
+    public ResponseEntity<MembresiaResponseDTO> obtenerDeSocio(@PathVariable Long socioId) {
+        return membresiaService.obtenerDeSocio(socioId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
     }
 
     // GET /api/v1/membresias/proximas-a-vencer?dias=7 → membresías ACTIVAS que vencen pronto
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/proximas-a-vencer")
     public ResponseEntity<List<MembresiaResponseDTO>> proximasAVencer(
             @RequestParam(defaultValue = "7") int dias) {
         return ResponseEntity.ok(membresiaService.listarProximasAVencer(dias));
     }
 
-    // POST /api/v1/membresias/pendiente → asignar plan sin pago (fiado)
-    @PostMapping("/pendiente")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
-    public ResponseEntity<?> crearPendiente(@RequestBody Map<String, Object> body) {
-        try {
-            Long   socioId  = Long.valueOf(body.get("socioId").toString());
-            String planTipo = body.get("planTipo").toString();
-            var m = membresiaService.crearMembresiaPendiente(socioId, planTipo);
-            return ResponseEntity.ok(membresiaService.mapearAResponseDTO(m));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error al asignar el plan"));
-        }
-    }
-
-    // PATCH /api/v1/membresias/{id}/estado → cancelar
+    // PATCH /api/v1/membresias/{id}/estado → cancelar — solo ADMIN
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
-    public ResponseEntity<MembresiaResponseDTO> cambiarEstado(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
             @RequestParam EstadoMembresia nuevoEstado) {
         try {
             return ResponseEntity.ok(membresiaService.cambiarEstado(id, nuevoEstado));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", String.valueOf(e.getMessage())));
         }
     }
 }

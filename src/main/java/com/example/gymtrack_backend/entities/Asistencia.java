@@ -33,8 +33,4 @@ public class Asistencia {
     private Boolean permitido = true;
 
     private String observacion;
-
-    /** true si el socio entró con una membresía PENDIENTE_PAGO (deuda) */
-    @Column(name = "con_deuda", nullable = false)
-    private Boolean conDeuda = false;
 }

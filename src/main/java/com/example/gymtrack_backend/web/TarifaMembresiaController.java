@@ -16,7 +16,7 @@ import java.util.Map;
  * REST Controller para el tarifario / planes de membresía.
  * GET  /api/v1/tarifas          → lista todos los planes con socios activos
  * POST /api/v1/tarifas          → crear nuevo plan
- * PUT  /api/v1/tarifas/{tipo}   → actualizar precio de un plan
+ * PUT  /api/v1/tarifas/{tipo}   → actualizar precio y/o pases mensuales de un plan
  */
 @RestController
 @RequestMapping("/api/v1/tarifas")
@@ -40,6 +40,7 @@ public class TarifaMembresiaController {
             plan.setNombre(body.getOrDefault("nombre", body.get("tipo")).toString());
             plan.setPrecio(new BigDecimal(body.get("precio").toString()));
             plan.setDuracionDias(Integer.parseInt(body.get("duracionDias").toString()));
+            plan.setPasesMensuales(parsePases(body.get("pasesMensuales")));
             if (body.containsKey("incluye")) plan.setIncluye(body.get("incluye").toString());
             if (body.containsKey("descripcion")) plan.setDescripcion(body.get("descripcion").toString());
             return ResponseEntity.ok(tarifaService.crearPlan(plan));
@@ -54,10 +55,19 @@ public class TarifaMembresiaController {
             @PathVariable String tipo,
             @RequestBody Map<String, Object> body) {
         try {
-            BigDecimal precio = new BigDecimal(body.get("precio").toString());
-            return ResponseEntity.ok(tarifaService.actualizarPrecio(tipo.toUpperCase(), precio));
+            BigDecimal precio = body.get("precio") != null ? new BigDecimal(body.get("precio").toString()) : null;
+            boolean cambiaPases = body.containsKey("pasesMensuales");
+            return ResponseEntity.ok(tarifaService.actualizar(tipo.toUpperCase(), precio,
+                    cambiaPases, parsePases(body.get("pasesMensuales"))));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /** null, vacío o 0 = pase libre */
+    private Integer parsePases(Object valor) {
+        if (valor == null || valor.toString().isBlank()) return null;
+        int pases = Integer.parseInt(valor.toString());
+        return pases > 0 ? pases : null;
     }
 }

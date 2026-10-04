@@ -8,9 +8,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Membresía de un socio en el gimnasio.
- * El servicio calcula automáticamente la fechaVencimiento según el TipoMembresia.
- * Una membresía ACTIVA no puede eliminarse; solo cancelarse.
+ * Membresía de un socio en el gimnasio. Cada socio tiene UNA sola membresía:
+ * al renovar se extiende el vencimiento y el historial queda en los pagos.
  */
 @Data
 @Entity
@@ -33,7 +32,7 @@ public class Membresia {
     // Estado actual de la membresía
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_membresia", nullable = false, length = 20)
-    private EstadoMembresia estadoMembresia = EstadoMembresia.PENDIENTE_PAGO;
+    private EstadoMembresia estadoMembresia = EstadoMembresia.ACTIVA;
 
     // Fecha desde la cual la membresía es válida
     @Column(name = "fecha_inicio", nullable = false)
@@ -48,12 +47,11 @@ public class Membresia {
     private BigDecimal precio;
 
     /**
-     * Máximo de ingresos permitidos para esta membresía.
-     * NULL = membresía por tiempo (sin límite de entradas).
-     * > 0  = pase de X clases / entradas (punch-card).
+     * Pases por mes, copiados del plan al momento de pagar/renovar.
+     * NULL = pase libre (sin límite de ingresos). El cálculo vive en MembresiaService.calcularPases().
      */
-    @Column(name = "entradas_disponibles")
-    private Integer entradasDisponibles;
+    @Column(name = "pases_mensuales")
+    private Integer pasesMensuales;
 
     // Registro de cuándo se creó
     @Column(name = "fecha_creacion", nullable = false, updatable = false)

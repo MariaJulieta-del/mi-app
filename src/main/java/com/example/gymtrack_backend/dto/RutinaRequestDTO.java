@@ -28,4 +28,7 @@ public class RutinaRequestDTO {
 
     /** Nivel de dificultad: BAJA, MEDIA, ALTA */
     private String dificultad;
+
+    /** Objetivo: FUERZA, HIPERTROFIA, RESISTENCIA, PERDIDA_GRASA, SALUD (null = sin especificar) */
+    private String objetivo;
 }

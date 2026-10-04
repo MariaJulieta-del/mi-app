@@ -22,6 +22,10 @@ public class TarifaMembresia {
     @Column(name = "duracion_dias")
     private Integer duracionDias;
 
+    /** Pases (ingresos) por mes que incluye el plan. NULL = pase libre */
+    @Column(name = "pases_mensuales")
+    private Integer pasesMensuales;
+
     private String descripcion;
 
     private String incluye;

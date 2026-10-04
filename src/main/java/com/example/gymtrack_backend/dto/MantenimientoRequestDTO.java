@@ -11,6 +11,8 @@ public class MantenimientoRequestDTO {
     private String tecnico;
     private BigDecimal costo;
     private String observaciones;
+    private LocalDate fechaAlta;
+    private String telefonoTecnico;
 
     // Getters & Setters
     public Long getMaquinaId() { return maquinaId; }
@@ -33,4 +35,10 @@ public class MantenimientoRequestDTO {
 
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+
+    public LocalDate getFechaAlta() { return fechaAlta; }
+    public void setFechaAlta(LocalDate fechaAlta) { this.fechaAlta = fechaAlta; }
+
+    public String getTelefonoTecnico() { return telefonoTecnico; }
+    public void setTelefonoTecnico(String telefonoTecnico) { this.telefonoTecnico = telefonoTecnico; }
 }

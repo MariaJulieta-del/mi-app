@@ -1,5 +1,6 @@
 package com.example.gymtrack_backend.web;
 
+import com.example.gymtrack_backend.dto.MaquinaEstadisticasDTO;
 import com.example.gymtrack_backend.dto.MantenimientoRequestDTO;
 import com.example.gymtrack_backend.dto.MantenimientoResponseDTO;
 import com.example.gymtrack_backend.service.MantenimientoService;
@@ -20,20 +21,34 @@ public class MantenimientoController {
     private final MantenimientoService mantenimientoService;
 
     /** GET /api/v1/mantenimientos — todos los mantenimientos */
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping
     public List<MantenimientoResponseDTO> listarTodos() {
         return mantenimientoService.listarTodos();
     }
 
     /** GET /api/v1/mantenimientos/maquina/{maquinaId} — por máquina */
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/maquina/{maquinaId}")
     public List<MantenimientoResponseDTO> listarPorMaquina(@PathVariable Long maquinaId) {
         return mantenimientoService.listarPorMaquina(maquinaId);
     }
 
+    /** GET /api/v1/mantenimientos/maquina/{maquinaId}/estadisticas — historial clínico */
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    @GetMapping("/maquina/{maquinaId}/estadisticas")
+    public ResponseEntity<?> estadisticasPorMaquina(@PathVariable Long maquinaId) {
+        try {
+            MaquinaEstadisticasDTO stats = mantenimientoService.estadisticasPorMaquina(maquinaId);
+            return ResponseEntity.ok(stats);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     /** POST /api/v1/mantenimientos — crear */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<?> crear(@RequestBody MantenimientoRequestDTO dto) {
         try {
             return ResponseEntity.ok(mantenimientoService.crear(dto));
@@ -44,7 +59,7 @@ public class MantenimientoController {
 
     /** PUT /api/v1/mantenimientos/{id} — actualizar */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody MantenimientoRequestDTO dto) {
         try {
             return ResponseEntity.ok(mantenimientoService.actualizar(id, dto));

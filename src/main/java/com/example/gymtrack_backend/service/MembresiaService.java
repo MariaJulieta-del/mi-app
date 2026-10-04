@@ -1,21 +1,34 @@
 package com.example.gymtrack_backend.service;
 
-import com.example.gymtrack_backend.dto.MembresiaRequestDTO;
 import com.example.gymtrack_backend.dto.MembresiaResponseDTO;
 import com.example.gymtrack_backend.entities.Membresia;
 import com.example.gymtrack_backend.entities.Socio;
 import com.example.gymtrack_backend.entities.TarifaMembresia;
 import com.example.gymtrack_backend.entities.enums.EstadoMembresia;
+import com.example.gymtrack_backend.repository.AsistenciaRepository;
 import com.example.gymtrack_backend.repository.MembresiaRepository;
 import com.example.gymtrack_backend.repository.SocioRepository;
 import com.example.gymtrack_backend.repository.TarifaMembresiaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Reglas de membresía:
+ *  - Cada socio tiene UNA sola membresía. Pagar un plan la crea o la renueva.
+ *  - No existe el fiado: la membresía solo se activa con un pago.
+ *  - Cada plan define N pases por mes (null = libre). Los pases se cuentan por ciclo mensual
+ *    a partir de fechaInicio y un mismo día consume un solo pase.
+ */
 @Service
 public class MembresiaService {
 
@@ -28,134 +41,126 @@ public class MembresiaService {
     @Autowired
     private TarifaMembresiaRepository tarifaRepository;
 
+    @Autowired
+    private AsistenciaRepository asistenciaRepository;
+
     // ──────────────────────────────────────────────
-    // CREAR (desde el módulo de Pagos — flujo principal)
+    // RENOVAR / ASIGNAR PLAN (siempre asociado a un pago)
     // ──────────────────────────────────────────────
 
     /**
-     * Crea una membresía ACTIVA para un socio.
-     * El precio y la duración se obtienen del tarifario.
-     * El socio solo puede tener 1 membresía ACTIVA a la vez.
+     * Crea la membresía del socio o la renueva con el plan indicado.
+     *  - Si está ACTIVA: se extiende el vencimiento (no se pierden días ya pagos).
+     *  - Si está VENCIDA/CANCELADA o no existe: arranca hoy.
+     * El precio y los pases se toman del tarifario en este momento.
      */
     @Transactional
-    public Membresia crearMembresiaActiva(Long socioId, String planTipo, LocalDate fechaInicio) {
+    public Membresia renovar(Long socioId, String planTipo) {
         Socio socio = socioRepository.findById(socioId)
             .orElseThrow(() -> new RuntimeException("Socio no encontrado: " + socioId));
-
-        // Verificar que no tenga membresía activa
-        if (membresiaRepository.existsBySocioIdAndEstadoMembresia(socioId, EstadoMembresia.ACTIVA)) {
-            throw new RuntimeException("El socio ya tiene una membresía activa. Cancelala primero.");
+        if (!Boolean.TRUE.equals(socio.getActivo())) {
+            throw new RuntimeException("El socio está dado de baja. Reactivalo antes de cobrarle un plan.");
         }
 
-        // Obtener datos del plan desde el tarifario
         TarifaMembresia tarifa = tarifaRepository.findById(planTipo.toUpperCase())
             .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + planTipo));
-
         if (tarifa.getDuracionDias() == null || tarifa.getDuracionDias() <= 0) {
             throw new RuntimeException("El plan no tiene duración configurada: " + planTipo);
         }
 
-        LocalDate inicio = fechaInicio != null ? fechaInicio : LocalDate.now();
-        LocalDate vencimiento = inicio.plusDays(tarifa.getDuracionDias());
+        LocalDate hoy = LocalDate.now();
+        Membresia m = membresiaRepository.findBySocioId(socioId).orElseGet(() -> {
+            Membresia nueva = new Membresia();
+            nueva.setSocio(socio);
+            return nueva;
+        });
 
-        Membresia membresia = new Membresia();
-        membresia.setSocio(socio);
-        membresia.setTipoMembresia(planTipo.toUpperCase());
-        membresia.setEstadoMembresia(EstadoMembresia.ACTIVA); // directamente activa al registrar pago
-        membresia.setFechaInicio(inicio);
-        membresia.setFechaVencimiento(vencimiento);
-        membresia.setPrecio(tarifa.getPrecio());
-        // entradasDisponibles se pasa desde el DTO en el flujo de creación manual;
-        // la tarifa podría tener un default, por ahora queda null (plan por tiempo).
+        boolean vigente = m.getId() != null
+                && m.getEstadoMembresia() == EstadoMembresia.ACTIVA
+                && m.getFechaVencimiento() != null
+                && !m.getFechaVencimiento().isBefore(hoy);
 
-        return membresiaRepository.save(membresia);
+        if (vigente) {
+            m.setFechaVencimiento(m.getFechaVencimiento().plusDays(tarifa.getDuracionDias()));
+        } else {
+            m.setFechaInicio(hoy);
+            m.setFechaVencimiento(hoy.plusDays(tarifa.getDuracionDias()));
+        }
+
+        m.setTipoMembresia(tarifa.getTipo());
+        m.setPrecio(tarifa.getPrecio());
+        m.setPasesMensuales(tarifa.getPasesMensuales());
+        m.setEstadoMembresia(EstadoMembresia.ACTIVA);
+        return membresiaRepository.save(m);
     }
 
-    /**
-     * Versión extendida de crearMembresiaActiva que acepta entradas disponibles.
-     * Para planes tipo punch-card (pase de N clases).
-     */
-    @Transactional
-    public Membresia crearMembresiaActivaConEntradas(Long socioId, String planTipo, LocalDate fechaInicio, Integer entradasDisponibles) {
-        Membresia m = crearMembresiaActiva(socioId, planTipo, fechaInicio);
-        if (entradasDisponibles != null && entradasDisponibles > 0) {
-            m.setEntradasDisponibles(entradasDisponibles);
-            return membresiaRepository.save(m);
+    // ──────────────────────────────────────────────
+    // PASES — única fuente de verdad
+    // ──────────────────────────────────────────────
+
+    /** Estado de los pases del ciclo mensual que contiene a `hoy`. */
+    public record PasesInfo(boolean libre, Integer pasesMensuales, int usados, Integer restantes,
+                            LocalDate cicloInicio, LocalDate cicloFin) {}
+
+    public PasesInfo calcularPases(Membresia m, LocalDate hoy) {
+        LocalDate inicio = m.getFechaInicio() != null ? m.getFechaInicio() : hoy;
+
+        long meses = Math.max(0, ChronoUnit.MONTHS.between(inicio, hoy));
+        LocalDate cicloInicio = inicio.plusMonths(meses);
+        LocalDate cicloFin = cicloInicio.plusMonths(1).minusDays(1);
+        if (m.getFechaVencimiento() != null && cicloFin.isAfter(m.getFechaVencimiento())) {
+            cicloFin = m.getFechaVencimiento();
         }
-        return m;
+
+        int usados = (int) asistenciaRepository.countDiasConIngreso(m.getSocio().getId(), cicloInicio, cicloFin);
+        Integer total = m.getPasesMensuales();
+        boolean libre = total == null || total <= 0;
+        Integer restantes = libre ? null : Math.max(0, total - usados);
+        return new PasesInfo(libre, libre ? null : total, usados, restantes, cicloInicio, cicloFin);
     }
 
-    /**
-     * Asigna un plan al socio SIN cobrar (fiado).
-     * La membresía queda en PENDIENTE_PAGO.
-     * El socio podrá ingresar 1 vez antes de ser bloqueado.
-     */
-    @Transactional
-    public Membresia crearMembresiaPendiente(Long socioId, String planTipo) {
-        Socio socio = socioRepository.findById(socioId)
-            .orElseThrow(() -> new RuntimeException("Socio no encontrado: " + socioId));
-
-        if (membresiaRepository.existsBySocioIdAndEstadoMembresia(socioId, EstadoMembresia.ACTIVA)) {
-            throw new RuntimeException("El socio ya tiene una membresía activa.");
-        }
-        if (membresiaRepository.existsBySocioIdAndEstadoMembresia(socioId, EstadoMembresia.PENDIENTE_PAGO)) {
-            throw new RuntimeException("El socio ya tiene una membresía pendiente de pago.");
-        }
-
-        TarifaMembresia tarifa = tarifaRepository.findById(planTipo.toUpperCase())
-            .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + planTipo));
-
-        LocalDate inicio     = LocalDate.now();
-        LocalDate vencimiento = inicio.plusDays(tarifa.getDuracionDias());
-
-        Membresia membresia = new Membresia();
-        membresia.setSocio(socio);
-        membresia.setTipoMembresia(planTipo.toUpperCase());
-        membresia.setEstadoMembresia(EstadoMembresia.PENDIENTE_PAGO);
-        membresia.setFechaInicio(inicio);
-        membresia.setFechaVencimiento(vencimiento);
-        membresia.setPrecio(tarifa.getPrecio());
-
-        return membresiaRepository.save(membresia);
+    /** ¿La membresía está activa y no venció? */
+    public boolean estaVigente(Membresia m, LocalDate hoy) {
+        return m.getEstadoMembresia() == EstadoMembresia.ACTIVA
+                && (m.getFechaVencimiento() == null || !m.getFechaVencimiento().isBefore(hoy));
     }
 
     // ──────────────────────────────────────────────
     // LEER
     // ──────────────────────────────────────────────
 
-    /** Lista todas las membresías (admin) */
     public List<MembresiaResponseDTO> listarTodas() {
-        return membresiaRepository.findAll()
-            .stream().map(this::mapearAResponseDTO).collect(Collectors.toList());
+        Map<String, TarifaMembresia> planes = planesPorTipo();
+        return membresiaRepository.findAll().stream()
+            .map(m -> mapearAResponseDTO(m, planes))
+            .collect(Collectors.toList());
     }
 
-    /** Obtiene una membresía por ID */
     public MembresiaResponseDTO obtenerPorId(Long id) {
         Membresia m = membresiaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Membresía no encontrada: " + id));
         return mapearAResponseDTO(m);
     }
 
-    /** Lista todas las membresías de un socio */
-    public List<MembresiaResponseDTO> listarPorSocio(Long socioId) {
-        return membresiaRepository.findBySocioId(socioId)
-            .stream().map(this::mapearAResponseDTO).collect(Collectors.toList());
+    /** La membresía del socio (vacío si nunca pagó un plan) */
+    public Optional<MembresiaResponseDTO> obtenerDeSocio(Long socioId) {
+        return membresiaRepository.findBySocioId(socioId).map(this::mapearAResponseDTO);
     }
 
     /** Membresías ACTIVAS que vencen dentro de los próximos `dias` días */
     public List<MembresiaResponseDTO> listarProximasAVencer(int dias) {
-        LocalDate hoy   = LocalDate.now();
-        LocalDate hasta = hoy.plusDays(dias);
+        LocalDate hoy = LocalDate.now();
+        Map<String, TarifaMembresia> planes = planesPorTipo();
         return membresiaRepository
-                .findByEstadoMembresiaAndFechaVencimientoBetween(EstadoMembresia.ACTIVA, hoy, hasta)
-                .stream()
-                .sorted(java.util.Comparator.comparing(m -> m.getFechaVencimiento()))
-                .map(this::mapearAResponseDTO)
-                .collect(Collectors.toList());
+            .findByEstadoMembresiaAndFechaVencimientoBetween(EstadoMembresia.ACTIVA, hoy, hoy.plusDays(dias))
+            .stream()
+            .sorted(Comparator.comparing(Membresia::getFechaVencimiento))
+            .map(m -> mapearAResponseDTO(m, planes))
+            .collect(Collectors.toList());
     }
 
     // ──────────────────────────────────────────────
-    // CAMBIO DE ESTADO
+    // CANCELAR
     // ──────────────────────────────────────────────
 
     @Transactional
@@ -163,34 +168,57 @@ public class MembresiaService {
         Membresia membresia = membresiaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Membresía no encontrada: " + id));
 
-        if (nuevoEstado == EstadoMembresia.CANCELADA &&
-            (membresia.getEstadoMembresia() == EstadoMembresia.CANCELADA ||
-             membresia.getEstadoMembresia() == EstadoMembresia.VENCIDA)) {
-            throw new RuntimeException("No se puede cancelar una membresía en estado: "
-                + membresia.getEstadoMembresia());
+        if (nuevoEstado != EstadoMembresia.CANCELADA) {
+            throw new RuntimeException("Para activar una membresía hay que registrar un pago (renovar).");
+        }
+        if (membresia.getEstadoMembresia() != EstadoMembresia.ACTIVA) {
+            throw new RuntimeException("Solo se puede cancelar una membresía activa");
         }
 
-        membresia.setEstadoMembresia(nuevoEstado);
+        membresia.setEstadoMembresia(EstadoMembresia.CANCELADA);
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(membresia.getSocio().getId());
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle("Canceló la membresía " + membresia.getTipoMembresia());
         return mapearAResponseDTO(membresiaRepository.save(membresia));
     }
 
     // ──────────────────────────────────────────────
-    // HELPER
+    // HELPERS
     // ──────────────────────────────────────────────
 
+    private Map<String, TarifaMembresia> planesPorTipo() {
+        return tarifaRepository.findAll().stream()
+            .collect(Collectors.toMap(TarifaMembresia::getTipo, Function.identity()));
+    }
+
     public MembresiaResponseDTO mapearAResponseDTO(Membresia m) {
+        return mapearAResponseDTO(m, planesPorTipo());
+    }
+
+    private MembresiaResponseDTO mapearAResponseDTO(Membresia m, Map<String, TarifaMembresia> planes) {
+        LocalDate hoy = LocalDate.now();
         MembresiaResponseDTO dto = new MembresiaResponseDTO();
         dto.setId(m.getId());
         dto.setSocioId(m.getSocio().getId());
         dto.setSocioNombreCompleto(m.getSocio().getNombre() + " " + m.getSocio().getApellido());
         dto.setTipoMembresia(m.getTipoMembresia());
+        TarifaMembresia plan = planes.get(m.getTipoMembresia());
+        dto.setPlanNombre(plan != null && plan.getNombre() != null ? plan.getNombre() : m.getTipoMembresia());
         dto.setEstadoMembresia(m.getEstadoMembresia());
         dto.setFechaInicio(m.getFechaInicio());
         dto.setFechaVencimiento(m.getFechaVencimiento());
         dto.setPrecio(m.getPrecio());
         dto.setFechaCreacion(m.getFechaCreacion());
-        dto.setEntradasDisponibles(m.getEntradasDisponibles());
-        // entradasUsadas se calcula en servicio con query cuando sea necesario
+        if (m.getFechaVencimiento() != null) {
+            dto.setDiasRestantes(ChronoUnit.DAYS.between(hoy, m.getFechaVencimiento()));
+        }
+
+        PasesInfo pases = calcularPases(m, hoy);
+        dto.setPaseLibre(pases.libre());
+        dto.setPasesMensuales(pases.pasesMensuales());
+        dto.setPasesUsados(pases.usados());
+        dto.setPasesRestantes(pases.restantes());
+        dto.setCicloInicio(pases.cicloInicio());
+        dto.setCicloFin(pases.cicloFin());
         return dto;
     }
 }

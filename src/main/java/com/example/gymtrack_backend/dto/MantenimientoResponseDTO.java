@@ -16,6 +16,10 @@ public class MantenimientoResponseDTO {
     private BigDecimal costo;
     private String observaciones;
     private LocalDateTime fechaCreacion;
+    private LocalDate fechaAlta;
+    private String telefonoTecnico;
+    /** Días que la máquina estuvo fuera de servicio (fechaAlta - fechaMantenimiento), null si no se completó */
+    private Long diasInactividad;
 
     // Getters & Setters
     public Long getId() { return id; }
@@ -50,4 +54,13 @@ public class MantenimientoResponseDTO {
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public LocalDate getFechaAlta() { return fechaAlta; }
+    public void setFechaAlta(LocalDate fechaAlta) { this.fechaAlta = fechaAlta; }
+
+    public String getTelefonoTecnico() { return telefonoTecnico; }
+    public void setTelefonoTecnico(String telefonoTecnico) { this.telefonoTecnico = telefonoTecnico; }
+
+    public Long getDiasInactividad() { return diasInactividad; }
+    public void setDiasInactividad(Long diasInactividad) { this.diasInactividad = diasInactividad; }
 }

@@ -62,6 +62,10 @@ public class Rutina {
     @Column(name = "dificultad", length = 20)
     private String dificultad;
 
+    /** Objetivo: FUERZA, HIPERTROFIA, RESISTENCIA, PERDIDA_GRASA, SALUD (null = sin especificar) */
+    @Column(length = 20)
+    private String objetivo;
+
     /** Días de la semana en que se realiza esta rutina, ej: ["LUNES", "MIÉRCOLES"] */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rutina_dias", joinColumns = @JoinColumn(name = "rutina_id"))

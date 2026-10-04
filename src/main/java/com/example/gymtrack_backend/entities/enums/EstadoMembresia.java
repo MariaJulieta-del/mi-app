@@ -1,11 +1,11 @@
 package com.example.gymtrack_backend.entities.enums;
 
 /**
- * Estados posibles de una membresía.
+ * Estados posibles de la membresía de un socio.
+ * Cada socio tiene UNA sola membresía que se renueva pagando (no existe el "fiado").
  */
 public enum EstadoMembresia {
-    PENDIENTE_PAGO,  // Creada pero aún sin pago registrado
-    ACTIVA,          // Pago confirmado y dentro del período de vigencia
-    VENCIDA,         // La fechaVencimiento ya pasó
-    CANCELADA        // Cancelada manualmente (no se puede eliminar si fue ACTIVA)
+    ACTIVA,          // Pagada y dentro del período de vigencia
+    VENCIDA,         // La fechaVencimiento ya pasó → hay que renovar
+    CANCELADA        // Dada de baja manualmente
 }

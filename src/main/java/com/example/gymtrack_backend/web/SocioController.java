@@ -1,5 +1,7 @@
 package com.example.gymtrack_backend.web;
 
+import com.example.gymtrack_backend.dto.AltaSocioRequestDTO;
+import com.example.gymtrack_backend.dto.AltaSocioResponseDTO;
 import com.example.gymtrack_backend.entities.Socio;
 import com.example.gymtrack_backend.repository.DisciplinaRepository;
 import com.example.gymtrack_backend.repository.SocioRepository;
@@ -24,19 +26,25 @@ public class SocioController {
     @Autowired
     private DisciplinaRepository disciplinaRepository;
 
+    @Autowired
+    private com.example.gymtrack_backend.service.PinService pinService;
+
     // GET - Obtener socios activos
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping
     public List<Socio> obtenerTodos() {
         return socioService.obtenerTodos();
     }
 
     // GET - Obtener TODOS los socios (activos + inactivos)
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/todos")
     public List<Socio> obtenerTodosConInactivos() {
         return socioService.obtenerTodosConInactivos();
     }
 
     // GET- read - Obtener socio por ID
+    @PreAuthorize("@acceso.puedeVerSocio(#id)")
     @GetMapping ("/{id}")
     public ResponseEntity<Socio> obtenerPorId(@PathVariable Long id) {
         return socioService.obtenerPorId(id)
@@ -44,9 +52,23 @@ public class SocioController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST- create - Crear nuevo socio
+    // POST - Alta completa: socio + membresía + pago (o pendiente)
+    @PostMapping("/alta")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<?> altaCompleta(@RequestBody AltaSocioRequestDTO dto) {
+        try {
+            AltaSocioResponseDTO resp = socioService.altaCompleta(dto);
+            return ResponseEntity.ok(resp);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    // POST- create - Crear nuevo socio (legado — solo datos personales, sin membresía)
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Socio> crear(@RequestBody Socio socio) {
         try {
             return ResponseEntity.ok(socioService.crear(socio));
@@ -57,7 +79,7 @@ public class SocioController {
 
     // PUT- update - Actualizar socio
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Socio> actualizar(@PathVariable Long id, 
                                              @RequestBody Socio socio) {
         try {
@@ -69,7 +91,7 @@ public class SocioController {
 
     // DELETE - Baja lógica
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Void> darDeBaja(@PathVariable Long id) {
         try {
             socioService.darDeBaja(id);
@@ -93,7 +115,7 @@ public class SocioController {
 
     // PUT - Reactivar socio dado de baja
     @PutMapping("/{id}/reactivar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Socio> reactivar(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(socioService.reactivar(id));
@@ -104,7 +126,7 @@ public class SocioController {
 
     // PATCH - Asignar disciplina a un socio (disciplinaId=null para quitar)
     @PatchMapping("/{id}/disciplina")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<?> asignarDisciplina(
             @PathVariable Long id,
             @RequestParam(required = false) Long disciplinaId) {
@@ -131,6 +153,14 @@ public class SocioController {
             socio.setDisciplina(disciplina);
             return ResponseEntity.ok(socioRepository.save(socio));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // POST - Genera un PIN nuevo para el socio (lo olvidó o nunca tuvo). Se muestra una sola vez.
+    //        Cierra las sesiones que tenía abiertas con el PIN anterior.
+    @PostMapping("/{id}/pin")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<java.util.Map<String, String>> generarPin(@PathVariable Long id) {
+        return ResponseEntity.ok(java.util.Map.of("pin", pinService.asignarNuevoPin(id)));
     }
 
     // GET - Info de cupos de todas las disciplinas activas

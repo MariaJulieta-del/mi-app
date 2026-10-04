@@ -24,4 +24,10 @@ public class EjercicioResponseDTO {
     private java.util.List<String> grupos;
     private String imagenUrl;
     private java.util.List<Long> maquinaIds;
+
+    /** true → pertenece al bloque inamovible de Entrada en Calor */
+    private boolean esCalentamiento;
+
+    /** Día al que pertenece este ejercicio dentro de la rutina (1, 2, 3...) */
+    private Integer dia;
 }

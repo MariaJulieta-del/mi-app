@@ -20,19 +20,20 @@ public class NotificacionController {
 
     private final NotificacionService service;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping
     public ResponseEntity<List<NotificacionResponseDTO>> listar() {
         return ResponseEntity.ok(service.listar());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Notificacion> crear(@Valid @RequestBody NotificacionRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(dto));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Void> archivar(@PathVariable Long id) {
         service.archivar(id);
         return ResponseEntity.noContent().build();

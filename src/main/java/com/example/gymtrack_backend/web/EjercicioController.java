@@ -46,7 +46,7 @@ public class EjercicioController {
 
     /** Crear nuevo ejercicio — solo ADMIN o EMPLEADO */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Ejercicio> crear(@RequestBody Ejercicio ejercicio) {
         ejercicio.setId(null);
         if (ejercicio.getActivo() == null) ejercicio.setActivo(true);
@@ -57,7 +57,7 @@ public class EjercicioController {
 
     /** Actualizar ejercicio — solo ADMIN o EMPLEADO */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Ejercicio> actualizar(@PathVariable Long id,
                                                 @RequestBody Ejercicio datos) {
         return ejercicioRepo.findById(id).map(e -> {
@@ -80,7 +80,7 @@ public class EjercicioController {
 
     /** Dar de baja lógica — solo ADMIN o EMPLEADO */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Void> desactivar(@PathVariable Long id) {
         return ejercicioRepo.findById(id).map(e -> {
             e.setActivo(false);
@@ -91,7 +91,7 @@ public class EjercicioController {
 
     /** Reactivar ejercicio — solo ADMIN o EMPLEADO */
     @PatchMapping("/{id}/activar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Ejercicio> activar(@PathVariable Long id) {
         return ejercicioRepo.findById(id).map(e -> {
             e.setActivo(true);

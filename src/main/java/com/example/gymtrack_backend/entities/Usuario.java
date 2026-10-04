@@ -27,12 +27,23 @@ public class Usuario implements UserDetails {
 
     private String email;
 
+    private String nombre;
+    private String apellido;
+    private String telefono;
+    private String especialidad;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Rol rol = Rol.EMPLEADO;
+    private Rol rol = Rol.PROFESOR;
 
     @Column(nullable = false)
     private boolean activo = true;
+
+    /**
+     * Solo socios: cuándo se asignó su PIN actual. null = todavía no tiene PIN (no puede entrar).
+     * Los tokens emitidos antes de esta fecha dejan de valer (al regenerar el PIN se cierran las sesiones viejas).
+     */
+    private java.time.LocalDateTime pinActualizado;
 
     // Relación opcional: si el usuario es un SOCIO, apunta a su registro
     @ManyToOne(fetch = FetchType.LAZY)

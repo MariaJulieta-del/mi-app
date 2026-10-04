@@ -57,4 +57,15 @@ public class RutinaEjercicio {
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "ejercicio_catalogo_id", nullable = true)
     private Ejercicio ejercicioCatalogo;
+
+    /**
+     * true → este ejercicio pertenece al bloque de Entrada en Calor.
+     * No puede eliminarse por el usuario; siempre se renderiza primero.
+     */
+    @Column(name = "es_calentamiento", nullable = false)
+    private boolean esCalentamiento = false;
+
+    /** Día al que pertenece este ejercicio dentro de la rutina (Día 1, Día 2, etc.) */
+    @Column(nullable = false)
+    private Integer dia = 1;
 }

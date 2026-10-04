@@ -5,6 +5,6 @@ package com.example.gymtrack_backend.entities.enums;
  */
 public enum EstadoPago {
     PENDIENTE,    // Registrado pero no confirmado
-    COMPLETADO,   // Pago confirmado → activa la membresía si estaba PENDIENTE_PAGO
+    COMPLETADO,   // Pago confirmado
     CANCELADO     // Pago anulado
 }

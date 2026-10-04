@@ -18,17 +18,18 @@ public class AsistenciaResponseDTO {
     private String    tipo;
     private Boolean   permitido;
     private String    observacion;
-    private Boolean   conDeuda;
 
-    // ── Info de membresía (opcional, solo se llena en checkin) ──
-    /** Fecha de vencimiento de la membresía activa */
+    // ── Info de membresía (solo se llena en el check-in) ──
     private LocalDate fechaVencimiento;
-    /** Tipo de plan (ej: MENSUAL, PASE_10_CLASES) */
     private String    tipoMembresia;
-    /** Entradas totales del plan (null = plan por tiempo) */
-    private Integer   entradasDisponibles;
-    /** Entradas ya usadas dentro del período de la membresía */
-    private Integer   entradasUsadas;
-    /** Entradas restantes = entradasDisponibles - entradasUsadas (null si plan por tiempo) */
-    private Integer   entradasRestantes;
+    /** true = pase libre (sin límite de ingresos) */
+    private Boolean   paseLibre;
+    /** Pases por mes del plan (null si es libre) */
+    private Integer   pasesMensuales;
+    /** Pases usados en el ciclo mensual actual (incluye el ingreso de hoy) */
+    private Integer   pasesUsados;
+    /** Pases que le quedan en el ciclo (null si es libre) */
+    private Integer   pasesRestantes;
+    /** Semáforo: VERDE (ok), AMARILLO (ok pero quedan pocos pases / vence pronto), ROJO (denegado) */
+    private String    estadoAcceso;
 }

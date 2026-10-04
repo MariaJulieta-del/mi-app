@@ -21,14 +21,10 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
 
     boolean existsBySocioIdAndFechaAndTipo(Long socioId, LocalDate fecha, String tipo);
 
-    /** Cuenta ingresos con deuda de un socio desde una fecha (para membresía PENDIENTE_PAGO activa) */
-    @Query("SELECT COUNT(a) FROM Asistencia a WHERE a.socio.id = :socioId AND a.conDeuda = true AND a.permitido = true AND a.tipo = 'ENTRADA' AND a.fecha >= :desde")
-    long countIngresosConDeuda(@Param("socioId") Long socioId, @Param("desde") java.time.LocalDate desde);
+    /** ¿El socio ya ingresó (con acceso permitido) en esa fecha? Un mismo día consume un solo pase. */
+    boolean existsBySocioIdAndFechaAndTipoAndPermitidoTrue(Long socioId, LocalDate fecha, String tipo);
 
-    /**
-     * Cuenta entradas PERMITIDAS de un socio dentro del período de una membresía.
-     * Se usa para punch-cards (planes por cantidad de ingresos).
-     */
-    @Query("SELECT COUNT(a) FROM Asistencia a WHERE a.socio.id = :socioId AND a.tipo = 'ENTRADA' AND a.permitido = true AND a.fecha BETWEEN :desde AND :hasta")
-    long countEntradasEnPeriodo(@Param("socioId") Long socioId, @Param("desde") java.time.LocalDate desde, @Param("hasta") java.time.LocalDate hasta);
+    /** Días distintos con ingreso permitido en un período → pases consumidos */
+    @Query("SELECT COUNT(DISTINCT a.fecha) FROM Asistencia a WHERE a.socio.id = :socioId AND a.tipo = 'ENTRADA' AND a.permitido = true AND a.fecha BETWEEN :desde AND :hasta")
+    long countDiasConIngreso(@Param("socioId") Long socioId, @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 }

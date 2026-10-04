@@ -10,6 +10,7 @@ import com.example.gymtrack_backend.entities.Rutina;
 import com.example.gymtrack_backend.entities.RutinaEjercicio;
 import com.example.gymtrack_backend.entities.Socio;
 import com.example.gymtrack_backend.repository.EjercicioRepository;
+import com.example.gymtrack_backend.repository.ProgresoEjercicioRepository;
 import com.example.gymtrack_backend.repository.RutinaEjercicioRepository;
 import com.example.gymtrack_backend.repository.RutinaRepository;
 import com.example.gymtrack_backend.repository.SocioRepository;
@@ -39,16 +40,22 @@ public class RutinaService {
     @Autowired
     private EjercicioRepository ejercicioRepository;
 
+    @Autowired
+    private ProgresoEjercicioRepository progresoEjercicioRepository;
+
     // ──────────────────────────────────────────────
     // RUTINAS - CRUD
     // ──────────────────────────────────────────────
 
-    @Transactional
+    // SIN @Transactional en el método padre: cada repository.save() tiene su propia
+    // transacción implícita. Así un fallo en crearCalentamientoDefault no hace rollback
+    // de la rutina que ya se commiteó.
     public RutinaResponseDTO crearRutina(Long socioId, RutinaRequestDTO dto) {
         Rutina rutina = new Rutina();
         rutina.setNombre(dto.getNombre());
         rutina.setDescripcion(dto.getDescripcion());
         rutina.setDificultad(dto.getDificultad());
+        rutina.setObjetivo(normalizarObjetivo(dto.getObjetivo()));
         if (dto.getTrenes() != null) {
             rutina.getTrenes().clear();
             rutina.getTrenes().addAll(dto.getTrenes());
@@ -65,7 +72,20 @@ public class RutinaService {
         }
         // socioId == null → rutina general sin socio asignado
 
-        return mapearAResponseDTO(rutinaRepository.save(rutina));
+        // 1. Guardar la rutina en su propia transacción (commit inmediato)
+        Rutina guardada = rutinaRepository.save(rutina);
+
+        // 2. Agregar calentamiento. Si falla (p.ej. columna es_calentamiento aún no existe
+        //    porque el backend no fue reiniciado desde la migración V19), la rutina ya quedó
+        //    guardada y se responde exitosamente. Los ejercicios de calentamiento aparecerán
+        //    automáticamente al reiniciar el backend (V19 corre y la columna existe).
+        try {
+            crearCalentamientoDefault(guardada);
+        } catch (Exception e) {
+            System.err.println("[RutinaService] Calentamiento default omitido (¿migración V19 pendiente?): " + e.getMessage());
+        }
+
+        return mapearAResponseDTO(guardada);
     }
 
     /** Devuelve las rutinas generales (sin socio asignado). Solo para ADMIN. */
@@ -92,6 +112,7 @@ public class RutinaService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public RutinaResponseDTO obtenerRutina(Long rutinaId, Long socioId) {
         Rutina rutina = findRutina(rutinaId, socioId);
         return mapearAResponseDTO(rutina);
@@ -104,6 +125,7 @@ public class RutinaService {
         rutina.setNombre(dto.getNombre());
         rutina.setDescripcion(dto.getDescripcion());
         rutina.setDificultad(dto.getDificultad());
+        rutina.setObjetivo(normalizarObjetivo(dto.getObjetivo()));
         if (dto.getTrenes() != null) {
             rutina.getTrenes().clear();
             rutina.getTrenes().addAll(dto.getTrenes());
@@ -119,6 +141,12 @@ public class RutinaService {
     @Transactional
     public void eliminarRutina(Long rutinaId, Long socioId) {
         Rutina rutina = findRutina(rutinaId, socioId);
+        // 1. Borrar progreso de todos los ejercicios de esta rutina
+        progresoEjercicioRepository.deleteByRutinaId(rutinaId);
+        // 2. Borrar todos los ejercicios de la rutina
+        rutinaEjercicioRepository.deleteByRutinaId(rutinaId);
+        // 3. Borrar la rutina (las element collections rutina_trenes y rutina_dias
+        //    se eliminan en cascada por JPA al borrar el padre)
         rutinaRepository.delete(rutina);
     }
 
@@ -128,7 +156,11 @@ public class RutinaService {
 
     /**
      * Devuelve los ejercicios de una rutina, validando que el socio sea el propietario.
+     * @Transactional(readOnly = true) es necesario para que las relaciones LAZY
+     * (rutina.socio, rutinaEjercicio.ejercicioCatalogo) se carguen dentro de la misma
+     * sesión JPA sin LazyInitializationException.
      */
+    @Transactional(readOnly = true)
     public List<EjercicioResponseDTO> obtenerEjercicios(Long rutinaId, Long socioId) {
         findRutina(rutinaId, socioId);
         return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId)
@@ -164,6 +196,10 @@ public class RutinaService {
             ? dto.getOrden()
             : rutinaEjercicioRepository.countByRutinaId(rutinaId) + 1;
         ej.setOrden(orden);
+        if (dto.getEsCalentamiento() != null) {
+            ej.setEsCalentamiento(dto.getEsCalentamiento());
+        }
+        ej.setDia(dto.getDia() != null ? dto.getDia() : 1);
 
         return mapearEjercicioADTO(rutinaEjercicioRepository.save(ej));
     }
@@ -192,7 +228,63 @@ public class RutinaService {
         findRutina(rutinaId, socioId);
         RutinaEjercicio ej = rutinaEjercicioRepository.findById(ejercicioId)
             .orElseThrow(() -> new RuntimeException("Ejercicio no encontrado"));
+        if (ej.isEsCalentamiento()) {
+            throw new IllegalStateException(
+                "Los ejercicios de entrada en calor son inamovibles y no pueden eliminarse.");
+        }
         rutinaEjercicioRepository.delete(ej);
+    }
+
+    // ──────────────────────────────────────────────
+    // CLONACIÓN
+    // ──────────────────────────────────────────────
+
+    /**
+     * Clona una rutina (y todos sus ejercicios) asignándola opcionalmente a un socio destino.
+     * Si socioDestinoId es null, la copia queda como rutina general (sin socio).
+     */
+    @Transactional
+    public RutinaResponseDTO clonarRutina(Long rutinaOrigenId, Long socioDestinoId, String nombreNuevo) {
+        Rutina origen = rutinaRepository.findById(rutinaOrigenId)
+            .orElseThrow(() -> new RuntimeException("Rutina no encontrada con id: " + rutinaOrigenId));
+
+        Rutina nueva = new Rutina();
+        nueva.setNombre((nombreNuevo != null && !nombreNuevo.isBlank())
+            ? nombreNuevo : "Copia de " + origen.getNombre());
+        nueva.setDescripcion(origen.getDescripcion());
+        nueva.setDificultad(origen.getDificultad());
+        nueva.setObjetivo(origen.getObjetivo());
+        if (origen.getTrenes() != null)    nueva.getTrenes().addAll(origen.getTrenes());
+        if (origen.getDiasSemana() != null) nueva.getDiasSemana().addAll(origen.getDiasSemana());
+
+        if (socioDestinoId != null) {
+            Socio socio = socioRepository.findById(socioDestinoId)
+                .orElseThrow(() -> new RuntimeException("Socio no encontrado con id: " + socioDestinoId));
+            nueva.setSocio(socio);
+        }
+
+        Rutina guardada = rutinaRepository.save(nueva);
+
+        // Clonar ejercicios conservando el orden
+        List<RutinaEjercicio> ejerciciosOrigen =
+            rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaOrigenId);
+        for (RutinaEjercicio ej : ejerciciosOrigen) {
+            RutinaEjercicio copia = new RutinaEjercicio();
+            copia.setRutina(guardada);
+            copia.setNombreEjercicio(ej.getNombreEjercicio());
+            copia.setSeries(ej.getSeries());
+            copia.setRepeticiones(ej.getRepeticiones());
+            copia.setPesoKg(ej.getPesoKg());
+            copia.setDescansoSeg(ej.getDescansoSeg());
+            copia.setNotas(ej.getNotas());
+            copia.setOrden(ej.getOrden());
+            copia.setEjercicioCatalogo(ej.getEjercicioCatalogo());
+            copia.setEsCalentamiento(ej.isEsCalentamiento());
+            copia.setDia(ej.getDia());
+            rutinaEjercicioRepository.save(copia);
+        }
+
+        return mapearAResponseDTO(guardada);
     }
 
     // ──────────────────────────────────────────────
@@ -200,18 +292,26 @@ public class RutinaService {
     // ──────────────────────────────────────────────
 
     /**
-     * Busca una rutina:
-     * - Si socioId != null → valida que pertenezca al socio (rutina de socio)
-     * - Si socioId == null → busca solo por ID (rutina general / admin)
+     * Busca una rutina y valida el acceso:
+     * - Si socioId == null  → ADMIN / PROFESOR: acceso libre por ID
+     * - Si socioId != null  → SOCIO: puede ver sus propias rutinas Y las rutinas generales
+     *                         (socio_id IS NULL). No puede ver rutinas de OTRO socio.
+     *
+     * Usa findById + comprobación en memoria para evitar problemas con
+     * findByIdAndSocioId cuando el Hibernate genera JOINs inesperados.
      */
     private Rutina findRutina(Long rutinaId, Long socioId) {
-        if (socioId != null) {
-            return rutinaRepository.findByIdAndSocioId(rutinaId, socioId)
-                .orElseThrow(() -> new RuntimeException(
-                    "Rutina no encontrada o no pertenece al socio indicado"));
-        }
-        return rutinaRepository.findById(rutinaId)
+        Rutina rutina = rutinaRepository.findById(rutinaId)
             .orElseThrow(() -> new RuntimeException("Rutina no encontrada"));
+
+        if (socioId != null) {
+            // Socio puede acceder a su propia rutina o a rutinas generales (sin socio)
+            Socio socioRutina = rutina.getSocio();
+            if (socioRutina != null && !socioRutina.getId().equals(socioId)) {
+                throw new RuntimeException("Rutina no pertenece al socio indicado");
+            }
+        }
+        return rutina;
     }
 
     private RutinaResponseDTO mapearAResponseDTO(Rutina rutina) {
@@ -227,6 +327,13 @@ public class RutinaService {
         dto.setFechaCreacion(rutina.getFechaCreacion());
         dto.setDiasSemana(rutina.getDiasSemana());
         dto.setDificultad(rutina.getDificultad());
+        dto.setObjetivo(rutina.getObjetivo());
+
+        // Resumen para tarjetas/previews (sin contar la entrada en calor)
+        List<RutinaEjercicio> ejercicios = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutina.getId());
+        dto.setCantidadEjercicios((int) ejercicios.stream().filter(e -> !e.isEsCalentamiento()).count());
+        dto.setCantidadDias((int) ejercicios.stream().filter(e -> !e.isEsCalentamiento())
+                .map(e -> e.getDia() != null ? e.getDia() : 1).distinct().count());
         return dto;
     }
 
@@ -250,6 +357,50 @@ public class RutinaService {
             dto.setImagenUrl(cat.getImagenUrl());
             dto.setMaquinaIds(cat.getMaquinaIds() != null ? cat.getMaquinaIds() : new java.util.ArrayList<>());
         }
+        dto.setEsCalentamiento(ej.isEsCalentamiento());
+        dto.setDia(ej.getDia() != null ? ej.getDia() : 1);
         return dto;
+    }
+
+    /**
+     * Agrega los 5 ejercicios estándar de movilidad/calentamiento a una rutina nueva.
+     * Todos tienen esCalentamiento = true y orden 1..5, garantizando que siempre
+     * aparezcan primero y no puedan ser eliminados por el usuario.
+     */
+    private void crearCalentamientoDefault(Rutina rutina) {
+        record WarmUp(String nombre, int series, int reps, int descansoSeg, String notas) {}
+
+        java.util.List<WarmUp> bloques = java.util.List.of(
+            new WarmUp("Caminata / Trote suave",        1, 10,  0,  "5-10 minutos a paso moderado o trote liviano en cinta"),
+            new WarmUp("Rotación de hombros",           2, 15, 15,  "Círculos amplios hacia adelante y hacia atrás"),
+            new WarmUp("Movilidad de cadera",           2, 15, 15,  "Círculos de cadera en ambas direcciones"),
+            new WarmUp("Sentadilla de movilidad",       2, 10, 20,  "Sin peso — enfocada en rango de movimiento y postura"),
+            new WarmUp("Estiramiento de isquiotibiales",2, 30, 10,  "Posición sostenida 30 segundos por lado")
+        );
+
+        int orden = 1;
+        for (WarmUp w : bloques) {
+            RutinaEjercicio ej = new RutinaEjercicio();
+            ej.setRutina(rutina);
+            ej.setNombreEjercicio(w.nombre());
+            ej.setSeries(w.series());
+            ej.setRepeticiones(w.reps());
+            ej.setDescansoSeg(w.descansoSeg());
+            ej.setNotas(w.notas());
+            ej.setOrden(orden++);
+            ej.setEsCalentamiento(true);
+            rutinaEjercicioRepository.save(ej);
+        }
+    }
+
+    private static final java.util.Set<String> OBJETIVOS =
+            java.util.Set.of("FUERZA", "HIPERTROFIA", "RESISTENCIA", "PERDIDA_GRASA", "SALUD");
+
+    /** Valida el objetivo; vacío = sin especificar */
+    private static String normalizarObjetivo(String objetivo) {
+        if (objetivo == null || objetivo.isBlank()) return null;
+        String o = objetivo.trim().toUpperCase();
+        if (!OBJETIVOS.contains(o)) throw new IllegalArgumentException("Objetivo inválido: " + objetivo);
+        return o;
     }
 }

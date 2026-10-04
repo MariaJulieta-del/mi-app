@@ -30,4 +30,13 @@ public class RutinaResponseDTO {
 
     /** Nivel de dificultad: BAJA, MEDIA, ALTA */
     private String dificultad;
+
+    /** Objetivo: FUERZA, HIPERTROFIA, RESISTENCIA, PERDIDA_GRASA, SALUD (null = sin especificar) */
+    private String objetivo;
+
+    /** Ejercicios de la rutina, sin contar la entrada en calor */
+    private int cantidadEjercicios;
+
+    /** Cantidad de días distintos (Día 1, Día 2…) que tiene la rutina */
+    private int cantidadDias;
 }
