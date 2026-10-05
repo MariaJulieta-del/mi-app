@@ -19,6 +19,7 @@ import java.util.List;
 public class NotificacionController {
 
     private final NotificacionService service;
+    private final com.example.gymtrack_backend.security.AccesoSocio acceso;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping
@@ -28,8 +29,15 @@ public class NotificacionController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<Notificacion> crear(@Valid @RequestBody NotificacionRequestDTO dto) {
+    public ResponseEntity<NotificacionResponseDTO> crear(@Valid @RequestBody NotificacionRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(dto));
+    }
+
+    /** Avisos para el socio que está usando la app */
+    @GetMapping("/mias")
+    @PreAuthorize("hasRole('SOCIO')")
+    public ResponseEntity<List<NotificacionResponseDTO>> mias() {
+        return ResponseEntity.ok(service.listarParaSocio(acceso.socioIdActual()));
     }
 
     @DeleteMapping("/{id}")

@@ -22,7 +22,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/rutinas")
-@CrossOrigin(origins = "*")
 public class RutinaController {
 
     @Autowired

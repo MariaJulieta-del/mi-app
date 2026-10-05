@@ -20,7 +20,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/tarifas")
-@CrossOrigin(origins = "*")
 public class TarifaMembresiaController {
 
     @Autowired

@@ -19,7 +19,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/membresias")
-@CrossOrigin(origins = "*")
 public class MembresiaController {
 
     @Autowired

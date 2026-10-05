@@ -9,6 +9,8 @@ public record NotificacionResponseDTO(
         String tipo,
         String destinatario,
         Long socioId,
+        Long disciplinaId,
+        String disciplinaNombre,
         LocalDateTime fechaCreacion,
         Boolean activa
 ) {}

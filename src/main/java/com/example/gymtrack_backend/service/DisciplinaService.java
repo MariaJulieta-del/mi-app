@@ -38,11 +38,12 @@ public class DisciplinaService {
     private final UsuarioRepository usuarioRepo;
     private final MembresiaRepository membresiaRepo;
     private final MembresiaService membresiaService;
+    private final com.example.gymtrack_backend.repository.AsistenciaRepository asistenciaRepo;
 
     // ── Consultas ────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<DisciplinaResponseDTO> listar(boolean soloActivas, boolean conInscriptos, Long socioIdConsulta) {
+    public List<DisciplinaResponseDTO> listar(boolean soloActivas, boolean conInscriptos, Long socioIdConsulta, String usuarioActual) {
         List<Disciplina> lista = soloActivas ? repo.findByActivaTrue() : repo.findAll();
         Set<Long> delSocio = socioIdConsulta == null ? Set.of() : new HashSet<>(
                 inscripcionRepo.findConDisciplinaBySocioId(socioIdConsulta).stream().map(i -> i.getDisciplina().getId()).toList());
@@ -52,6 +53,7 @@ public class DisciplinaService {
                 .map(d -> {
                     DisciplinaResponseDTO dto = toDTO(d, conInscriptos);
                     if (socioIdConsulta != null) dto.setInscripto(delSocio.contains(d.getId()));
+                    if (usuarioActual != null) dto.setEsMia(d.getProfesor() != null && usuarioActual.equals(d.getProfesor().getUsername()));
                     return dto;
                 })
                 .toList();
@@ -100,6 +102,88 @@ public class DisciplinaService {
                 .map(u -> new Instructor(u.getId(), nombreDe(u)))
                 .sorted(Comparator.comparing(Instructor::nombre, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    // ── Asistencia a las clases ──────────────────────────────────────────────
+
+    /** Se cuenta como presente a quien ingresó al gimnasio desde este tiempo antes del inicio hasta el fin */
+    public static final int MINUTOS_ANTES = 90;
+
+    public record Presente(Long socioId, String nombre, String hora) {}
+    public record Sesion(LocalDate fecha, String dia, String horaInicio, String horaFin, String estado,
+                         List<Presente> presentes, int esperados) {}
+    public record ResumenAlumno(Long socioId, String nombre, int asistencias, int sesiones, LocalDate ultimaVez) {}
+    public record AsistenciaClase(List<Sesion> sesiones, List<ResumenAlumno> alumnos, int minutosAntes, int semanas) {}
+
+    /**
+     * Quién vino a cada clase de las últimas semanas. Se deduce del ingreso al gimnasio
+     * (QR o recepción) dentro del horario de la clase.
+     */
+    @Transactional(readOnly = true)
+    public AsistenciaClase asistencia(Long disciplinaId, int semanas) {
+        Disciplina d = obtener(disciplinaId);
+        int sem = Math.max(1, Math.min(semanas, 12));
+        LocalDate hoy = LocalDate.now();
+        LocalDate desde = hoy.minusDays(sem * 7L - 1);
+        java.time.LocalTime ahora = java.time.LocalTime.now();
+
+        List<InscripcionDisciplina> inscripciones = inscripcionRepo.findConSocioByDisciplinaId(disciplinaId);
+        Map<Long, InscripcionDisciplina> porSocio = new HashMap<>();
+        inscripciones.forEach(i -> porSocio.put(i.getSocio().getId(), i));
+
+        // Ingresos permitidos de los inscriptos: socio → fecha → horas
+        Map<Long, Map<LocalDate, List<LocalTime>>> ingresos = new HashMap<>();
+        for (var a : asistenciaRepo.findByFechaBetweenOrderByFechaDescHoraDesc(desde, hoy)) {
+            if (!Boolean.TRUE.equals(a.getPermitido()) || !"ENTRADA".equals(a.getTipo()) || a.getHora() == null) continue;
+            Long sid = a.getSocio().getId();
+            if (!porSocio.containsKey(sid)) continue;
+            ingresos.computeIfAbsent(sid, k -> new HashMap<>()).computeIfAbsent(a.getFecha(), k -> new ArrayList<>()).add(a.getHora());
+        }
+
+        List<Sesion> sesiones = new ArrayList<>();
+        Map<Long, int[]> conteo = new HashMap<>();          // socio → {asistencias, sesiones}
+        Map<Long, LocalDate> ultima = new HashMap<>();
+        for (LocalDate f = hoy; !f.isBefore(desde); f = f.minusDays(1)) {
+            String dia = DIAS.get(f.getDayOfWeek().getValue() - 1);
+            List<Disciplina.Horario> delDia = d.getHorarios().stream().filter(h -> h.getDia().equals(dia))
+                    .sorted(Comparator.comparing(Disciplina.Horario::getHoraInicio).reversed()).toList();
+            for (Disciplina.Horario h : delDia) {
+                LocalTime ini = hora(h.getHoraInicio()), fin = hora(h.getHoraFin());
+                String estado = !f.equals(hoy) ? "PASADA" : ahora.isBefore(ini) ? "PROXIMA" : ahora.isBefore(fin) ? "EN_CURSO" : "PASADA";
+                List<Presente> presentes = new ArrayList<>();
+                int esperados = 0;
+                for (InscripcionDisciplina i : inscripciones) {
+                    Socio s = i.getSocio();
+                    if (!Boolean.TRUE.equals(s.getActivo()) || i.getFechaAlta().isAfter(f)) continue;
+                    esperados++;
+                    if ("PROXIMA".equals(estado)) continue;
+                    conteo.computeIfAbsent(s.getId(), k -> new int[2])[1]++;
+                    LocalTime entrada = ingresos.getOrDefault(s.getId(), Map.of()).getOrDefault(f, List.of()).stream()
+                            .filter(t -> !t.isBefore(ini.minusMinutes(MINUTOS_ANTES)) && t.isBefore(fin))
+                            .min(Comparator.naturalOrder()).orElse(null);
+                    if (entrada != null) {
+                        presentes.add(new Presente(s.getId(), s.getNombre() + " " + s.getApellido(), entrada.toString().substring(0, 5)));
+                        conteo.get(s.getId())[0]++;
+                        ultima.merge(s.getId(), f, (x, y) -> x.isAfter(y) ? x : y);
+                    }
+                }
+                presentes.sort(Comparator.comparing(Presente::nombre, String.CASE_INSENSITIVE_ORDER));
+                sesiones.add(new Sesion(f, dia, h.getHoraInicio(), h.getHoraFin(), estado, presentes, esperados));
+            }
+        }
+
+        List<ResumenAlumno> alumnos = inscripciones.stream()
+                .filter(i -> Boolean.TRUE.equals(i.getSocio().getActivo()))
+                .map(i -> {
+                    int[] c = conteo.getOrDefault(i.getSocio().getId(), new int[2]);
+                    return new ResumenAlumno(i.getSocio().getId(), i.getSocio().getNombre() + " " + i.getSocio().getApellido(),
+                            c[0], c[1], ultima.get(i.getSocio().getId()));
+                })
+                // Primero los que menos vienen: son a quienes conviene escribirles
+                .sorted(Comparator.comparingDouble((ResumenAlumno r) -> r.sesiones() == 0 ? 1 : (double) r.asistencias() / r.sesiones())
+                        .thenComparing(ResumenAlumno::nombre, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new AsistenciaClase(sesiones, alumnos, MINUTOS_ANTES, sem);
     }
 
     // ── Alta / edición ───────────────────────────────────────────────────────

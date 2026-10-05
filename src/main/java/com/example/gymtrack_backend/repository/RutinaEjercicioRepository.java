@@ -31,4 +31,8 @@ public interface RutinaEjercicioRepository extends JpaRepository<RutinaEjercicio
      * Cuenta cuántos ejercicios tiene una rutina.
      */
     int countByRutinaId(Long rutinaId);
+
+    /** IDs de ejercicios del catálogo que usa alguna rutina */
+    @Query("select distinct re.ejercicioCatalogo.id from RutinaEjercicio re where re.ejercicioCatalogo is not null")
+    java.util.Set<Long> idsDeEjerciciosEnUso();
 }

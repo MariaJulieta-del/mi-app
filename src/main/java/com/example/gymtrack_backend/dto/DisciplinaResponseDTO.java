@@ -26,6 +26,8 @@ public class DisciplinaResponseDTO {
     private List<Inscripto> inscriptos;
     /** Solo para un socio: si él está inscripto */
     private Boolean inscripto;
+    /** Solo staff: true si la disciplina está a cargo de quien consulta */
+    private Boolean esMia;
 
     @Data
     public static class Inscripto {

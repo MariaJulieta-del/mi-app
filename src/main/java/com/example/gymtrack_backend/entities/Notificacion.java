@@ -30,7 +30,14 @@ public class Notificacion {
     /** Si destinatario = SOCIO, apunta al socio específico */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "socio_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Socio socio;
+
+    /** Si destinatario = DISCIPLINA, los alumnos inscriptos en esa disciplina */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "disciplina_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Disciplina disciplina;
 
     @Column(nullable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();

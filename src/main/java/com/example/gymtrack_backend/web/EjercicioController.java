@@ -6,19 +6,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestClient;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/ejercicios")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class EjercicioController {
 
     private final EjercicioRepository ejercicioRepo;
+    private final com.example.gymtrack_backend.service.EjercicioLimpiezaService limpieza;
 
     /** Listar todos los ejercicios activos (opcionalmente filtrar por grupo muscular) */
     @GetMapping
@@ -99,105 +96,28 @@ public class EjercicioController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Grupos musculares disponibles */
-    @GetMapping("/grupos")
-    public List<String> grupos() {
-        return List.of("Pecho", "Espalda", "Piernas", "Hombros", "Brazos", "Core", "Cardio", "Full Body");
+    /**
+     * Vista previa de la limpieza: ejercicios desactivados que ninguna rutina usa (se pueden borrar),
+     * desactivados que sí están en rutinas (se conservan) y posibles duplicados por nombre.
+     */
+    @GetMapping("/limpieza")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<com.example.gymtrack_backend.service.EjercicioLimpiezaService.Vista> vistaLimpieza() {
+        return ResponseEntity.ok(limpieza.vistaPrevia());
     }
 
-    /**
-     * Proxy al catálogo ExerciseDB — lista paginada con filtro por bodyPart o búsqueda.
-     * GET /api/v1/ejercicios/catalogo?bodyPart=chest&q=bench&limit=20&offset=0
-     */
-    @GetMapping("/catalogo")
-    public ResponseEntity<String> catalogo(
-            @RequestParam(defaultValue = "") String bodyPart,
-            @RequestParam(defaultValue = "") String q,
-            @RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        try {
-            String url;
-            if (!q.isBlank()) {
-                // URLEncoder usa '+' para espacios (form encoding), pero el path necesita '%20'
-                String encoded = URLEncoder.encode(q.trim(), StandardCharsets.UTF_8).replace("+", "%20");
-                url = "https://exercisedb-api.vercel.app/api/v1/exercises/name/" + encoded
-                      + "?limit=" + limit + "&offset=" + offset;
-            } else if (!bodyPart.isBlank()) {
-                url = "https://exercisedb-api.vercel.app/api/v1/exercises/bodyPart/"
-                      + URLEncoder.encode(bodyPart, StandardCharsets.UTF_8).replace("+", "%20")
-                      + "?limit=" + limit + "&offset=" + offset;
-            } else {
-                url = "https://exercisedb-api.vercel.app/api/v1/exercises?limit=" + limit + "&offset=" + offset;
-            }
-            String result = RestClient.create().get().uri(url)
-                    .header("Accept", "application/json")
-                    .retrieve().body(String.class);
-            return ResponseEntity.ok().header("Content-Type", "application/json").body(result);
-        } catch (Exception e) {
-            return ResponseEntity.ok("{\"success\":false,\"data\":{\"exercises\":[]}}");
-        }
+    /** Borra definitivamente los ejercicios desactivados que ninguna rutina usa */
+    @PostMapping("/limpieza")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Integer>> limpiar() {
+        return ResponseEntity.ok(Map.of("borrados", limpieza.borrarViejos()));
     }
 
-    /**
-     * Lista de body parts disponibles en ExerciseDB.
-     * GET /api/v1/ejercicios/catalogo/bodyparts
-     */
-    @GetMapping("/catalogo/bodyparts")
-    public ResponseEntity<String> bodyParts() {
-        try {
-            String url = "https://exercisedb-api.vercel.app/api/v1/bodyPartList";
-            String result = RestClient.create().get().uri(url)
-                    .header("Accept", "application/json")
-                    .retrieve().body(String.class);
-            return ResponseEntity.ok().header("Content-Type", "application/json").body(result);
-        } catch (Exception e) {
-            return ResponseEntity.ok("{\"success\":true,\"data\":[\"back\",\"cardio\",\"chest\",\"lower arms\",\"lower legs\",\"neck\",\"shoulders\",\"upper arms\",\"upper legs\",\"waist\"]}");
-        }
-    }
-
-    /**
-     * Proxy a wger.de — busca ejercicios con imágenes, sin API key.
-     * GET /api/v1/ejercicios/buscar-externo?q=bench+press
-     */
-    @GetMapping("/buscar-externo")
-    public ResponseEntity<String> buscarExterno(
-            @RequestParam String q,
-            @RequestParam(defaultValue = "english") String language) {
-        try {
-            String encoded = URLEncoder.encode(q, StandardCharsets.UTF_8);
-            String url = "https://wger.de/api/v2/exercise/search/?term="
-                    + encoded + "&language=" + language + "&format=json";
-            String result = RestClient.create()
-                    .get().uri(url)
-                    .header("Accept", "application/json")
-                    .retrieve()
-                    .body(String.class);
-            return ResponseEntity.ok()
-                    .header("Content-Type", "application/json")
-                    .body(result);
-        } catch (Exception e) {
-            return ResponseEntity.ok("{\"suggestions\":[]}");
-        }
-    }
-
-    /**
-     * Proxy a wger.de — info completa de un ejercicio (músculos + imágenes).
-     * GET /api/v1/ejercicios/info-externo/{baseId}
-     */
-    @GetMapping("/info-externo/{baseId}")
-    public ResponseEntity<String> infoExterno(@PathVariable int baseId) {
-        try {
-            String url = "https://wger.de/api/v2/exerciseinfo/" + baseId + "/?format=json";
-            String result = RestClient.create()
-                    .get().uri(url)
-                    .header("Accept", "application/json")
-                    .retrieve()
-                    .body(String.class);
-            return ResponseEntity.ok()
-                    .header("Content-Type", "application/json")
-                    .body(result);
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+    /** Borra un ejercicio definitivamente (solo si ninguna rutina lo usa) */
+    @DeleteMapping("/{id}/permanente")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> borrarPermanente(@PathVariable Long id) {
+        limpieza.borrar(id);
+        return ResponseEntity.noContent().build();
     }
 }

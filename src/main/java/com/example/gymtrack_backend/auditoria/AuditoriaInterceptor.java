@@ -75,6 +75,9 @@ public class AuditoriaInterceptor implements HandlerInterceptor {
             r("PUT",    "/rutinas/\\d+",                                 "Editó una rutina"),
             r("DELETE", "/rutinas/\\d+",                                 "Eliminó una rutina"),
             r("POST",   "/notificaciones",                               "Envió una notificación"),
+            r("POST",   "/disciplinas/\\d+/avisos",                     "Envió un aviso a los alumnos de una disciplina"),
+            r("POST",   "/ejercicios/limpieza",                          "Borró ejercicios viejos"),
+            r("DELETE", "/ejercicios/\\d+/permanente",                  "Borró un ejercicio"),
             r("POST",   "/kiosco",                                       "Vinculó una pantalla de recepción"),
             r("DELETE", "/kiosco/\\d+",                              "Desvinculó una pantalla de recepción")
     );

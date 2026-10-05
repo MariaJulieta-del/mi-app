@@ -21,15 +21,17 @@ public class DisciplinaController {
 
     private final DisciplinaService service;
     private final AccesoSocio acceso;
+    private final com.example.gymtrack_backend.service.NotificacionService notificacionService;
 
     /**
      * Staff: todas (con inscriptos). Socio: solo las activas, sin la lista de inscriptos
      * y con la marca de si él está inscripto.
      */
     @GetMapping
-    public ResponseEntity<List<DisciplinaResponseDTO>> listar(@RequestParam(defaultValue = "true") boolean soloActivas) {
-        if (acceso.esStaff()) return ResponseEntity.ok(service.listar(soloActivas, true, null));
-        return ResponseEntity.ok(service.listar(true, false, acceso.socioIdActual()));
+    public ResponseEntity<List<DisciplinaResponseDTO>> listar(@RequestParam(defaultValue = "true") boolean soloActivas,
+                                                              org.springframework.security.core.Authentication auth) {
+        if (acceso.esStaff()) return ResponseEntity.ok(service.listar(soloActivas, true, null, auth.getName()));
+        return ResponseEntity.ok(service.listar(true, false, acceso.socioIdActual(), null));
     }
 
     @GetMapping("/{id}")
@@ -91,6 +93,21 @@ public class DisciplinaController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<DisciplinaResponseDTO> desinscribir(@PathVariable Long id, @PathVariable Long socioId) {
         return ResponseEntity.ok(service.desinscribir(id, socioId));
+    }
+
+    /** Quién vino a cada clase de las últimas semanas (según el ingreso al gimnasio) */
+    @GetMapping("/{id}/asistencia")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<DisciplinaService.AsistenciaClase> asistencia(@PathVariable Long id, @RequestParam(defaultValue = "4") int semanas) {
+        return ResponseEntity.ok(service.asistencia(id, semanas));
+    }
+
+    /** Aviso a todos los alumnos de la disciplina (lo ven en la app y por email si está activado) */
+    @PostMapping("/{id}/avisos")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<com.example.gymtrack_backend.service.NotificacionService.AvisoEnviado> avisar(
+            @PathVariable Long id, @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(notificacionService.avisarDisciplina(id, body.get("titulo"), body.get("mensaje")));
     }
 
     /** Saca a los inscriptos dados de baja o sin membresía vigente */
