@@ -1337,3 +1337,31 @@ body {
   .gt-agenda-clase strong { overflow-wrap: anywhere; }
   .gt-card.gt-card-semana { padding: 8px; }
 }
+
+/* Limpieza de ejercicios */
+.gt-chip-neutro { background: var(--bg-surface-2); color: var(--text-secondary); border: 1px solid var(--border); font-weight: 600; }
+.gt-limpieza-lista { display: flex; flex-wrap: wrap; gap: 6px; max-height: 180px; overflow-y: auto; }
+.gt-limpieza-grupo { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-radius: 8px; background: var(--yellow-bg); }
+
+/* Ficha de la clase: pestañas, asistencia, avisos */
+.gt-pestanas { width: 100%; margin-bottom: 14px; }
+.gt-pestanas button { flex: 1; }
+.gt-filtro-chip {
+  padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--bg-surface);
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+}
+.gt-filtro-chip.activo { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.gt-sesion { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-surface); }
+.gt-sesion-cab {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 12px; border: none; background: none;
+  font: inherit; text-align: left; cursor: pointer; color: inherit;
+}
+.gt-sesion-cab:disabled { cursor: default; opacity: .7; }
+.gt-sesion-fecha { display: flex; flex-direction: column; min-width: 76px; font-variant-numeric: tabular-nums; }
+.gt-sesion-fecha strong { font-size: 14px; color: var(--text-primary); }
+.gt-sesion-fecha small { font-size: 12px; color: var(--text-muted); }
+.gt-sesion-detalle { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+
+/* Avisos del socio */
+.gt-aviso { padding: 10px 12px; border-radius: 10px; background: var(--bg-surface-2); border-left: 3px solid var(--border); }
+.gt-aviso.nuevo { border-left-color: var(--accent); background: var(--accent-light); }

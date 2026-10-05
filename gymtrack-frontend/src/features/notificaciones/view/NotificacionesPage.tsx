@@ -150,7 +150,7 @@ export default function NotificacionesPage() {
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
                     <TipoBadge tipo={notif.tipo} />
                     <span style={{ fontSize: 11, background: 'var(--bg-surface-2)', color: 'var(--text-muted)', borderRadius: 6, padding: '2px 8px', border: '1px solid var(--border)' }}>
-                      {notif.destinatario === 'TODOS' ? 'Todos' : notif.socioNombre ? notif.socioNombre : `Socio #${notif.socioId}`}
+                      {notif.destinatario === 'TODOS' ? 'Todos' : notif.destinatario === 'DISCIPLINA' ? `Clase: ${notif.disciplinaNombre ?? '—'}` : notif.socioNombre ? notif.socioNombre : `Socio #${notif.socioId}`}
                     </span>
                     <span style={{ fontSize: 12, color: 'var(--text-xmuted)' }}>{new Date(notif.fechaCreacion).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</span>
                   </div>

@@ -8,6 +8,10 @@ import type { Socio } from '../../socios/types/Socio'
 import { inscribirSocio, desinscribirSocio, liberarCupos, obtenerDisciplina, type DisciplinaApi } from '../services/disciplinaService'
 import { colorDisciplina, resumenHorarios } from '../utils/disciplinaUtils'
 import CupoMeter from './CupoMeter'
+import AsistenciaClase from './AsistenciaClase'
+import AvisoClase from './AvisoClase'
+
+type Pestana = 'alumnos' | 'asistencia' | 'aviso'
 
 /** Alumnos de una disciplina: ver, inscribir, quitar y liberar cupos */
 export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar }: {
@@ -23,6 +27,7 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
   const [aviso, setAviso] = useState<string | null>(null)
   const [trabajando, setTrabajando] = useState<number | 'liberar' | null>(null)
   const [quitar, setQuitar] = useState<number | null>(null)
+  const [pestana, setPestana] = useState<Pestana>('alumnos')
 
   useEffect(() => { obtenerTodos().then(setSocios).catch(() => {}) }, [])
 
@@ -82,6 +87,16 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
         <CupoMeter total={disciplina.totalInscritos} cupo={disciplina.cupoMaximo} />
       </div>
 
+      <div className="gt-segmentado gt-pestanas" role="tablist" aria-label="Secciones de la clase">
+        {([['alumnos', `Alumnos (${inscriptos.length})`], ['asistencia', 'Asistencia'], ['aviso', 'Enviar aviso']] as const).map(([k, label]) => (
+          <button key={k} type="button" role="tab" aria-selected={pestana === k} className={pestana === k ? 'activo' : ''} onClick={() => setPestana(k)}>{label}</button>
+        ))}
+      </div>
+
+      {pestana === 'asistencia' && <AsistenciaClase disciplinaId={disciplina.id} />}
+      {pestana === 'aviso' && <AvisoClase disciplina={disciplina} />}
+
+      {pestana === 'alumnos' && <>
       {error && <div className="gt-alert gt-alert-error">{error}</div>}
       {aviso && <div className="gt-alert gt-alert-success">{aviso}</div>}
 
@@ -144,6 +159,7 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
           ))}
         </div>
       )}
+      </>}
     </Modal>
   )
 }

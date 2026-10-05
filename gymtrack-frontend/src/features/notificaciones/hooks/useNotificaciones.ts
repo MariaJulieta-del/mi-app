@@ -6,6 +6,7 @@ import { useToast } from '../../../shared/hooks/useToast'
 
 export interface Notificacion {
   id: number; titulo: string; mensaje: string; tipo: string; destinatario: string
+  disciplinaNombre?: string | null
   socioId?: number | null; socioNombre?: string; fechaCreacion: string; activa: boolean
 }
 

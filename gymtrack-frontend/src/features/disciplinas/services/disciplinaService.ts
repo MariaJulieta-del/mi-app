@@ -37,6 +37,8 @@ export interface DisciplinaApi {
   inscriptos?: Inscripto[]
   /** Solo socio: si él está inscripto */
   inscripto?: boolean
+  /** Solo staff: la disciplina está a cargo de quien consulta */
+  esMia?: boolean
 }
 
 /** Lo que se envía al crear o editar */
@@ -93,3 +95,25 @@ export const clasesDeHoy = async (): Promise<ClaseHoy[]> =>
 
 export const disciplinasDelSocio = async (socioId: number): Promise<DisciplinaApi[]> =>
   (await axiosInstance.get(`${API}/socio/${socioId}`)).data
+
+// ── Asistencia y avisos ────────────────────────────────────────────────────
+
+export interface Presente { socioId: number; nombre: string; hora: string }
+export interface Sesion {
+  fecha: string; dia: string; horaInicio: string; horaFin: string
+  estado: 'PASADA' | 'EN_CURSO' | 'PROXIMA'
+  presentes: Presente[]
+  esperados: number
+}
+export interface ResumenAlumno { socioId: number; nombre: string; asistencias: number; sesiones: number; ultimaVez: string | null }
+export interface AsistenciaClase { sesiones: Sesion[]; alumnos: ResumenAlumno[]; minutosAntes: number; semanas: number }
+
+/** Quién vino a cada clase (según el ingreso al gimnasio dentro del horario de la clase) */
+export const asistenciaDisciplina = async (id: number, semanas = 4): Promise<AsistenciaClase> =>
+  (await axiosInstance.get(`${API}/${id}/asistencia`, { params: { semanas } })).data
+
+export interface AvisoEnviado { alumnos: number; conEmail: number }
+
+/** Aviso a todos los alumnos activos de la disciplina */
+export const avisarDisciplina = async (id: number, titulo: string, mensaje: string): Promise<AvisoEnviado> =>
+  (await axiosInstance.post(`${API}/${id}/avisos`, { titulo, mensaje })).data

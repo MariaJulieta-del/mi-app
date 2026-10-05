@@ -16,6 +16,7 @@ export default function DisciplinaCard({ d, onAlumnos, onEditar, onCambiarActiva
       <div className="gt-disc-card-cuerpo">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <h3 className="gt-disc-nombre">{d.nombre}</h3>
+          {d.esMia && <span className="gt-badge gt-badge-green">Tu clase</span>}
           {!d.activa && <span className="gt-badge gt-badge-gray">Inactiva</span>}
         </div>
         <p className="gt-text-sm gt-text-muted" style={{ margin: '2px 0 8px' }}>

@@ -5,6 +5,7 @@ import {
 } from '../services/disciplinaService'
 import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
+import { useAuth } from '../../../shared/context/AuthContext'
 
 export type Vista = 'semana' | 'lista'
 
@@ -14,6 +15,7 @@ const leerVista = (): Vista => {
 
 export function useDisciplinas() {
   const toast = useToast()
+  const { user } = useAuth()
   const [disciplinas, setDisciplinas] = useState<DisciplinaApi[]>([])
   const [instructores, setInstructores] = useState<Instructor[]>([])
   const [cargando, setCargando] = useState(true)
@@ -24,6 +26,8 @@ export function useDisciplinas() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroInstructor, setFiltroInstructor] = useState('')
   const [verInactivas, setVerInactivas] = useState(false)
+  // Profesor: por defecto ve solo sus clases (si tiene alguna a cargo)
+  const [soloMiasElegido, setSoloMias] = useState<boolean | null>(null)
 
   // Modales: formulario (null = cerrado, 'nueva' o la disciplina a editar), alumnos y confirmación
   const [formulario, setFormulario] = useState<DisciplinaApi | 'nueva' | null>(null)
@@ -46,13 +50,17 @@ export function useDisciplinas() {
     try { localStorage.setItem('gt-disciplinas-vista', v) } catch { /* sin almacenamiento */ }
   }
 
+  const cantidadMias = disciplinas.filter(d => d.esMia && d.activa).length
+  const soloMias = soloMiasElegido ?? (user?.rol === 'PROFESOR' && cantidadMias > 0)
+
   const visibles = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
     return disciplinas
+      .filter(d => !soloMias || d.esMia)
       .filter(d => verInactivas || d.activa)
       .filter(d => !filtroInstructor || (d.instructor ?? '') === filtroInstructor)
       .filter(d => !q || d.nombre.toLowerCase().includes(q) || (d.instructor ?? '').toLowerCase().includes(q))
-  }, [disciplinas, busqueda, filtroInstructor, verInactivas])
+  }, [disciplinas, busqueda, filtroInstructor, verInactivas, soloMias])
 
   const nombresInstructores = useMemo(
     () => [...new Set(disciplinas.map(d => d.instructor).filter((x): x is string => !!x))].sort(),
@@ -101,6 +109,7 @@ export function useDisciplinas() {
 
   return {
     disciplinas, visibles, instructores, nombresInstructores, cargando, error, resumen, colorSugerido,
+    soloMias, setSoloMias, cantidadMias,
     vista, setVista, busqueda, setBusqueda, filtroInstructor, setFiltroInstructor, verInactivas, setVerInactivas,
     formulario, setFormulario, alumnosDe, setAlumnosDe, confirmarActiva, setConfirmarActiva,
     guardar, cambiarActiva, reemplazar,

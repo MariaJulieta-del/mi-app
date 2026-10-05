@@ -2,31 +2,40 @@ import { useState } from 'react'
 import { useEjercicios } from '../hooks/useEjercicios'
 import CatalogoEjerciciosTab from '../components/tabs/CatalogoEjerciciosTab'
 import MisEjerciciosTab from '../components/tabs/MisEjerciciosTab'
+import LimpiezaModal from '../components/LimpiezaModal'
+import { useAuth } from '../../../shared/context/AuthContext'
 
 export default function EjerciciosPage() {
   const [tab, setTab] = useState<'catalogo' | 'mis'>('catalogo')
   const [lightbox, setLightbox] = useState<{ url: string; nombre: string } | null>(null)
   const ej = useEjercicios()
+  const { user } = useAuth()
+  const [limpiando, setLimpiando] = useState(false)
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 10, flexWrap: 'wrap' }}>
         <div>
           <h1 className="gt-page-title" style={{ margin: 0 }}>Ejercicios</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-            Catálogo de más de 1000 ejercicios con GIFs animados
+            Catálogo de 1.324 ejercicios con GIF y los ejercicios propios del gimnasio
           </p>
         </div>
         {tab === 'mis' && (
-          <button className="gt-btn gt-btn-primary" onClick={ej.abrirNuevo}>+ Nuevo ejercicio</button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {user?.rol === 'ADMIN' && (
+              <button className="gt-btn gt-btn-secondary" onClick={() => setLimpiando(true)}>🧹 Limpiar viejos</button>
+            )}
+            <button className="gt-btn gt-btn-primary" onClick={ej.abrirNuevo}>+ Nuevo ejercicio</button>
+          </div>
         )}
       </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid var(--border)' }}>
-        {([['catalogo', '📚 Catálogo ExerciseDB'], ['mis', '⭐ Mis ejercicios']] as const).map(([key, label]) => (
+        {([['catalogo', '📚 Catálogo'], ['mis', '⭐ Mis ejercicios']] as const).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             style={{
               padding: '10px 24px', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: tab === key ? 700 : 400,
@@ -42,6 +51,11 @@ export default function EjerciciosPage() {
           </button>
         ))}
       </div>
+
+      {limpiando && (
+        <LimpiezaModal onCerrar={() => setLimpiando(false)}
+          onListo={n => { setLimpiando(false); ej.setMsg(n === 0 ? 'No había ejercicios para borrar' : `Se borraron ${n} ejercicios viejos`); ej.cargarLocales() }} />
+      )}
 
       {/* Mensajes globales */}
       {ej.msg && (

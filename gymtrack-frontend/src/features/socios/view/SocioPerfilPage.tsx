@@ -12,6 +12,7 @@ import MembresiaResumen from '../../membresias/components/MembresiaResumen'
 import ProgresoSocio from '../../seguimiento/components/ProgresoSocio'
 import DisciplinasDelSocio from '../../disciplinas/components/DisciplinasDelSocio'
 import SocioInicio from '../components/SocioInicio'
+import AvisosSocio from '../components/AvisosSocio'
 import RutinaCard from '../../rutinas/components/RutinaCard'
 import { linkEditarRutina } from '../../rutinas/utils/rutinaUtils'
 
@@ -68,6 +69,7 @@ export default function SocioPerfilPage() {
         </Link>
       )}
       {esSocio && <SocioInicio membresia={membresia} rutinas={rutinas} />}
+      {esSocio && <AvisosSocio />}
 
       {/* ── Encabezado ── */}
       <div className="gt-card">

@@ -52,6 +52,12 @@ export default function DisciplinasPage() {
               {d.nombresInstructores.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           )}
+          {d.cantidadMias > 0 && (
+            <button type="button" className={`gt-filtro-chip${d.soloMias ? ' activo' : ''}`} aria-pressed={d.soloMias}
+              onClick={() => d.setSoloMias(!d.soloMias)}>
+              {d.soloMias ? '✓ ' : ''}Mis clases ({d.cantidadMias})
+            </button>
+          )}
           <label className="gt-text-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', cursor: 'pointer' }}>
             <input type="checkbox" checked={d.verInactivas} onChange={e => d.setVerInactivas(e.target.checked)} /> Ver inactivas
           </label>
