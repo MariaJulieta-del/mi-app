@@ -3,7 +3,6 @@ package com.example.gymtrack_backend.web;
 import com.example.gymtrack_backend.dto.AltaSocioRequestDTO;
 import com.example.gymtrack_backend.dto.AltaSocioResponseDTO;
 import com.example.gymtrack_backend.entities.Socio;
-import com.example.gymtrack_backend.repository.DisciplinaRepository;
 import com.example.gymtrack_backend.repository.SocioRepository;
 import com.example.gymtrack_backend.service.SocioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +21,6 @@ public class SocioController {
 
     @Autowired
     private SocioRepository socioRepository;
-
-    @Autowired
-    private DisciplinaRepository disciplinaRepository;
 
     @Autowired
     private com.example.gymtrack_backend.service.PinService pinService;
@@ -124,65 +120,11 @@ public class SocioController {
         }
     }
 
-    // PATCH - Asignar disciplina a un socio (disciplinaId=null para quitar)
-    @PatchMapping("/{id}/disciplina")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<?> asignarDisciplina(
-            @PathVariable Long id,
-            @RequestParam(required = false) Long disciplinaId) {
-        return socioRepository.findById(id).map(socio -> {
-            if (disciplinaId == null) {
-                socio.setDisciplina(null);
-                return ResponseEntity.ok(socioRepository.save(socio));
-            }
-            var disciplina = disciplinaRepository.findById(disciplinaId)
-                    .orElse(null);
-            if (disciplina == null) return ResponseEntity.notFound().build();
-
-            // Verificar cupo disponible (si ya está en esa disciplina, no cuenta doble)
-            boolean yaAsignado = disciplinaId.equals(
-                    socio.getDisciplina() != null ? socio.getDisciplina().getId() : null);
-            if (!yaAsignado && disciplina.getCupoMaximo() != null) {
-                long inscritos = socioRepository.countByDisciplinaIdAndActivoTrue(disciplinaId);
-                if (inscritos >= disciplina.getCupoMaximo()) {
-                    return ResponseEntity.badRequest()
-                            .body(java.util.Map.of("error",
-                                    "La disciplina está llena (" + inscritos + "/" + disciplina.getCupoMaximo() + " cupos)"));
-                }
-            }
-            socio.setDisciplina(disciplina);
-            return ResponseEntity.ok(socioRepository.save(socio));
-        }).orElse(ResponseEntity.notFound().build());
-    }
-
     // POST - Genera un PIN nuevo para el socio (lo olvidó o nunca tuvo). Se muestra una sola vez.
     //        Cierra las sesiones que tenía abiertas con el PIN anterior.
     @PostMapping("/{id}/pin")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<java.util.Map<String, String>> generarPin(@PathVariable Long id) {
         return ResponseEntity.ok(java.util.Map.of("pin", pinService.asignarNuevoPin(id)));
-    }
-
-    // GET - Info de cupos de todas las disciplinas activas
-    @GetMapping("/disciplinas-cupo")
-    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> disciplinasCupo() {
-        var disciplinas = disciplinaRepository.findAll().stream()
-                .filter(d -> Boolean.TRUE.equals(d.getActiva()))
-                .map(d -> {
-                    long inscritos = socioRepository.countByDisciplinaIdAndActivoTrue(d.getId());
-                    java.util.Map<String, Object> item = new java.util.LinkedHashMap<>();
-                    item.put("id", d.getId());
-                    item.put("nombre", d.getNombre());
-                    item.put("instructor", d.getInstructor());
-                    item.put("horario", d.getHorario());
-                    item.put("cupoMaximo", d.getCupoMaximo());
-                    item.put("inscriptos", inscritos);
-                    item.put("disponibles", d.getCupoMaximo() != null
-                            ? Math.max(0, d.getCupoMaximo() - inscritos) : null);
-                    item.put("llena", d.getCupoMaximo() != null && inscritos >= d.getCupoMaximo());
-                    return item;
-                })
-                .toList();
-        return ResponseEntity.ok(disciplinas);
     }
 }

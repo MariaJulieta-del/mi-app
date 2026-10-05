@@ -42,12 +42,6 @@ public class Socio {
     @Column(name = "fecha_modificacion")
     private LocalDateTime fechaModificacion;
 
-    /** Disciplina asignada al socio (opcional) */
-    @ManyToOne(fetch = FetchType.EAGER, optional = true)
-    @JoinColumn(name = "disciplina_id", nullable = true)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Disciplina disciplina;
-
     @PrePersist
     protected void onCreate() {
         this.fechaCreacion = LocalDateTime.now();

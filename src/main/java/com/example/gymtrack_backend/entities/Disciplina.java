@@ -1,7 +1,9 @@
 package com.example.gymtrack_backend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,28 +22,38 @@ public class Disciplina {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    /** Nombre del instructor cuando no es un profesor cargado en la app */
     private String instructor;
 
-    /** Legado — descripción libre del horario */
-    private String horario;
+    /** Profesor a cargo (opcional). Si está, su nombre reemplaza al texto de "instructor" */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profesor_id")
+    @JsonIgnore
+    private Usuario profesor;
 
     private Integer cupoMaximo;
 
     @Column(nullable = false)
     private Boolean activa = true;
 
-    /** Días de la semana en los que se dicta la clase */
+    /** Color de la paleta de la app (1 a 8) para el calendario */
+    private Integer color;
+
+    /** Horarios de la semana: un renglón por día y franja */
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "disciplina_dias", joinColumns = @JoinColumn(name = "disciplina_id"))
-    @Column(name = "dia")
-    @OrderColumn(name = "orden")
-    private List<String> diasSemana = new ArrayList<>();
+    @CollectionTable(name = "disciplina_horarios", joinColumns = @JoinColumn(name = "disciplina_id"))
+    private List<Horario> horarios = new ArrayList<>();
 
-    /** Hora de inicio, ej: "18:00" */
-    @Column(name = "hora_inicio", length = 10)
-    private String horaInicio;
-
-    /** Hora de fin, ej: "19:00" */
-    @Column(name = "hora_fin", length = 10)
-    private String horaFin;
+    @Embeddable
+    @Data
+    public static class Horario {
+        /** LUNES, MARTES, MIÉRCOLES, JUEVES, VIERNES, SÁBADO, DOMINGO */
+        @Column(name = "dia", nullable = false, length = 10)
+        private String dia;
+        /** "HH:mm" */
+        @Column(name = "hora_inicio", nullable = false, length = 5)
+        private String horaInicio;
+        @Column(name = "hora_fin", nullable = false, length = 5)
+        private String horaFin;
+    }
 }

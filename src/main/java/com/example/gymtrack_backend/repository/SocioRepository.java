@@ -16,11 +16,7 @@ public interface SocioRepository extends JpaRepository<Socio, Long> {
     Optional<Socio> findByDni(String dni);
     long countByActivoTrue();
 
-    /** Cuántos socios activos están inscriptos en una disciplina */
-    long countByDisciplinaIdAndActivoTrue(Long disciplinaId);
 
-    /** Socios inscriptos en una disciplina */
-    List<Socio> findByDisciplinaId(Long disciplinaId);
 
     /** Socios activos que NO tienen ninguna asistencia ENTRADA permitida desde :desde */
     @Query("""
