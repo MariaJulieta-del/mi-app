@@ -43,10 +43,6 @@ export const activarEjercicio = async (id: number): Promise<Ejercicio> => {
   return res.data
 }
 
-export const asignarDisciplina = async (socioId: number, disciplinaId: number | null): Promise<void> => {
-  const params = disciplinaId !== null ? { disciplinaId } : {}
-  await axiosInstance.patch(`/api/v1/socios/${socioId}/disciplina`, null, { params })
-}
 
 // ── ExerciseDB catálogo ────────────────────────────────────────────────────
 

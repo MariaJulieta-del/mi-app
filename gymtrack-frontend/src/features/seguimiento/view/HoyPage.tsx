@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { obtenerHoy, type Hoy } from '../services/seguimientoService'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { useAuth } from '../../../shared/context/AuthContext'
+import { clasesDeHoy, type ClaseHoy } from '../../disciplinas/services/disciplinaService'
+import { colorDisciplina, minutos, textoCupo } from '../../disciplinas/utils/disciplinaUtils'
 
 /**
  * Inicio del profesor: quién está entrenando ahora y a quién conviene atender.
@@ -12,11 +14,17 @@ export default function HoyPage() {
   const { user } = useAuth()
   const [hoy, setHoy] = useState<Hoy | null>(null)
   const [error, setError] = useState(false)
+  const [clases, setClases] = useState<ClaseHoy[]>([])
+  const minutosDeAhora = () => new Date().getHours() * 60 + new Date().getMinutes()
+  const [ahoraMin, setAhoraMin] = useState(minutosDeAhora)
 
   useEffect(() => {
-    const cargar = () => obtenerHoy().then(h => { setHoy(h); setError(false) }).catch(() => setError(true))
+    const cargar = () => {
+      obtenerHoy().then(h => { setHoy(h); setError(false) }).catch(() => setError(true))
+      clasesDeHoy().then(setClases).catch(() => {})
+    }
     cargar()
-    const id = setInterval(cargar, 30000)
+    const id = setInterval(() => { cargar(); setAhoraMin(minutosDeAhora()) }, 30000)
     return () => clearInterval(id)
   }, [])
 
@@ -57,6 +65,32 @@ export default function HoyPage() {
               </Link>
             )}
           </div>
+
+          {clases.length > 0 && (
+            <div className="gt-card" style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p className="gt-card-title" style={{ margin: 0 }}>Clases de hoy</p>
+                <Link to="/disciplinas" className="gt-text-sm">Calendario</Link>
+              </div>
+              <div className="gt-clases-hoy">
+                {clases.map((c, i) => {
+                  const enCurso = ahoraMin >= minutos(c.horaInicio) && ahoraMin < minutos(c.horaFin)
+                  const termino = ahoraMin >= minutos(c.horaFin)
+                  return (
+                    <div key={`${c.disciplinaId}-${i}`} className={`gt-disc-fila${termino ? ' pasada' : ''}`} style={{ ['--c' as string]: colorDisciplina(c.color) }}>
+                      <span className="gt-agenda-hora">{c.horaInicio}<small>{c.horaFin}</small></span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>{c.nombre}</strong>
+                        {enCurso && <span className="gt-badge gt-badge-green" style={{ marginLeft: 6 }}>En curso</span>}
+                        {c.instructor && <div className="gt-text-sm gt-text-muted">{c.instructor}</div>}
+                      </div>
+                      <span className="gt-text-sm" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{textoCupo(c.inscriptos, c.cupoMaximo)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="gt-hoy-grid">
             {/* ── Entrenando hoy ── */}

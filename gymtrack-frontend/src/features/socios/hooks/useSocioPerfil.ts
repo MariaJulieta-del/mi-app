@@ -7,17 +7,10 @@ import { obtenerPorSocio, cambiarEstado } from '../../membresias/services/membre
 import { obtenerRutinas, obtenerEjercicios, eliminarRutina } from '../../rutinas/services/rutinaService'
 import { guardarProgreso } from '../../rutinas/services/progresoService'
 import { listarMaquinas, type Maquina } from '../../maquinas/services/maquinaService'
-import { asignarDisciplina } from '../../ejercicios/services/ejercicioService'
 import { obtenerFicha } from '../services/fichaService'
-import axiosInstance from '../../../shared/services/axiosInstance'
 import type { Socio } from '../types/Socio'
 import type { Membresia } from '../../membresias/types/Membresia'
 import type { Rutina, Ejercicio } from '../../rutinas/types/Rutina'
-
-export interface Disciplina {
-  id: number; nombre: string; instructor: string; horario: string
-  activa: boolean; cupoMaximo?: number; inscriptos?: number; disponibles?: number; llena?: boolean
-}
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const hoyIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1 })()
@@ -38,7 +31,6 @@ export function useSocioPerfil() {
   const [socio, setSocio] = useState<Socio | null>(null)
   const [membresia, setMembresia] = useState<Membresia | null>(null)
   const [rutinas, setRutinas] = useState<Rutina[]>([])
-  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [observacionesMedicas, setObservacionesMedicas] = useState<string | null>(null)
   const [ejerciciosPorRutina, setEjerciciosPorRutina] = useState<Record<number, Ejercicio[]>>({})
@@ -51,10 +43,6 @@ export function useSocioPerfil() {
   const [confirmarEliminarRutinaId, setConfirmarEliminarRutinaId] = useState<number | null>(null)
   const [eliminandoRutinaId, setEliminandoRutinaId] = useState<number | null>(null)
 
-  // ── Disciplina ──
-  const [showDisciplina, setShowDisciplina] = useState(false)
-  const [disciplinaSelId, setDisciplinaSelId] = useState('')
-  const [guardandoDisciplina, setGuardandoDisciplina] = useState(false)
 
   // ── Mi semana ──
   const [diaSeleccionado, setDiaSeleccionado] = useState(hoyIdx)
@@ -71,10 +59,8 @@ export function useSocioPerfil() {
       obtenerPorId(id),
       obtenerPorSocio(id).catch(() => null),
       obtenerRutinas(id).catch(() => [] as Rutina[]),
-      axiosInstance.get('/api/v1/socios/disciplinas-cupo').then(r => r.data as Disciplina[]).catch(() => [] as Disciplina[]),
-    ]).then(async ([s, mem, ruts, discs]) => {
-    setSocio(s); setMembresia(mem); setRutinas(ruts); setDisciplinas(discs)
-    if (s.disciplina?.id) setDisciplinaSelId(String(s.disciplina.id))
+    ]).then(async ([s, mem, ruts]) => {
+    setSocio(s); setMembresia(mem); setRutinas(ruts)
 
     if (!esSocio) {
       obtenerFicha(id)
@@ -117,17 +103,6 @@ export function useSocioPerfil() {
     }
   }
 
-  const handleAsignarDisciplina = async () => {
-    setGuardandoDisciplina(true)
-    try {
-      await asignarDisciplina(id, disciplinaSelId ? Number(disciplinaSelId) : null)
-      toast.success(disciplinaSelId ? 'Disciplina asignada' : 'Disciplina quitada', '')
-      setShowDisciplina(false); await cargar()
-    } catch (e) {
-      setError(mensajeError(e, 'No se pudo asignar la disciplina'))
-    } finally { setGuardandoDisciplina(false) }
-  }
-
   const handleGuardarProgreso = async (ejId: number) => {
     setGuardandoProgreso(ejId)
     try {
@@ -164,16 +139,13 @@ export function useSocioPerfil() {
   }
 
   return {
-    id, socio, membresia, rutinas, disciplinas, maquinas, observacionesMedicas,
+    id, socio, membresia, rutinas, maquinas, observacionesMedicas,
     ejerciciosPorRutina, cargandoEjs, cargando, error, setError,
     esSocio, esAdmin, navigate,
     // Membresía
     confirmarCancelar, setConfirmarCancelar, handleCancelarMembresia,
     // Rutinas
     confirmarEliminarRutinaId, setConfirmarEliminarRutinaId, eliminandoRutinaId, handleEliminarRutina,
-    // Disciplina
-    showDisciplina, setShowDisciplina, disciplinaSelId, setDisciplinaSelId,
-    guardandoDisciplina, handleAsignarDisciplina,
     // Mi semana
     diaSeleccionado, setDiaSeleccionado, expandedEjs, toggleExpandedEj,
     progresoHoy, setProgresoHoy, guardandoProgreso, handleGuardarProgreso,

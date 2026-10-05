@@ -1,160 +1,119 @@
+import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useDisciplinas } from '../hooks/useDisciplinas'
+import HorarioSemanal from '../components/HorarioSemanal'
+import DisciplinaCard from '../components/DisciplinaCard'
+import DisciplinaFormModal from '../components/DisciplinaFormModal'
+import AlumnosModal from '../components/AlumnosModal'
+import { colorDisciplina } from '../utils/disciplinaUtils'
 
+/**
+ * Disciplinas (clases grupales): calendario semanal o lista, alumnos por clase,
+ * cupos y horarios por día.
+ */
 export default function DisciplinasPage() {
-  const { formRef, ...d } = useDisciplinas()
+  const d = useDisciplinas()
+  const formAbierto = d.formulario !== null
+  const editando = d.formulario !== 'nueva' ? d.formulario : null
 
   return (
     <>
-      <h1 className="gt-page-title">Disciplinas</h1>
-
-      {d.exito && (
-        <div className="gt-alert gt-alert-success">
-          {d.exito}
-          <button onClick={() => d.setExito(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+      <div className="gt-section-header" style={{ flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <h1 className="gt-page-title" style={{ margin: 0 }}>Disciplinas</h1>
+          <p className="gt-text-muted" style={{ margin: '2px 0 0' }}>Clases grupales, horarios y cupos</p>
         </div>
-      )}
-      {d.error && (
-        <div className="gt-alert gt-alert-error">
-          {d.error}
-          <button onClick={() => d.setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-        </div>
-      )}
-
-      {/* Formulario */}
-      <div ref={formRef} className="gt-card" style={{ marginBottom: 20 }}>
-        <p className="gt-card-title">{d.editando !== null ? 'Editar disciplina' : 'Nueva disciplina'}</p>
-        <form onSubmit={d.handleSubmit}>
-          <div className="gt-form-grid">
-            <div className="gt-form-group">
-              <label className="gt-label">Nombre *</label>
-              <input className="gt-input" value={d.form.nombre} onChange={e => d.setForm({ ...d.form, nombre: e.target.value })} placeholder="Ej: CrossFit" />
-            </div>
-            <div className="gt-form-group">
-              <label className="gt-label">Instructor</label>
-              <input className="gt-input" value={d.form.instructor} onChange={e => d.setForm({ ...d.form, instructor: e.target.value })} placeholder="Nombre del profesor" />
-            </div>
-            <div className="gt-form-group">
-              <label className="gt-label">Cupo máximo</label>
-              <input className="gt-input" type="number" value={d.form.cupoMaximo}
-                onChange={e => d.setForm({ ...d.form, cupoMaximo: e.target.value === '' ? '' : Number(e.target.value) })}
-                placeholder="Ej: 20" />
-            </div>
-            <div className="gt-form-group">
-              <label className="gt-label">Hora inicio</label>
-              <input className="gt-input" type="time" value={d.form.horaInicio} onChange={e => d.setForm({ ...d.form, horaInicio: e.target.value })} />
-            </div>
-            <div className="gt-form-group">
-              <label className="gt-label">Hora fin</label>
-              <input className="gt-input" type="time" value={d.form.horaFin} onChange={e => d.setForm({ ...d.form, horaFin: e.target.value })} />
-            </div>
-            <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="gt-label">Días de la semana</label>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                {d.DIAS.map(dia => {
-                  const sel = d.form.diasSemana.includes(dia)
-                  return (
-                    <button key={dia} type="button" onClick={() => d.toggleDia(dia)}
-                      style={{ padding: '4px 12px', borderRadius: 20, border: '1.5px solid',
-                        borderColor: sel ? 'var(--blue-text)' : 'var(--border)',
-                        background: sel ? 'var(--blue-bg)' : 'var(--bg-surface-2)',
-                        color: sel ? 'var(--blue-text)' : 'var(--text-muted)',
-                        fontWeight: sel ? 600 : 400, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s' }}>
-                      {d.DIAS_CORTO[dia]}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="gt-label">Descripción</label>
-              <textarea className="gt-textarea" rows={2} value={d.form.descripcion}
-                onChange={e => d.setForm({ ...d.form, descripcion: e.target.value })}
-                placeholder="Descripción de la disciplina" />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="submit" className="gt-btn gt-btn-primary">
-              {d.editando !== null ? 'Actualizar' : 'Crear disciplina'}
-            </button>
-            {d.editando !== null && (
-              <button type="button" className="gt-btn gt-btn-secondary" onClick={d.cancelarEdicion}>Cancelar</button>
-            )}
-          </div>
-        </form>
+        <button type="button" className="gt-btn gt-btn-primary" onClick={() => d.setFormulario('nueva')}>+ Nueva disciplina</button>
       </div>
 
-      {/* Lista */}
-      {d.disciplinas.length === 0 ? (
-        <div className="gt-empty"><p>No hay disciplinas registradas</p></div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {d.disciplinas.map(disc => {
-            const dias: string[] = disc.diasSemana ?? []
-            return (
-              <div key={disc.id} className="gt-card" style={{ padding: '16px 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span className="gt-fw-600" style={{ fontSize: 16, color: 'var(--text-primary)' }}>{disc.nombre}</span>
-                      <span className={disc.activa ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-gray'}>{disc.activa ? 'Activa' : 'Inactiva'}</span>
-                    </div>
-                    {disc.instructor && <p style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-muted)' }}>👤 {disc.instructor}</p>}
-                    {(disc.horaInicio || disc.horaFin) && <p style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-muted)' }}>🕐 {disc.horaInicio || '—'} – {disc.horaFin || '—'}</p>}
-                    {disc.cupoMaximo != null && <p style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-muted)' }}>👥 Cupo: <strong>{disc.cupoMaximo}</strong> máx.</p>}
-                    {disc.descripcion && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>{disc.descripcion}</p>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    <button className="gt-btn gt-btn-secondary" style={{ fontSize: 12 }} onClick={() => d.handleEditar(disc)}>Editar</button>
-                    {disc.activa && (
-                      <>
-                        <button className="gt-btn" style={{ fontSize: 12, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', border: '1px solid var(--border)' }}
-                          disabled={d.renovando === disc.id} onClick={() => d.handleRenovarMes(disc.id, disc.nombre)}>
-                          {d.renovando === disc.id ? 'Renovando...' : '🔄 Renovar mes'}
-                        </button>
-                        <button className="gt-btn gt-btn-danger" style={{ fontSize: 12 }} onClick={() => d.handleDesactivar(disc.id)}>Desactivar</button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {disc.cupoMaximo != null && (
-                  <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: (disc.cuposDisponibles ?? disc.cupoMaximo) === 0 ? 'var(--red)' : 'var(--green-text)' }}>
-                      {(disc.cuposDisponibles ?? disc.cupoMaximo) === 0 ? '🔴 Sin cupos disponibles' : `🟢 ${disc.cuposDisponibles} cupo${disc.cuposDisponibles === 1 ? '' : 's'} disponible${disc.cuposDisponibles === 1 ? '' : 's'}`}
-                    </span>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>({disc.totalInscritos ?? 0} / {disc.cupoMaximo} inscriptos)</span>
-                  </div>
-                )}
-                {disc.sociosInscritos && disc.sociosInscritos.length > 0 && (
-                  <details style={{ marginTop: 8 }}>
-                    <summary style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>Ver alumnos ({disc.sociosInscritos.length})</summary>
-                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {disc.sociosInscritos.map((nombre: string, i: number) => (
-                        <span key={i} style={{ fontSize: 12, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 12, padding: '2px 8px' }}>{nombre}</span>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                {dias.length > 0 && (
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {d.DIAS.map(dia => {
-                        const activo = dias.includes(dia)
-                        return (
-                          <div key={dia} style={{ flex: 1, textAlign: 'center', padding: '6px 0', borderRadius: 8,
-                            background: activo ? 'var(--blue-text)' : 'var(--bg-surface-3)',
-                            color: activo ? '#fff' : 'var(--text-muted)', fontWeight: activo ? 700 : 400, fontSize: 11 }}>
-                            {d.DIAS_CORTO[dia]}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+      {d.error && <div className="gt-alert gt-alert-error">{d.error}</div>}
+
+      {/* Resumen */}
+      {!d.cargando && d.disciplinas.length > 0 && (
+        <div className="gt-disc-resumen">
+          <div><strong>{d.resumen.activas}</strong><span>disciplinas activas</span></div>
+          <div><strong>{d.resumen.clasesSemana}</strong><span>clases por semana</span></div>
+          <div><strong>{d.resumen.inscriptos}</strong><span>inscripciones</span></div>
+          <div><strong>{d.resumen.completas}</strong><span>{d.resumen.completas === 1 ? 'completa' : 'completas'}</span></div>
         </div>
       )}
+
+      {/* Barra de herramientas */}
+      {d.disciplinas.length > 0 && (
+        <div className="gt-disc-barra">
+          <div className="gt-segmentado" role="tablist" aria-label="Vista">
+            <button type="button" role="tab" aria-selected={d.vista === 'semana'} className={d.vista === 'semana' ? 'activo' : ''} onClick={() => d.setVista('semana')}>📅 Semana</button>
+            <button type="button" role="tab" aria-selected={d.vista === 'lista'} className={d.vista === 'lista' ? 'activo' : ''} onClick={() => d.setVista('lista')}>☰ Lista</button>
+          </div>
+          <input className="gt-input" style={{ flex: 1, minWidth: 160, maxWidth: 280 }} placeholder="Buscar disciplina o instructor…"
+            value={d.busqueda} onChange={e => d.setBusqueda(e.target.value)} aria-label="Buscar" />
+          {d.nombresInstructores.length > 1 && (
+            <select className="gt-select" style={{ width: 'auto' }} value={d.filtroInstructor} onChange={e => d.setFiltroInstructor(e.target.value)} aria-label="Instructor">
+              <option value="">Todos los instructores</option>
+              {d.nombresInstructores.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          )}
+          <label className="gt-text-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={d.verInactivas} onChange={e => d.setVerInactivas(e.target.checked)} /> Ver inactivas
+          </label>
+        </div>
+      )}
+
+      {/* Leyenda: el color siempre acompaña al nombre */}
+      {d.vista === 'semana' && d.visibles.length > 0 && (
+        <div className="gt-disc-leyenda" aria-label="Referencias de colores">
+          {d.visibles.filter(x => x.activa).map(x => (
+            <button key={x.id} type="button" className="gt-disc-leyenda-item" onClick={() => d.setAlumnosDe(x)}>
+              <span className="gt-disc-punto" style={{ background: colorDisciplina(x.color) }} aria-hidden />{x.nombre}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {d.cargando ? <p className="gt-text-muted">Cargando…</p>
+        : d.disciplinas.length === 0 ? (
+          <div className="gt-card gt-empty" style={{ padding: '40px 20px' }}>
+            <p style={{ fontSize: 34, margin: 0 }}>🧘</p>
+            <p style={{ margin: '8px 0 14px' }}>Todavía no hay disciplinas. Creá la primera (Funcional, Yoga, Spinning…) con sus días, horarios y cupo.</p>
+            <button type="button" className="gt-btn gt-btn-primary" onClick={() => d.setFormulario('nueva')}>+ Crear disciplina</button>
+          </div>
+        ) : d.visibles.length === 0 ? (
+          <div className="gt-empty">Ninguna disciplina coincide con los filtros.</div>
+        ) : d.vista === 'semana' ? (
+          <div className="gt-card gt-card-semana">
+            <HorarioSemanal disciplinas={d.visibles.filter(x => x.activa)} onAbrir={x => d.setAlumnosDe(x)} />
+          </div>
+        ) : (
+          <div className="gt-disc-grid">
+            {d.visibles.map(x => (
+              <DisciplinaCard key={x.id} d={x}
+                onAlumnos={() => d.setAlumnosDe(x)}
+                onEditar={() => d.setFormulario(x)}
+                onCambiarActiva={() => d.setConfirmarActiva(x)} />
+            ))}
+          </div>
+        )}
+
+      {formAbierto && (
+        <DisciplinaFormModal inicial={editando} instructores={d.instructores} colorSugerido={d.colorSugerido}
+          onGuardar={d.guardar} onCerrar={() => d.setFormulario(null)} />
+      )}
+      {d.alumnosDe && (
+        <AlumnosModal disciplina={d.alumnosDe} onCambio={d.reemplazar}
+          onEditar={() => { const x = d.alumnosDe; d.setAlumnosDe(null); d.setFormulario(x) }}
+          onCerrar={() => d.setAlumnosDe(null)} />
+      )}
+      <ConfirmModal
+        open={d.confirmarActiva !== null}
+        title={d.confirmarActiva?.activa ? 'Desactivar disciplina' : 'Reactivar disciplina'}
+        message={d.confirmarActiva?.activa
+          ? `“${d.confirmarActiva?.nombre}” deja de aparecer en el calendario y no admite inscripciones nuevas. Los inscriptos se conservan y se puede reactivar cuando quieras.`
+          : `“${d.confirmarActiva?.nombre}” vuelve a aparecer en el calendario.`}
+        confirmLabel={d.confirmarActiva?.activa ? 'Desactivar' : 'Reactivar'}
+        cancelLabel="Cancelar"
+        danger={!!d.confirmarActiva?.activa}
+        onConfirm={d.cambiarActiva}
+        onCancel={() => d.setConfirmarActiva(null)}
+      />
     </>
   )
 }

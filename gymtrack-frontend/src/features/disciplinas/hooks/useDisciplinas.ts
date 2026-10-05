@@ -1,91 +1,108 @@
-import { useState, useEffect, useRef } from 'react'
-import { type DisciplinaApi, listarDisciplinas, crearDisciplina, actualizarDisciplina, desactivarDisciplina, renovarMesDisciplina } from '../services/disciplinaService'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  listarDisciplinas, crearDisciplina, actualizarDisciplina, cambiarActivaDisciplina, listarInstructores,
+  type DisciplinaApi, type DisciplinaRequest, type Instructor,
+} from '../services/disciplinaService'
+import { useToast } from '../../../shared/hooks/useToast'
+import { mensajeError } from '../../../shared/utils/errores'
 
-export interface Disciplina {
-  id?: number; nombre: string; descripcion: string; instructor: string; horario: string
-  cupoMaximo: number | ''; activa: boolean; diasSemana: string[]; horaInicio: string; horaFin: string
-}
+export type Vista = 'semana' | 'lista'
 
-export const DIAS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']
-export const DIAS_CORTO: Record<string, string> = {
-  LUNES: 'Lun', MARTES: 'Mar', 'MIÉRCOLES': 'Mié', JUEVES: 'Jue',
-  VIERNES: 'Vie', 'SÁBADO': 'Sáb', DOMINGO: 'Dom',
-}
-
-const VACIO: Disciplina = {
-  nombre: '', descripcion: '', instructor: '', horario: '',
-  cupoMaximo: '', activa: true, diasSemana: [], horaInicio: '', horaFin: '',
+const leerVista = (): Vista => {
+  try { return localStorage.getItem('gt-disciplinas-vista') === 'lista' ? 'lista' : 'semana' } catch { return 'semana' }
 }
 
 export function useDisciplinas() {
-  const formRef = useRef<HTMLDivElement>(null)
+  const toast = useToast()
   const [disciplinas, setDisciplinas] = useState<DisciplinaApi[]>([])
-  const [form, setForm] = useState<Disciplina>(VACIO)
-  const [editando, setEditando] = useState<number | null>(null)
+  const [instructores, setInstructores] = useState<Instructor[]>([])
+  const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [exito, setExito] = useState<string | null>(null)
-  const [renovando, setRenovando] = useState<number | null>(null)
+
+  // Vista y filtros
+  const [vista, setVistaEstado] = useState<Vista>(leerVista)
+  const [busqueda, setBusqueda] = useState('')
+  const [filtroInstructor, setFiltroInstructor] = useState('')
+  const [verInactivas, setVerInactivas] = useState(false)
+
+  // Modales: formulario (null = cerrado, 'nueva' o la disciplina a editar), alumnos y confirmación
+  const [formulario, setFormulario] = useState<DisciplinaApi | 'nueva' | null>(null)
+  const [alumnosDe, setAlumnosDe] = useState<DisciplinaApi | null>(null)
+  const [confirmarActiva, setConfirmarActiva] = useState<DisciplinaApi | null>(null)
 
   const cargar = () =>
-    listarDisciplinas(false).then(setDisciplinas).catch(() => setError('No se pudieron cargar las disciplinas'))
+    listarDisciplinas(false)
+      .then(lista => { setDisciplinas(lista); setError(null) })
+      .catch(() => setError('No se pudieron cargar las disciplinas'))
+      .finally(() => setCargando(false))
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => {
+    cargar()
+    listarInstructores().then(setInstructores).catch(() => {})
+  }, [])
 
-  const toggleDia = (dia: string) => {
-    setForm(f => ({
-      ...f,
-      diasSemana: f.diasSemana.includes(dia) ? f.diasSemana.filter(d => d !== dia) : [...f.diasSemana, dia],
-    }))
+  const setVista = (v: Vista) => {
+    setVistaEstado(v)
+    try { localStorage.setItem('gt-disciplinas-vista', v) } catch { /* sin almacenamiento */ }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.nombre) { setError('El nombre es obligatorio'); return }
+  const visibles = useMemo(() => {
+    const q = busqueda.trim().toLowerCase()
+    return disciplinas
+      .filter(d => verInactivas || d.activa)
+      .filter(d => !filtroInstructor || (d.instructor ?? '') === filtroInstructor)
+      .filter(d => !q || d.nombre.toLowerCase().includes(q) || (d.instructor ?? '').toLowerCase().includes(q))
+  }, [disciplinas, busqueda, filtroInstructor, verInactivas])
+
+  const nombresInstructores = useMemo(
+    () => [...new Set(disciplinas.map(d => d.instructor).filter((x): x is string => !!x))].sort(),
+    [disciplinas])
+
+  const activas = disciplinas.filter(d => d.activa)
+  const resumen = {
+    activas: activas.length,
+    inscriptos: activas.reduce((acc, d) => acc + d.totalInscritos, 0),
+    clasesSemana: activas.reduce((acc, d) => acc + d.horarios.length, 0),
+    completas: activas.filter(d => d.cupoMaximo != null && d.totalInscritos >= d.cupoMaximo).length,
+  }
+
+  /** Primer color libre entre las disciplinas activas */
+  const colorSugerido = useMemo(() => {
+    const usados = new Set(activas.map(d => d.color))
+    for (let c = 1; c <= 8; c++) if (!usados.has(c)) return c
+    return (disciplinas.length % 8) + 1
+  }, [activas, disciplinas.length])
+
+  const reemplazar = (d: DisciplinaApi) => {
+    setDisciplinas(lista => lista.some(x => x.id === d.id) ? lista.map(x => (x.id === d.id ? d : x)) : [...lista, d])
+    setAlumnosDe(actual => (actual && actual.id === d.id ? d : actual))
+  }
+
+  const guardar = async (datos: DisciplinaRequest) => {
+    const editando = formulario !== 'nueva' && formulario !== null ? formulario : null
+    const res = editando ? await actualizarDisciplina(editando.id, datos) : await crearDisciplina(datos)
+    reemplazar(res)
+    setFormulario(null)
+    toast.success(editando ? 'Disciplina actualizada' : 'Disciplina creada', res.nombre)
+  }
+
+  const cambiarActiva = async () => {
+    const d = confirmarActiva
+    if (!d) return
+    setConfirmarActiva(null)
     try {
-      const payload = { ...form, cupoMaximo: form.cupoMaximo === '' ? null : form.cupoMaximo }
-      if (editando !== null) {
-        await actualizarDisciplina(editando, payload)
-        setExito('Disciplina actualizada')
-      } else {
-        await crearDisciplina(payload)
-        setExito('Disciplina creada')
-      }
-      setForm(VACIO); setEditando(null); setError(null); cargar()
-    } catch { setError('Error al guardar la disciplina') }
+      await cambiarActivaDisciplina(d.id, !d.activa)
+      reemplazar({ ...d, activa: !d.activa })
+      toast.success(d.activa ? 'Disciplina desactivada' : 'Disciplina reactivada', d.nombre)
+    } catch (err: unknown) {
+      toast.error('Error', mensajeError(err, 'No se pudo cambiar el estado'))
+    }
   }
-
-  const handleEditar = (d: DisciplinaApi) => {
-    setForm({
-      id: d.id, nombre: d.nombre ?? '', descripcion: d.descripcion ?? '',
-      instructor: d.instructor ?? '', horario: d.horario ?? '',
-      cupoMaximo: d.cupoMaximo ?? '', activa: d.activa ?? true,
-      diasSemana: d.diasSemana ?? [], horaInicio: d.horaInicio ?? '', horaFin: d.horaFin ?? '',
-    })
-    setEditando(d.id); setExito(null); setError(null)
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-  }
-
-  const handleDesactivar = async (id: number) => {
-    try { await desactivarDisciplina(id); setExito('Disciplina desactivada'); cargar() }
-    catch { setError('Error al desactivar') }
-  }
-
-  const handleRenovarMes = async (id: number, nombre: string) => {
-    if (!confirm(`¿Renovar mes de "${nombre}"? Esto liberará todos los cupos actuales.`)) return
-    try {
-      setRenovando(id)
-      await renovarMesDisciplina(id)
-      setExito(`Cupos de "${nombre}" renovados — socios desvinculados`)
-      cargar()
-    } catch { setError('Error al renovar el mes') }
-    finally { setRenovando(null) }
-  }
-
-  const cancelarEdicion = () => { setForm(VACIO); setEditando(null) }
 
   return {
-    formRef, disciplinas, form, setForm, editando, error, setError, exito, setExito, renovando,
-    toggleDia, handleSubmit, handleEditar, handleDesactivar, handleRenovarMes, cancelarEdicion,
-    DIAS, DIAS_CORTO,
+    disciplinas, visibles, instructores, nombresInstructores, cargando, error, resumen, colorSugerido,
+    vista, setVista, busqueda, setBusqueda, filtroInstructor, setFiltroInstructor, verInactivas, setVerInactivas,
+    formulario, setFormulario, alumnosDe, setAlumnosDe, confirmarActiva, setConfirmarActiva,
+    guardar, cambiarActiva, reemplazar,
   }
 }

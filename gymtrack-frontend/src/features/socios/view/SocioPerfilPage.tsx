@@ -10,6 +10,7 @@ import EstadoBadge from '../components/EstadoBadge'
 import MiSemanaView from '../components/MiSemanaView'
 import MembresiaResumen from '../../membresias/components/MembresiaResumen'
 import ProgresoSocio from '../../seguimiento/components/ProgresoSocio'
+import DisciplinasDelSocio from '../../disciplinas/components/DisciplinasDelSocio'
 import SocioInicio from '../components/SocioInicio'
 import RutinaCard from '../../rutinas/components/RutinaCard'
 import { linkEditarRutina } from '../../rutinas/utils/rutinaUtils'
@@ -80,7 +81,6 @@ export default function SocioPerfilPage() {
               <span>DNI <strong>{socio.dni}</strong></span>
               {socio.email && <span>✉ {socio.email}</span>}
               {socio.telefono && <span>📞 {socio.telefono}</span>}
-              {socio.disciplina && <span className="gt-chip" style={{ background: 'var(--purple-bg)', color: 'var(--purple-text)' }}>{socio.disciplina.nombre}</span>}
             </div>
           </div>
           {esSocio ? (
@@ -95,9 +95,6 @@ export default function SocioPerfilPage() {
               {socio.activo !== false && (
                 <button className="gt-btn gt-btn-secondary" onClick={() => setConfirmarPin(true)} title="Para que entre a la app con DNI + PIN">🔑 Generar PIN</button>
               )}
-              <button className="gt-btn gt-btn-secondary" onClick={() => p.setShowDisciplina(v => !v)}>
-                {socio.disciplina ? 'Cambiar disciplina' : 'Asignar disciplina'}
-              </button>
             </div>
           )}
         </div>
@@ -108,22 +105,6 @@ export default function SocioPerfilPage() {
           </div>
         )}
 
-        {p.showDisciplina && (
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <select className="gt-select" style={{ flex: 1, minWidth: 200 }} value={p.disciplinaSelId} onChange={e => p.setDisciplinaSelId(e.target.value)}>
-              <option value="">— Sin disciplina —</option>
-              {p.disciplinas.map(d => (
-                <option key={d.id} value={d.id} disabled={!!d.llena && String(d.id) !== p.disciplinaSelId}>
-                  {d.nombre} · {d.instructor} · {d.horario}{d.cupoMaximo != null ? ` (${d.inscriptos}/${d.cupoMaximo}${d.llena ? ' — LLENA' : ''})` : ''}
-                </option>
-              ))}
-            </select>
-            <button className="gt-btn gt-btn-primary" onClick={p.handleAsignarDisciplina} disabled={p.guardandoDisciplina}>
-              {p.guardandoDisciplina ? 'Guardando...' : 'Confirmar'}
-            </button>
-            <button className="gt-btn gt-btn-secondary" onClick={() => p.setShowDisciplina(false)}>Cancelar</button>
-          </div>
-        )}
       </div>
 
       {/* ── Membresía (una sola por socio) ── */}
@@ -197,6 +178,9 @@ export default function SocioPerfilPage() {
           ))}
         </div>
       )}
+
+      {/* ── Disciplinas (clases grupales) ── */}
+      <DisciplinasDelSocio socioId={Number(id)} editable={!esSocio} />
 
       {/* ── Progreso: cargas y asistencia ── */}
       <div style={{ marginTop: 16 }}>

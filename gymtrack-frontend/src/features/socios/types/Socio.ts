@@ -12,5 +12,4 @@ export interface Socio {
  fechaVencimiento?: string
  fechaCreacion?: string
  fechaModificacion?: string
- disciplina?: { id: number; nombre: string; instructor?: string; horario?: string } | null
 }

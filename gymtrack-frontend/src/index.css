@@ -1186,3 +1186,154 @@ body {
 @media (max-width: 640px) {
   .gt-topbar-usuario, .gt-topbar-kbd { display: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Disciplinas
+   Paleta categórica validada (daltonismo y contraste), con su versión oscura.
+   El color siempre acompaña al nombre de la clase: nunca identifica solo.
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  --disc-1: #2a78d6; --disc-2: #eb6834; --disc-3: #1baf7a; --disc-4: #eda100;
+  --disc-5: #e87ba4; --disc-6: #008300; --disc-7: #4a3aa7; --disc-8: #e34948;
+}
+.dark {
+  --disc-1: #3987e5; --disc-2: #d95926; --disc-3: #199e70; --disc-4: #c98500;
+  --disc-5: #d55181; --disc-6: #008300; --disc-7: #9085e9; --disc-8: #e66767;
+}
+
+.gt-disc-punto { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+/* Resumen y barra de herramientas */
+.gt-disc-resumen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.gt-disc-resumen > div { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; }
+.gt-disc-resumen strong { font-size: 22px; color: var(--text-primary); line-height: 1.1; }
+.gt-disc-resumen span { font-size: 12px; color: var(--text-muted); }
+.gt-disc-barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.gt-segmentado { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-surface); }
+.gt-segmentado button { border: none; background: none; padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+.gt-segmentado button.activo { background: var(--accent); color: #fff; }
+.gt-disc-leyenda { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.gt-disc-leyenda-item {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg-surface); font: inherit; font-size: 12px; color: var(--text-secondary); cursor: pointer;
+}
+.gt-disc-leyenda-item:hover { border-color: var(--text-muted); }
+
+/* Grilla semanal (escritorio) */
+.gt-semana { overflow-x: auto; }
+.gt-semana-cab, .gt-semana-cuerpo { display: grid; grid-template-columns: 52px repeat(7, minmax(110px, 1fr)); min-width: 820px; }
+.gt-semana-cab { position: sticky; top: 0; z-index: 2; background: var(--bg-surface); border-bottom: 1px solid var(--border); }
+.gt-semana-dia { padding: 8px 6px; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.gt-semana-dia.hoy { color: var(--accent); }
+.gt-semana-hoy { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.gt-semana-cuerpo { position: relative; }
+.gt-semana-horas > div { font-size: 11px; color: var(--text-muted); text-align: right; padding-right: 8px; transform: translateY(-7px); }
+.gt-semana-col { position: relative; border-left: 1px solid var(--border-light); }
+.gt-semana-col.hoy { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+.gt-semana-linea { position: absolute; left: 0; right: 0; border-top: 1px solid var(--border-light); }
+.gt-semana-ahora { position: absolute; left: 0; right: 0; border-top: 2px solid var(--red); z-index: 1; }
+.gt-semana-ahora::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.gt-clase {
+  position: absolute; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; overflow: hidden;
+  padding: 4px 6px; border: none; border-left: 4px solid var(--c); border-radius: 6px; text-align: left; cursor: pointer;
+  background: color-mix(in srgb, var(--c) 16%, var(--bg-surface)); color: var(--text-primary); font: inherit;
+  box-shadow: 0 0 0 2px var(--bg-surface); transition: box-shadow .12s, transform .12s;
+}
+.gt-clase:hover, .gt-clase:focus-visible { box-shadow: 0 0 0 2px var(--bg-surface), var(--shadow-md); transform: translateY(-1px); z-index: 3; }
+.gt-clase-nombre { font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gt-clase-hora { font-size: 11px; color: var(--text-secondary); }
+.gt-clase-cupo { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+
+/* Agenda (celular) */
+.gt-agenda { display: none; }
+.gt-agenda-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 10px; }
+.gt-agenda-dia {
+  display: flex; flex-direction: column; align-items: center; padding: 6px 0; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg-surface); font: inherit; font-size: 12px; font-weight: 700; color: var(--text-secondary); cursor: pointer;
+}
+.gt-agenda-dia small { font-weight: 500; color: var(--text-muted); }
+.gt-agenda-dia.hoy { border-color: var(--accent); }
+.gt-agenda-dia.activo { background: var(--accent); border-color: var(--accent); color: #fff; }
+.gt-agenda-dia.activo small { color: #fff; opacity: .85; }
+.gt-agenda-clase, .gt-disc-fila {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; margin-bottom: 8px; text-align: left;
+  border: 1px solid var(--border); border-left: 4px solid var(--c); border-radius: 10px; background: var(--bg-surface); font: inherit; color: var(--text-primary);
+}
+.gt-agenda-clase { cursor: pointer; }
+.gt-agenda-clase strong, .gt-agenda-clase small { display: block; }
+.gt-agenda-hora { display: flex; flex-direction: column; font-weight: 700; font-size: 14px; min-width: 48px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.gt-agenda-hora small { font-weight: 500; font-size: 12px; color: var(--text-muted); }
+.gt-disc-fila { margin-bottom: 0; }
+.gt-disc-fila.pasada { opacity: .55; }
+.gt-clases-hoy { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+
+/* Tarjetas (vista lista) */
+.gt-disc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.gt-disc-card {
+  display: flex; flex-direction: column; background: var(--bg-surface); border: 1px solid var(--border); border-top: 4px solid var(--c);
+  border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.gt-disc-card.inactiva { opacity: .7; border-top-color: var(--border); }
+.gt-disc-card-cuerpo { padding: 14px 16px 8px; flex: 1; }
+.gt-disc-card-lado { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 6px; }
+.gt-disc-nombre { margin: 0; font-size: 17px; color: var(--text-primary); }
+.gt-disc-desc { margin: 8px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Medidor de cupo */
+.gt-cupo { display: flex; flex-direction: column; gap: 4px; }
+.gt-cupo-num { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+.gt-cupo-barra { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.gt-cupo-barra > div { height: 100%; border-radius: 3px; transition: width .3s; }
+
+/* Formulario */
+.gt-colores { display: flex; gap: 8px; flex-wrap: wrap; }
+.gt-color { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; box-shadow: 0 0 0 2px var(--bg-surface) inset; }
+.gt-color.sel { border-color: var(--text-primary); }
+.gt-franja { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-surface-2); display: flex; flex-direction: column; gap: 8px; }
+.gt-franja-dias { display: flex; gap: 4px; flex-wrap: wrap; }
+.gt-franja-horas { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.gt-franja-horas label { display: flex; align-items: center; gap: 6px; }
+.gt-franja-horas input { width: auto; }
+
+/* Alumnos */
+.gt-alumnos-resumen { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
+.gt-alumnos-lista { max-height: 320px; overflow-y: auto; }
+.gt-opciones { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 6px; }
+.gt-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-light); color: var(--accent); font-size: 12px; font-weight: 800; text-transform: uppercase;
+}
+.gt-icono-btn {
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-surface);
+  color: var(--text-muted); cursor: pointer; font-size: 13px; flex-shrink: 0;
+}
+.gt-icono-btn:hover:not(:disabled) { color: var(--red); border-color: var(--red); }
+
+/* Modal con encabezado y pie fijos */
+.gt-modal.gt-modal-flex { display: flex; flex-direction: column; max-height: calc(100vh - 40px); padding: 0; }
+.gt-modal-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 22px 12px; border-bottom: 1px solid var(--border-light); }
+.gt-modal-cuerpo { padding: 16px 22px; overflow-y: auto; }
+.gt-modal-pie { padding: 12px 22px; margin: 0; border-top: 1px solid var(--border-light); }
+.gt-modal-cerrar { border: none; background: none; font-size: 18px; color: var(--text-muted); cursor: pointer; padding: 4px; }
+
+@media (max-width: 768px) {
+  .gt-semana { display: none; }
+  .gt-agenda { display: block; }
+  .gt-disc-resumen { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .gt-modal.gt-modal-flex { max-height: 92vh; }
+  .gt-modal-cab, .gt-modal-cuerpo, .gt-modal-pie { padding-left: 16px; padding-right: 16px; }
+}
+
+.gt-card.gt-card-semana { padding: 12px; }
+/* Celulares chicos: la agenda entra sin desbordar */
+@media (max-width: 420px) {
+  .gt-agenda-dias { gap: 2px; }
+  .gt-agenda-dia { min-width: 0; padding: 5px 0; font-size: 11px; border-radius: 8px; }
+  .gt-agenda-clase, .gt-disc-fila { gap: 8px; padding: 8px 10px; }
+  .gt-agenda-hora { min-width: 40px; font-size: 13px; }
+  .gt-clase-cupo { white-space: nowrap; }
+  .gt-agenda-clase strong { overflow-wrap: anywhere; }
+  .gt-card.gt-card-semana { padding: 8px; }
+}
