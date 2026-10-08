@@ -20,3 +20,13 @@ export function formatFecha(iso?: string | null): string {
   const d = new Date(soloFecha ? iso + 'T00:00:00' : iso)
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-AR')
 }
+
+/** Edad cumplida a hoy a partir de una fecha YYYY-MM-DD (null si no hay fecha o es inválida) */
+export function edadDe(nacimiento?: string | null): number | null {
+  if (!nacimiento || !/^\d{4}-\d{2}-\d{2}/.test(nacimiento)) return null
+  const [y, m, d] = nacimiento.slice(0, 10).split('-').map(Number)
+  const hoy = new Date()
+  let edad = hoy.getFullYear() - y
+  if (hoy.getMonth() + 1 < m || (hoy.getMonth() + 1 === m && hoy.getDate() < d)) edad--
+  return edad >= 0 && edad < 120 ? edad : null
+}

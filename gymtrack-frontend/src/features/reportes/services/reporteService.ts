@@ -41,3 +41,16 @@ export interface Metricas {
  ocupacion: number[][]; semanasOcupacion: number
 }
 export const getMetricas = async (): Promise<Metricas> => (await axiosInstance.get(`${API}/metricas`)).data
+
+export interface GrupoPublico {
+ clave: string; nombre: string; socios: number; porcentaje: number | null; edadPromedio: number | null
+ visitas: number; visitasPorSemana: number | null; franjas: number[]; horaPico: string | null; horaPromedio: string | null
+}
+export interface Demografia {
+ dias: number; sociosActivos: number; conEdad: number; conGenero: number; edadPromedio: number | null
+ edadMinima: number | null; edadMaxima: number | null; nombresFranjas: string[]
+ generos: GrupoPublico[]; edades: GrupoPublico[]
+ franjas: { nombre: string; visitas: number; porcentaje: number | null; edadPromedio: number | null }[]
+ visitas: number
+}
+export const getDemografia = async (dias = 60): Promise<Demografia> => (await axiosInstance.get(`${API}/demografia`, { params: { dias } })).data

@@ -9,6 +9,8 @@ export interface ProgresoInput {
   repeticionesReales?: number | null
   seriesRealizadas?: number | null
   observacion?: string | null
+  /** Esfuerzo percibido 1 a 10 */
+  rpe?: number | null
 }
 
 
@@ -30,6 +32,7 @@ export async function getProgresoRutina(
   repeticionesReales: number | null
   seriesRealizadas: number | null
   observacion: string | null
+  rpe?: number | null
 }>>> {
   const res = await axiosInstance.get(`${BASE}/socio/${socioId}/rutina/${rutinaId}`)
   return res.data

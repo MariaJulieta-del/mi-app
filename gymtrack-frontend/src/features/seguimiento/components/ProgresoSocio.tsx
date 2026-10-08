@@ -15,6 +15,7 @@ function BarrasSemanas({ semanas }: { semanas: Progreso['semanas'] }) {
   const W = 300, H = 96, gap = 4, bw = (W - gap * (semanas.length - 1)) / semanas.length
   return (
     <div style={{ position: 'relative' }}>
+      {/* La última barra es la semana en curso; las fechas marcan el lunes de cada semana */}
       <svg viewBox={`0 0 ${W} ${H + 16}`} width="100%" role="img"
         aria-label={`Días de entrenamiento por semana, últimas ${semanas.length} semanas`}>
         <line x1={0} x2={W} y1={H} y2={H} stroke="var(--border)" strokeWidth={1} />
@@ -31,8 +32,9 @@ function BarrasSemanas({ semanas }: { semanas: Progreso['semanas'] }) {
                   fill="var(--accent)" opacity={hover === null || hover === i ? (actual ? 0.7 : 1) : 0.45} />
               )}
               {i % 3 === 2 || actual ? (
-                <text x={x + bw / 2} y={H + 13} textAnchor="middle" fontSize={9} fill="var(--text-muted)">
-                  {actual ? 'Esta' : fechaCorta(s.inicio)}
+                <text x={actual ? x + bw : x + bw / 2} y={H + 13} textAnchor={actual ? 'end' : 'middle'} fontSize={9}
+                  fill={actual ? 'var(--text-secondary)' : 'var(--text-muted)'} fontWeight={actual ? 600 : 400}>
+                  {actual ? 'Esta sem.' : fechaCorta(s.inicio)}
                 </text>
               ) : null}
             </g>
@@ -116,7 +118,7 @@ export default function ProgresoSocio({ socioId, titulo = 'Progreso' }: { socioI
         <div><span className="gt-progreso-num">{p.sesionesRegistradas}</span><span className="gt-stat-label">entrenamientos registrados</span></div>
       </div>
 
-      <p className="gt-stat-label" style={{ margin: '16px 0 4px' }}>Días por semana</p>
+      <p className="gt-stat-label" style={{ margin: '16px 0 4px' }}>Días por semana <span style={{ opacity: .75 }}>· últimas 12 semanas</span></p>
       <BarrasSemanas semanas={p.semanas} />
 
       <p className="gt-stat-label" style={{ margin: '18px 0 8px' }}>Cargas por ejercicio</p>

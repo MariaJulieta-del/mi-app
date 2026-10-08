@@ -18,3 +18,5 @@ export const historialCierres = async (): Promise<CierreCajaResumen[]> => {
   const res = await axiosInstance.get(API)
   return res.data
 }
+
+export const cierresPendientes = async (): Promise<string[]> => (await axiosInstance.get(`${API}/pendientes`)).data

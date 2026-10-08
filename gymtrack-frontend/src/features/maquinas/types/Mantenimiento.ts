@@ -1,4 +1,7 @@
-export type TipoMantenimiento = 'PENDIENTE' | 'REALIZADO' | 'PREVENTIVO' | 'CORRECTIVO'
+/** Estado del trabajo */
+export type TipoMantenimiento = 'PENDIENTE' | 'REALIZADO'
+/** Naturaleza del trabajo: preventivo (antes de que se rompa) o correctivo (ya falla) */
+export type CategoriaMantenimiento = 'PREVENTIVO' | 'CORRECTIVO'
 
 export interface Mantenimiento {
   id?: number
@@ -6,6 +9,7 @@ export interface Mantenimiento {
   maquinaNombre?: string
   maquinaNroMaquina?: string
   tipo: TipoMantenimiento
+  categoria?: CategoriaMantenimiento | null
   descripcion: string
   fechaMantenimiento?: string
   fechaAlta?: string
@@ -21,6 +25,7 @@ export interface Mantenimiento {
 export interface MantenimientoRequest {
   maquinaId: number
   tipo: TipoMantenimiento
+  categoria?: CategoriaMantenimiento | null
   descripcion: string
   fechaMantenimiento?: string
   fechaAlta?: string

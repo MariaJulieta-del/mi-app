@@ -3,6 +3,7 @@ import type { Maquina } from '../../maquinas/services/maquinaService'
 import type { Ejercicio, Rutina } from '../../rutinas/types/Rutina'
 import { resolverImg } from '../utils/socioUtils'
 import { ordenarDias } from '../../rutinas/utils/rutinaUtils'
+import MaquinasEjercicio from '../../rutinas/components/MaquinasEjercicio'
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const hoyIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1 })()
@@ -79,7 +80,7 @@ export default function MiSemanaView({
                 fontWeight: 700, fontSize: 13,
                 borderColor: seleccionado ? 'var(--accent)' : esHoy ? 'var(--accent)' : 'var(--border)',
                 background: seleccionado ? 'var(--accent)' : 'var(--bg-surface)',
-                color: seleccionado ? '#fff' : esHoy ? 'var(--accent)' : tienEjs ? 'var(--text-primary)' : 'var(--text-muted)',
+                color: seleccionado ? 'var(--on-accent)' : esHoy ? 'var(--accent)' : tienEjs ? 'var(--text-primary)' : 'var(--text-muted)',
                 opacity: tienEjs || seleccionado ? 1 : 0.5,
               }}>
               {dia.slice(0, 3)}
@@ -99,12 +100,12 @@ export default function MiSemanaView({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {ejsHoy.map(({ ej, rutinaNombre, rutinaId }, idx2) => {
-            const img = resolverImg(ej.nombreEjercicio)
+            const img = ej.imagenUrl || resolverImg(ej.nombreEjercicio)
             const ejId = ej.id ?? idx2
             const abierto = expandedEjs.has(ejId)
-            const maqAsignadas = (ej.maquinaIds ?? []).map(mid => maquinas.find(m => m.id === mid)).filter(Boolean) as Maquina[]
-            const maqRecomendadas = (ej.grupos ?? []).length > 0
-              ? maquinas.filter(m => (m.grupos ?? []).some(g => (ej.grupos ?? []).includes(g)) && !maqAsignadas.some(a => a.id === m.id)).slice(0, 5)
+            // Si el profe no le asoció máquinas al ejercicio, se sugieren las que trabajan esos músculos
+            const maqRecomendadas = (ej.maquinas ?? []).length === 0 && (ej.grupos ?? []).length > 0
+              ? maquinas.filter(m => (m.grupos ?? []).some(g => (ej.grupos ?? []).includes(g))).slice(0, 5)
               : []
 
             return (
@@ -129,6 +130,7 @@ export default function MiSemanaView({
                         ej.repeticiones ? `${ej.repeticiones} reps` : null,
                         ej.pesoKg ? `${ej.pesoKg} kg` : null,
                         ej.descansoSeg ? `${ej.descansoSeg}s desc.` : null,
+                        ...(ej.maquinas ?? []).filter(m => m.nroMaquina).map(m => `⚙ N° ${m.nroMaquina}`),
                       ].filter(Boolean).join('  ·  ')}
                     </p>
                     {ej.grupos && ej.grupos.length > 0 && (
@@ -148,16 +150,10 @@ export default function MiSemanaView({
 
                 {abierto && (
                   <div style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {maqAsignadas.length > 0 && (
+                    {(ej.maquinas ?? []).length > 0 && (
                       <div>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>⚙️ Máquinas asignadas</p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {maqAsignadas.map(m => (
-                            <span key={m.id} style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600 }}>
-                              {m.nombre}{m.nroMaquina ? ` — ${m.nroMaquina}` : ''}
-                            </span>
-                          ))}
-                        </div>
+                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>⚙️ Dónde hacerlo</p>
+                        <MaquinasEjercicio maquinas={ej.maquinas} grande />
                       </div>
                     )}
                     {maqRecomendadas.length > 0 && (

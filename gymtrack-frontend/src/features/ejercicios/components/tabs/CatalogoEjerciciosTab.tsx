@@ -79,9 +79,9 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
             style={{
               padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: '1px solid',
               fontWeight: !catBodyPart ? 700 : 400,
-              background: !catBodyPart ? '#2563EB' : 'var(--bg-surface-2)',
-              color: !catBodyPart ? '#fff' : 'var(--text-secondary)',
-              borderColor: !catBodyPart ? '#2563EB' : 'var(--border)',
+              background: !catBodyPart ? 'var(--accent)' : 'var(--bg-surface-2)',
+              color: !catBodyPart ? 'var(--on-accent)' : 'var(--text-secondary)',
+              borderColor: !catBodyPart ? 'var(--accent)' : 'var(--border)',
             }}>
             Todos ({EXERCISES_CATALOG.length})
           </button>
@@ -92,9 +92,9 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                 style={{
                   padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: '1px solid',
                   fontWeight: catBodyPart === bp ? 700 : 400,
-                  background: catBodyPart === bp ? '#2563EB' : 'var(--blue-bg)',
-                  color: catBodyPart === bp ? '#fff' : 'var(--blue-text)',
-                  borderColor: catBodyPart === bp ? '#2563EB' : 'var(--border)',
+                  background: catBodyPart === bp ? 'var(--accent)' : 'var(--blue-bg)',
+                  color: catBodyPart === bp ? 'var(--on-accent)' : 'var(--blue-text)',
+                  borderColor: catBodyPart === bp ? 'var(--accent)' : 'var(--border)',
                 }}>
                 {bp} ({count})
               </button>

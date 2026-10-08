@@ -30,6 +30,14 @@ export interface RutinaRequestDTO {
   /** Objetivo: FUERZA | HIPERTROFIA | RESISTENCIA | PERDIDA_GRASA | SALUD */
   objetivo?: string
 }
+export interface MaquinaDeEjercicio {
+  id: number
+  nombre: string
+  nroMaquina?: string | null
+  /** true = no está asociada al ejercicio: se dedujo por el nombre */
+  sugerida?: boolean
+}
+
 // Ejercicio devuelto por el backend
 export interface Ejercicio {
   id?: number
@@ -46,11 +54,14 @@ export interface Ejercicio {
   grupos?: string[]
   imagenUrl?: string
   maquinaIds?: number[]
-  maquinasNombres?: string[]
+  /** Máquinas activas asociadas en el catálogo, con su número */
+  maquinas?: MaquinaDeEjercicio[]
   /** true → pertenece al bloque inamovible de Entrada en Calor */
   esCalentamiento?: boolean
   /** Día al que pertenece dentro de la rutina (1, 2, 3...) */
   dia?: number
+  /** Superserie: los seguidos con el mismo número se hacen alternando series */
+  superserie?: number | null
 }
 // DTO para agregar un ejercicio a una rutina
 export interface EjercicioRequestDTO {

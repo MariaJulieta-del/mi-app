@@ -22,3 +22,26 @@ Prueban la API real: seguridad, permisos, QR de ingreso, PIN de socios, kiosco, 
 Variables: `E2E_API` (URL de la API), `E2E_ADMIN_USER` y `E2E_ADMIN_PASS` (por defecto `admin` / `Admin1234`).
 
 3. Al terminar, borrar la base: `psql -U postgres -c "DROP DATABASE gymtrack_test"`.
+
+## Probar los mails (sin mandar mails de verdad)
+
+`smtp-trucho.mjs` es un servidor de mail falso: acepta todo y lo guarda en `pruebas-e2e/mails-recibidos.json`.
+
+1. Levantar el servidor trucho:
+
+   ```bash
+   node pruebas-e2e/smtp-trucho.mjs
+   ```
+
+2. Levantar el backend de prueba apuntando a él:
+
+   ```bash
+   cd gymtrack-backend
+   DB_URL=jdbc:postgresql://localhost:5432/gymtrack_test ADMIN_PASSWORD=Admin1234 PORT=8081 MAIL_ENABLED=true ./mvnw spring-boot:run "-Dspring-boot.run.arguments=--spring.mail.host=localhost --spring.mail.port=2525 --spring.mail.properties.mail.smtp.auth=false --spring.mail.properties.mail.smtp.starttls.enable=false"
+   ```
+
+3. Correr la prueba (o mandar avisos desde la app y mirar el archivo):
+
+   ```bash
+   E2E_API=http://localhost:8081/api/v1 node pruebas-e2e/mails.mjs
+   ```

@@ -2,15 +2,17 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './shared/context/AuthContext'
+import { MarcaProvider } from './shared/context/MarcaContext'
 import './index.css'
 import App from './App.tsx'
-import 'bootstrap/dist/css/bootstrap.min.css';
 createRoot(document.getElementById('root')!).render(
  <StrictMode>
  <BrowserRouter>
+ <MarcaProvider>
  <AuthProvider>
  <App />
  </AuthProvider>
+ </MarcaProvider>
  </BrowserRouter>
  </StrictMode>,
 )

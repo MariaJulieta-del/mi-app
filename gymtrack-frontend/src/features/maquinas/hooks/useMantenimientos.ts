@@ -21,13 +21,15 @@ export function useMantenimientos() {
   const [mantError, setMantError] = useState<string | null>(null)
   const [mantMsg, setMantMsg] = useState<string | null>(null)
   const [mantFiltroMaquina, setMantFiltroMaquina] = useState<number | 'todas'>('todas')
-  const [mantFiltroTipo, setMantFiltroTipo] = useState<TipoMantenimiento | 'todos'>('todos')
+  const [mantFiltroTipo, setMantFiltroTipo] = useState<TipoMantenimiento | 'todos'>('PENDIENTE')
+  const [mantCargando, setMantCargando] = useState(true)
   const [confirmarEliminarMantId, setConfirmarEliminarMantId] = useState<number | null>(null)
 
   const cargarMantenimientos = () =>
     listarMantenimientos()
       .then(setMantenimientos)
       .catch((e: unknown) => setMantError('Error al cargar mantenimientos: ' + mensajeError(e, 'sin conexión con el servidor')))
+      .finally(() => setMantCargando(false))
 
   useEffect(() => { cargarMantenimientos() }, [])
 
@@ -50,6 +52,7 @@ export function useMantenimientos() {
     setMantForm({
       maquinaId: m.maquinaId,
       tipo: m.tipo,
+      categoria: m.categoria ?? undefined,
       descripcion: m.descripcion,
       fechaMantenimiento: m.fechaMantenimiento ?? fechaLocalISO(),
       fechaAlta: m.fechaAlta ?? '',
@@ -87,6 +90,17 @@ export function useMantenimientos() {
     } finally { setMantGuardando(false) }
   }
 
+  /** El trabajo quedó hecho: la máquina vuelve a estar operativa hoy */
+  const marcarRealizado = async (m: Mantenimiento) => {
+    try {
+      await actualizarMantenimiento(m.id!, { tipo: 'REALIZADO', fechaAlta: m.fechaAlta || fechaLocalISO() })
+      setMantMsg(`${m.maquinaNombre ?? 'La máquina'} quedó operativa.`)
+      await cargarMantenimientos()
+    } catch (e: unknown) {
+      setMantError(mensajeError(e, 'Error al actualizar'))
+    }
+  }
+
   const eliminarMant = async (id: number) => {
     try {
       await eliminarMantenimiento(id)
@@ -105,6 +119,6 @@ export function useMantenimientos() {
     mantFiltroTipo, setMantFiltroTipo,
     confirmarEliminarMantId, setConfirmarEliminarMantId,
     cargarMantenimientos, abrirNuevoMant, abrirEditarMant,
-    cancelarMant, guardarMant, eliminarMant,
+    cancelarMant, guardarMant, eliminarMant, marcarRealizado, mantCargando,
   }
 }

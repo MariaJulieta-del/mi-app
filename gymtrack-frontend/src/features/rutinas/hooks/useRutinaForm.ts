@@ -73,6 +73,10 @@ export function useRutinaForm() {
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [busqEj, setBusqEj] = useState('')
   const [mostrarCat, setMostrarCat] = useState(false)
+  /** Filtro rápido del catálogo por grupo muscular */
+  const [grupoCat, setGrupoCat] = useState('')
+  /** Último ejercicio agregado (para resaltarlo un momento) */
+  const [recienAgregado, setRecienAgregado] = useState<number | null>(null)
 
   // ── Rutinas generales como base ──
   const [generales, setGenerales] = useState<Rutina[]>([])
@@ -213,6 +217,7 @@ export function useRutinaForm() {
     if (ejercicios.some(x => x.catId === e.id && (x.dia ?? 1) === dia)) return
     // Series, repeticiones y descanso según el objetivo elegido
     const esq = OBJETIVO_CONFIG[objetivo]?.esquema ?? { series: 3, reps: 10, descanso: 60 }
+    if (e.id) setRecienAgregado(e.id)
     setEjercicios(prev => [...prev, {
       catId: e.id,
       nombre: e.nombre,
@@ -234,6 +239,27 @@ export function useRutinaForm() {
 
   const quitarEj = (idx: number) => setEjercicios(prev => prev.filter((_, i) => i !== idx))
 
+  /** Sube o baja un ejercicio dentro de su día */
+  const moverEj = (idx: number, dir: -1 | 1) => setEjercicios(prev => {
+    const dia = prev[idx].dia ?? 1
+    const delDia = prev.map((e, i) => ({ e, i })).filter(x => (x.e.dia ?? 1) === dia).map(x => x.i)
+    const pos = delDia.indexOf(idx)
+    const otro = delDia[pos + dir]
+    if (otro == null) return prev
+    const copia = [...prev]
+    const tmp = copia[idx]
+    copia[idx] = copia[otro]
+    copia[otro] = tmp
+    return copia
+  })
+
+  /** Copia todos los ejercicios de un día a otro (los que ya estén no se repiten) */
+  const copiarDia = (desde: number, hacia: number) => setEjercicios(prev => {
+    const yaHay = new Set(prev.filter(e => (e.dia ?? 1) === hacia).map(e => e.catId ?? e.nombre))
+    const nuevos = prev.filter(e => (e.dia ?? 1) === desde && !yaHay.has(e.catId ?? e.nombre)).map(e => ({ ...e, dia: hacia }))
+    return [...prev, ...nuevos]
+  })
+
   const actualizarEj = (idx: number, campo: keyof EjItem, valor: string | number) => {
     setEjercicios(prev => prev.map((e, i) => i === idx ? { ...e, [campo]: valor } : e))
   }
@@ -247,6 +273,7 @@ export function useRutinaForm() {
   const catalogoFiltrado = catalogo.filter(e => {
     if (!e.activo) return false
     const matchBusq = e.nombre.toLowerCase().includes(busqEj.toLowerCase())
+    if (grupoCat && !(e.grupos ?? []).includes(grupoCat)) return false
     if (trenesSel.length > 0 && !hayFullBody) {
       return matchBusq && (e.grupos ?? []).some(g => gruposSeleccionados.includes(g))
     }
@@ -343,6 +370,7 @@ export function useRutinaForm() {
     catalogo, maquinas, maquinasFiltradas,
     busqEj, setBusqEj,
     mostrarCat, setMostrarCat,
+    grupoCat, setGrupoCat, recienAgregado,
     // Picker
     generales, mostrarPicker, setMostrarPicker,
     busqGeneral, setBusqGeneral,
@@ -351,7 +379,7 @@ export function useRutinaForm() {
     // Computed
     gruposSeleccionados, hayFullBody, catalogoFiltrado,
     // Ej ops
-    agregarEjDesde, quitarEj, actualizarEj,
+    agregarEjDesde, quitarEj, actualizarEj, moverEj, copiarDia,
     // UI
     error, setError,
     guardando, progreso,

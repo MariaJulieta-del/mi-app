@@ -4,7 +4,7 @@ import type { Maquina } from '../types/Maquina'
 import { fechaLocalISO } from '../../../shared/utils/fechas'
 import type { Ejercicio } from '../../ejercicios/services/ejercicioService'
 import type { CatalogMaquina } from '../assets/maquinasCatalog'
-import type { MaquinaEstadisticas, TipoMantenimiento } from '../types/Mantenimiento'
+import type { MaquinaEstadisticas } from '../types/Mantenimiento'
 import {
   listarMaquinas, crearMaquina, actualizarMaquina,
   desactivarMaquina, activarMaquina,
@@ -17,9 +17,11 @@ const VACIO: Omit<Maquina, 'id'> = {
   grupos: [], instruccionesUso: '', ajustes: '', activa: true,
 }
 
-export function useMaquinas() {
+/** onMantenimientoCreado: para refrescar la lista de Mantenimiento al reportar desde Mis máquinas */
+export function useMaquinas(onMantenimientoCreado?: () => void) {
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [ejercicios, setEjercicios] = useState<Ejercicio[]>([])
+  const [cargando, setCargando] = useState(true)
 
   // Mis máquinas — filtros
   const [filtroGrupo, setFiltroGrupo] = useState('')
@@ -59,7 +61,7 @@ export function useMaquinas() {
     setReportarError(null)
   }
 
-  const abrirReportar = (maquinaId: number, tipo: 'PREVENTIVO' | 'CORRECTIVO') => {
+  const abrirReportar = (maquinaId: number, tipo: 'PREVENTIVO' | 'CORRECTIVO' = 'CORRECTIVO') => {
     setReportarId(maquinaId)
     setReportarTipo(tipo)
     setReportarDesc('')
@@ -84,13 +86,15 @@ export function useMaquinas() {
       const costoNum = reportarCosto.trim() ? Number(reportarCosto.replace(',', '.')) : undefined
       await crearMantenimiento({
         maquinaId: reportarId,
-        tipo: reportarTipo as TipoMantenimiento,
+        tipo: 'PENDIENTE',
+        categoria: reportarTipo,
         descripcion: reportarDesc.trim(),
         fechaMantenimiento: fechaLocalISO(),
         ...(costoNum != null && !isNaN(costoNum) ? { costo: costoNum } : {}),
       })
       setMsg(`Reporte ${reportarTipo === 'PREVENTIVO' ? 'preventivo' : 'correctivo'} registrado.`)
       cerrarReportar()
+      onMantenimientoCreado?.()
       // Refrescar stats de esa máquina
       if (statsCache[reportarId]) {
         estadisticasMaquina(reportarId)
@@ -106,17 +110,22 @@ export function useMaquinas() {
 
   const cargar = () =>
     Promise.all([listarMaquinas(false), listarTodosEjercicios()])
-      .then(([maks, ejs]) => { setMaquinas(maks); setEjercicios(ejs.filter(e => !e.esMaquina)) })
+      .then(([maks, ejs]) => { setMaquinas(maks); setEjercicios(ejs) })
       .catch(() => setError('Error al cargar'))
+      .finally(() => setCargando(false))
 
   useEffect(() => { cargar() }, [])
 
   const ejerciciosCompatibles = (grupos: string[]): Ejercicio[] => {
     if (!grupos || grupos.length === 0) return []
     return ejercicios.filter(e =>
-      e.activo && (e.grupos ?? []).some(g => grupos.includes(g))
+      e.activo && !e.esMaquina && (e.grupos ?? []).some(g => grupos.includes(g))
     )
   }
+
+  /** Ejercicios asociados a la máquina (los que el socio ve con este número) */
+  const ejerciciosDe = (maquinaId: number): Ejercicio[] =>
+    ejercicios.filter(e => e.activo !== false && (e.maquinaIds ?? []).includes(maquinaId))
 
   const nombresGuardados = useMemo(
     () => new Set(maquinas.map(m => m.nombre.toLowerCase())),
@@ -145,7 +154,6 @@ export function useMaquinas() {
 
   const abrirNuevo = () => {
     setForm({ ...VACIO }); setEditandoId(null); setShowForm(true); setError(null); setExpandedId(null)
-    setTimeout(() => document.getElementById('maq-nro')?.focus(), 50)
   }
 
   const abrirEditar = (m: Maquina) => {
@@ -212,7 +220,7 @@ export function useMaquinas() {
 
   return {
     // data
-    maquinas, ejercicios, filtradas, nombresGuardados,
+    maquinas, ejercicios, filtradas, nombresGuardados, cargando, ejerciciosDe,
     // filtros
     busqueda, setBusqueda, filtroGrupo, setFiltroGrupo,
     verInactivas, setVerInactivas,
@@ -224,7 +232,7 @@ export function useMaquinas() {
     // catalogo
     guardandoCat, catError, setCatError,
     // reportar
-    reportarId, reportarTipo, reportarDesc, setReportarDesc,
+    reportarId, reportarTipo, setReportarTipo, reportarDesc, setReportarDesc,
     reportarCosto, setReportarCosto,
     reportarGuardando, reportarError,
     abrirMenuReportar, abrirReportar, cerrarReportar, submitReportar,

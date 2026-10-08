@@ -9,9 +9,10 @@ import { inscribirSocio, desinscribirSocio, liberarCupos, obtenerDisciplina, typ
 import { colorDisciplina, resumenHorarios } from '../utils/disciplinaUtils'
 import CupoMeter from './CupoMeter'
 import AsistenciaClase from './AsistenciaClase'
+import ReservasClase from './ReservasClase'
 import AvisoClase from './AvisoClase'
 
-type Pestana = 'alumnos' | 'asistencia' | 'aviso'
+type Pestana = 'alumnos' | 'reservas' | 'asistencia' | 'aviso'
 
 /** Alumnos de una disciplina: ver, inscribir, quitar y liberar cupos */
 export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar }: {
@@ -88,11 +89,12 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
       </div>
 
       <div className="gt-segmentado gt-pestanas" role="tablist" aria-label="Secciones de la clase">
-        {([['alumnos', `Alumnos (${inscriptos.length})`], ['asistencia', 'Asistencia'], ['aviso', 'Enviar aviso']] as const).map(([k, label]) => (
+        {([['alumnos', `Alumnos fijos (${inscriptos.length})`], ['reservas', 'Próximas clases'], ['asistencia', 'Asistencia'], ['aviso', 'Enviar aviso']] as const).map(([k, label]) => (
           <button key={k} type="button" role="tab" aria-selected={pestana === k} className={pestana === k ? 'activo' : ''} onClick={() => setPestana(k)}>{label}</button>
         ))}
       </div>
 
+      {pestana === 'reservas' && <ReservasClase disciplinaId={disciplina.id} />}
       {pestana === 'asistencia' && <AsistenciaClase disciplinaId={disciplina.id} />}
       {pestana === 'aviso' && <AvisoClase disciplina={disciplina} />}
 

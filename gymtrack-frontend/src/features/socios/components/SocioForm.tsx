@@ -1,12 +1,43 @@
-import type { Socio } from '../types/Socio'
+import { GENEROS, type Genero, type Socio } from '../types/Socio'
+import { edadDe, fechaLocalISO } from '../../../shared/utils/fechas'
 import { useSocioForm, FORMAS, type AltaFormValida } from '../hooks/useSocioForm'
 import { textoPases } from '../../membresias/types/Tarifa'
+import Modal from '../../../shared/components/Modal'
 
 interface Props {
   onGuardar: (socio: Socio) => void
   onAltaCompleta?: (data: AltaFormValida) => void
   socioEditar?: Socio | null
   onCancelar: () => void
+  /** Se está registrando (deshabilita el botón) */
+  guardando?: boolean
+}
+
+/** Fecha de nacimiento (muestra la edad) y género: sirven para las métricas de público en Reportes */
+function CamposPublico({ nacimiento, genero, onNacimiento, onGenero, error }: {
+  nacimiento: string; genero: Genero | ''
+  onNacimiento: (v: string) => void; onGenero: (v: Genero | '') => void; error?: string
+}) {
+  const edad = edadDe(nacimiento)
+  return (
+    <>
+      <div className="gt-form-group">
+        <label className="gt-label" htmlFor="socio-nacimiento">
+          Fecha de nacimiento {edad != null && <span className="gt-text-muted" style={{ fontWeight: 500 }}>· {edad} años</span>}
+        </label>
+        <input id="socio-nacimiento" className={`gt-input${error ? ' gt-input-error' : ''}`} type="date"
+          value={nacimiento} max={fechaLocalISO()} min="1915-01-01" onChange={e => onNacimiento(e.target.value)} />
+        {error && <span className="gt-field-error">{error}</span>}
+      </div>
+      <div className="gt-form-group">
+        <label className="gt-label" htmlFor="socio-genero">Género</label>
+        <select id="socio-genero" className="gt-select" value={genero} onChange={e => onGenero(e.target.value as Genero | '')}>
+          <option value="">Prefiere no decirlo</option>
+          {GENEROS.map(g => <option key={g.valor} value={g.valor}>{g.texto}</option>)}
+        </select>
+      </div>
+    </>
+  )
 }
 
 const SocioForm = (props: Props) => {
@@ -15,9 +46,12 @@ const SocioForm = (props: Props) => {
   // ── EDICIÓN ──────────────────────────────────────────────────
   if (s.esEdicion) {
     return (
-      <div className="gt-card" style={{ marginBottom: 20 }}>
-        <p className="gt-card-title">Editar socio</p>
-        <form onSubmit={s.handleSubmit} noValidate>
+      <Modal titulo="Editar socio" onCerrar={s.onCancelar} ancho={640}
+        pie={<>
+          <button type="button" className="gt-btn gt-btn-secondary" onClick={s.onCancelar}>Cancelar</button>
+          <button type="submit" form="form-socio-editar" className="gt-btn gt-btn-primary">Guardar cambios</button>
+        </>}>
+        <form id="form-socio-editar" onSubmit={s.handleSubmit} noValidate>
           <div className="gt-form-grid">
             <div className="gt-form-group">
               <label className="gt-label">Nombre <span style={{ color: 'var(--red)' }}>*</span></label>
@@ -55,21 +89,26 @@ const SocioForm = (props: Props) => {
                 placeholder="socio@email.com" />
               {s.errores.email && <span className="gt-field-error">{s.errores.email}</span>}
             </div>
+            <CamposPublico nacimiento={s.form.fechaNacimiento ?? ''} genero={s.form.genero ?? ''} error={s.errores.fechaNacimiento}
+              onNacimiento={v => { s.setForm({ ...s.form, fechaNacimiento: v }); s.touch('fechaNacimiento') }}
+              onGenero={v => s.setForm({ ...s.form, genero: v || null })} />
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="submit" className="gt-btn gt-btn-primary">Actualizar socio</button>
-            <button type="button" className="gt-btn gt-btn-secondary" onClick={s.onCancelar}>Cancelar</button>
-          </div>
+          
         </form>
-      </div>
+      </Modal>
     )
   }
 
   // ── ALTA ──────────────────────────────────────────────────────
   return (
-    <div className="gt-card" style={{ marginBottom: 20 }}>
-      <p className="gt-card-title">Alta de socio</p>
-      <form onSubmit={s.handleSubmit} noValidate>
+    <Modal titulo="Nuevo socio" onCerrar={s.onCancelar} ancho={720}
+      pie={<>
+        <button type="button" className="gt-btn gt-btn-secondary" onClick={s.onCancelar}>Cancelar</button>
+        <button type="submit" form="form-socio-alta" className="gt-btn gt-btn-primary" disabled={props.guardando}>
+          {props.guardando ? 'Registrando…' : 'Registrar y cobrar'}
+        </button>
+      </>}>
+      <form id="form-socio-alta" onSubmit={s.handleSubmit} noValidate>
 
         <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Datos personales
@@ -110,6 +149,9 @@ const SocioForm = (props: Props) => {
               placeholder="socio@email.com" />
             {s.errores.email && <span className="gt-field-error">{s.errores.email}</span>}
           </div>
+          <CamposPublico nacimiento={s.altaForm.fechaNacimiento} genero={s.altaForm.genero} error={s.errores.fechaNacimiento}
+            onNacimiento={v => { s.setAltaForm(f => ({ ...f, fechaNacimiento: v })); s.touch('fechaNacimiento') }}
+            onGenero={v => s.setAltaForm(f => ({ ...f, genero: v }))} />
         </div>
 
         {/* Plan */}
@@ -129,9 +171,9 @@ const SocioForm = (props: Props) => {
                   <button key={t.tipo} type="button"
                     onClick={() => { s.setAltaForm(f => ({ ...f, tipoMembresia: t.tipo })); s.touch('tipoMembresia') }}
                     style={{ padding: '10px 16px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
-                      border: `2px solid ${sel ? '#D97706' : 'var(--border)'}`,
-                      background: sel ? 'var(--yellow-bg)' : 'var(--bg-surface-2)', textAlign: 'left', minWidth: 140 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: sel ? 'var(--yellow-text)' : 'var(--text-primary)' }}>{t.nombre}</div>
+                      border: `2px solid ${sel ? 'var(--accent)' : 'var(--border)'}`,
+                      background: sel ? 'var(--accent-light)' : 'var(--bg-surface-2)', textAlign: 'left', minWidth: 140 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: sel ? 'var(--accent)' : 'var(--text-primary)' }}>{t.nombre}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
                       ${t.precio.toLocaleString('es-AR')} · {t.duracionDias} días
                     </div>
@@ -181,13 +223,8 @@ const SocioForm = (props: Props) => {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          <button type="submit" className="gt-btn gt-btn-primary">
-            ✓ Registrar y cobrar
-          </button>
-        </div>
       </form>
-    </div>
+    </Modal>
   )
 }
 

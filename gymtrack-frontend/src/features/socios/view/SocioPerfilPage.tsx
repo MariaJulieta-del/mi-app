@@ -15,6 +15,9 @@ import SocioInicio from '../components/SocioInicio'
 import AvisosSocio from '../components/AvisosSocio'
 import RutinaCard from '../../rutinas/components/RutinaCard'
 import { linkEditarRutina } from '../../rutinas/utils/rutinaUtils'
+import { CargandoPagina } from '../../../shared/components/ui'
+import { edadDe } from '../../../shared/utils/fechas'
+import { textoGenero } from '../types/Socio'
 
 export default function SocioPerfilPage() {
   const p = useSocioPerfil()
@@ -36,7 +39,7 @@ export default function SocioPerfilPage() {
     toast.success('PIN cambiado', 'Usá el nuevo PIN la próxima vez que entres')
   }
 
-  if (p.cargando) return <p className="gt-text-muted">Cargando perfil...</p>
+  if (p.cargando) return <CargandoPagina filas={4} />
   if (!p.socio) return <div className="gt-alert gt-alert-error">{p.error ?? 'Socio no encontrado.'}</div>
 
   const { socio, membresia, rutinas, id, esSocio } = p
@@ -83,6 +86,8 @@ export default function SocioPerfilPage() {
               <span>DNI <strong>{socio.dni}</strong></span>
               {socio.email && <span>✉ {socio.email}</span>}
               {socio.telefono && <span>📞 {socio.telefono}</span>}
+              {edadDe(socio.fechaNacimiento) != null && <span>{edadDe(socio.fechaNacimiento)} años</span>}
+              {textoGenero(socio.genero) && <span>{textoGenero(socio.genero)}</span>}
             </div>
           </div>
           {esSocio ? (

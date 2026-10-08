@@ -59,6 +59,12 @@ export const actualizarEjercicioEnRutina = async (
   const res = await axiosInstance.patch(`${API}/${rutinaId}/ejercicios/${ejId}`, data, { headers: headers(socioId) })
   return res.data
 }
+/** Une el ejercicio con el siguiente en superserie (unir = true) o lo separa. Devuelve todos los ejercicios. */
+export const cambiarSuperserie = async (
+  rutinaId: number, ejId: number, socioId: number | null, unir: boolean
+): Promise<Ejercicio[]> =>
+  (await axiosInstance.post(`${API}/${rutinaId}/ejercicios/${ejId}/superserie`, { unir }, { headers: headers(socioId) })).data
+
 export const eliminarEjercicio = async (
  rutinaId: number, ejId: number, socioId: number | null
 ): Promise<void> => {

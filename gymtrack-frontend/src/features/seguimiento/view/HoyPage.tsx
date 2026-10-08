@@ -5,6 +5,9 @@ import { formatFecha } from '../../../shared/utils/fechas'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { clasesDeHoy, type ClaseHoy } from '../../disciplinas/services/disciplinaService'
 import { colorDisciplina, minutos, textoCupo } from '../../disciplinas/utils/disciplinaUtils'
+import { CargandoPagina } from '../../../shared/components/ui'
+import TareasRetencion from '../components/TareasRetencion'
+import ComentariosSocios from '../components/ComentariosSocios'
 
 /**
  * Inicio del profesor: quién está entrenando ahora y a quién conviene atender.
@@ -45,7 +48,7 @@ export default function HoyPage() {
       </div>
 
       {error && <div className="gt-alert gt-alert-error">No se pudo cargar la información de hoy.</div>}
-      {!hoy && !error && <p className="gt-text-muted">Cargando…</p>}
+      {!hoy && !error && <CargandoPagina />}
 
       {hoy && (
         <>
@@ -65,6 +68,9 @@ export default function HoyPage() {
               </Link>
             )}
           </div>
+
+          <TareasRetencion />
+          <ComentariosSocios />
 
           {clases.length > 0 && (
             <div className="gt-card" style={{ marginBottom: 16 }}>

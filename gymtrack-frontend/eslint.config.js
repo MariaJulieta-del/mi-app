@@ -20,7 +20,7 @@ export default defineConfig([
     },
     rules: {
       // Los archivos de contexto exportan el proveedor y su hook (patrón estándar de React)
-      'react-refresh/only-export-components': ['error', { allowConstantExport: true, allowExportNames: ['useAuth', 'useToast'] }],
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true, allowExportNames: ['useAuth', 'useToast', 'useMarca', 'useSocioApp'] }],
     },
   },
 ])

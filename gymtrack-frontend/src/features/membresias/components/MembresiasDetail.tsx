@@ -3,11 +3,12 @@ import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { useMembresiasDetail } from '../hooks/useMembresiasDetail'
 import MembresiaResumen from './MembresiaResumen'
+import { CargandoPagina } from '../../../shared/components/ui'
 
 export default function MembresiasDetail() {
   const d = useMembresiasDetail()
 
-  if (d.cargando) return <p className="gt-text-muted">Cargando...</p>
+  if (d.cargando) return <CargandoPagina filas={3} />
   if (d.error || !d.membresia) return <div className="gt-alert gt-alert-error">{d.error ?? 'Membresía no encontrada'}</div>
 
   const m = d.membresia

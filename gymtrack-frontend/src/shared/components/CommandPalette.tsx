@@ -23,7 +23,7 @@ const ACCESO_CFG = {
     subtitulo: 'Acceso permitido — recordar renovar',
   },
   ROJO: {
-    bg: '#DC2626', icon: '✕', titulo: 'ACCESO DENEGADO',
+    bg: 'var(--red)', icon: '✕', titulo: 'ACCESO DENEGADO',
     subtitulo: 'El socio no puede ingresar',
   },
 }
@@ -290,7 +290,7 @@ export default function CommandPalette() {
             }}>
               <span><kbd style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 4px' }}>↑↓</kbd> navegar</span>
               <span><kbd style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 4px' }}>Enter</kbd> ver perfil</span>
-              <span style={{ color: '#16A34A', fontWeight: 600 }}>▶ Verificar acceso — registra ingreso al instante</span>
+              <span style={{ color: 'var(--green-text)', fontWeight: 600 }}>▶ Verificar acceso — registra ingreso al instante</span>
             </div>
           </div>
         </div>

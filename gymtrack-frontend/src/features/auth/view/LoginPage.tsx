@@ -1,16 +1,20 @@
 import { useLogin } from '../hooks/useLogin'
+import { useMarca } from '../../../shared/context/MarcaContext'
 
 type Modo = 'staff' | 'socio'
 
 export default function LoginPage() {
   const l = useLogin()
+  const { marca } = useMarca()
 
   return (
     <div className="gt-login-page">
       <div className="gt-login-card">
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🏋️</div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: 'var(--accent)' }}>GymTrack</h1>
+          {marca.logo
+            ? <img src={marca.logo} alt="" style={{ maxHeight: 72, maxWidth: 200, objectFit: 'contain', marginBottom: 10 }} />
+            : <div style={{ fontSize: 40, marginBottom: 8 }}>🏋️</div>}
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: 'var(--accent)' }}>{marca.nombre}</h1>
           <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>
             {l.modo === 'socio' ? 'Entrá a tu cuenta para ver tu rutina y registrar tu ingreso' : 'Panel del gimnasio'}
           </p>
@@ -21,7 +25,7 @@ export default function LoginPage() {
             <button key={m} type="button" onClick={() => l.switchModo(m)}
               style={{ flex: 1, padding: '8px 0', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
                 background: l.modo === m ? 'var(--accent)' : 'transparent',
-                color: l.modo === m ? '#fff' : 'var(--text-muted)' }}>
+                color: l.modo === m ? 'var(--on-accent)' : 'var(--text-muted)' }}>
               {m === 'staff' ? '👤 Admin / Profesor' : '🪪 Soy socio'}
             </button>
           ))}

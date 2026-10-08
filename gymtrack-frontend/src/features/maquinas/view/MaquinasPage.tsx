@@ -1,172 +1,123 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { BookOpen, Cog, Plus, Wrench } from 'lucide-react'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { PageHeader, Resumen, Segmentado } from '../../../shared/components/ui'
+import { useToast } from '../../../shared/hooks/useToast'
 import { useMaquinas } from '../hooks/useMaquinas'
 import { useMantenimientos } from '../hooks/useMantenimientos'
-import { MACHINES_CATALOG } from '../assets/maquinasCatalog'
 import CatalogoMaquinasTab from '../components/tabs/CatalogoMaquinasTab'
-import MisMaquinasTab from '../components/tabs/MisMaquinasTab'
+import MisMaquinasTab, { type FiltroMaquinas } from '../components/tabs/MisMaquinasTab'
 import MantenimientoTab from '../components/tabs/MantenimientoTab'
+import MaquinaFormModal from '../components/MaquinaFormModal'
+import MaquinaDetalleModal from '../components/MaquinaDetalleModal'
+import ReportarModal from '../components/ReportarModal'
+import MantenimientoFormModal from '../components/MantenimientoFormModal'
+import { estadoMaquina, pendientesPorMaquina } from '../utils/estadoMaquina'
 
-type Tab = 'catalogo' | 'mis' | 'mantenimiento'
+type Tab = 'mis' | 'mantenimiento' | 'catalogo'
 
+/**
+ * Máquinas del gimnasio: estado de cada una (operativa / con falla), número visible,
+ * ejercicios que se hacen en ella y su historial de arreglos.
+ */
 export default function MaquinasPage() {
-  const [tab, setTab] = useState<Tab>('catalogo')
-  const maq = useMaquinas()
+  const [tab, setTab] = useState<Tab>('mis')
+  const [filtro, setFiltro] = useState<FiltroMaquinas>('todas')
+  const [detalleId, setDetalleId] = useState<number | null>(null)
+  const toast = useToast()
   const mant = useMantenimientos()
+  const maq = useMaquinas(mant.cargarMantenimientos)
 
-  const tabStyle = (t: Tab): React.CSSProperties => ({
-    padding: '8px 20px', borderRadius: '8px 8px 0 0', fontSize: 14, fontWeight: tab === t ? 700 : 500,
-    border: '1.5px solid', borderBottom: 'none', cursor: 'pointer', transition: 'all 0.1s',
-    background: tab === t ? 'var(--bg-surface)' : 'var(--bg-surface-2)',
-    color: tab === t ? '#D97706' : 'var(--text-muted)',
-    borderColor: tab === t ? '#D97706' : 'var(--border)',
-  })
+  // Los avisos de los hooks salen como notificación, no como cartel fijo
+  useEffect(() => { if (maq.msg) { toast.success(maq.msg); maq.setMsg(null) } }, [maq.msg]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (mant.mantMsg) { toast.success(mant.mantMsg); mant.setMantMsg(null) } }, [mant.mantMsg]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pendientes = useMemo(() => pendientesPorMaquina(mant.mantenimientos), [mant.mantenimientos])
+  const activas = maq.maquinas.filter(m => m.activa)
+  const conProblema = activas.filter(m => estadoMaquina(m, pendientes.get(m.id!)) !== 'operativa').length
+  const sinNumero = activas.filter(m => !(m.nroMaquina ?? '').trim()).length
+  const sinEjercicios = activas.filter(m => maq.ejerciciosDe(m.id!).length === 0).length
+  const anio = String(new Date().getFullYear())
+  const gastoAnio = mant.mantenimientos
+    .filter(m => (m.fechaMantenimiento ?? m.fechaCreacion ?? '').startsWith(anio))
+    .reduce((s, m) => s + Number(m.costo ?? 0), 0)
+
+  const verFiltro = (f: FiltroMaquinas) => { setTab('mis'); setFiltro(prev => (prev === f ? 'todas' : f)) }
+  const detalle = maq.maquinas.find(m => m.id === detalleId) ?? null
+  const reportando = maq.maquinas.find(m => m.id === maq.reportarId) ?? null
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <PageHeader titulo="Máquinas" subtitulo="Estado del equipamiento, números y arreglos"
+        acciones={tab === 'mantenimiento'
+          ? <button type="button" className="gt-btn gt-btn-primary" onClick={mant.abrirNuevoMant}><Wrench size={16} aria-hidden /> Registrar mantenimiento</button>
+          : <button type="button" className="gt-btn gt-btn-primary" onClick={maq.abrirNuevo}><Plus size={16} aria-hidden /> Nueva máquina</button>} />
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <h1 className="gt-page-title" style={{ margin: 0 }}>Máquinas</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-            Equipamiento del gimnasio con seguimiento de mantenimiento
-          </p>
-        </div>
-        {tab === 'mis' && (
-          <button className="gt-btn gt-btn-primary" onClick={maq.abrirNuevo}>+ Nueva máquina</button>
-        )}
-        {tab === 'mantenimiento' && (
-          <button className="gt-btn gt-btn-primary" onClick={mant.abrirNuevoMant}>+ Registrar mantenimiento</button>
-        )}
+      {maq.error && <div className="gt-alert gt-alert-error">{maq.error}</div>}
+      {mant.mantError && !mant.mantShowForm && <div className="gt-alert gt-alert-error">{mant.mantError}</div>}
+
+      {!maq.cargando && activas.length > 0 && (
+        <Resumen items={[
+          { valor: activas.length, texto: 'máquinas en uso' },
+          { valor: conProblema, texto: conProblema === 1 ? 'con falla o revisión' : 'con falla o revisión', tono: conProblema ? 'danger' : 'ok', onClick: () => verFiltro('falla'), activo: tab === 'mis' && filtro === 'falla' },
+          { valor: sinNumero, texto: 'sin número cargado', tono: sinNumero ? 'warn' : 'ok', onClick: () => verFiltro('sinNumero'), activo: tab === 'mis' && filtro === 'sinNumero' },
+          { valor: sinEjercicios, texto: 'sin ejercicios asociados', tono: sinEjercicios ? 'warn' : 'ok', onClick: () => verFiltro('sinEjercicios'), activo: tab === 'mis' && filtro === 'sinEjercicios' },
+          { valor: `$${Math.round(gastoAnio).toLocaleString('es-AR')}`, texto: `gastado en arreglos (${anio})` },
+        ]} />
+      )}
+
+      <div style={{ marginBottom: 14 }}>
+        <Segmentado etiqueta="Sección" valor={tab} onChange={setTab} opciones={[
+          { valor: 'mis', texto: 'Mis máquinas', icono: Cog, cuenta: maq.cargando ? undefined : activas.length },
+          { valor: 'mantenimiento', texto: 'Mantenimiento', icono: Wrench, cuenta: mant.mantCargando ? undefined : mant.mantenimientos.filter(m => m.tipo === 'PENDIENTE').length },
+          { valor: 'catalogo', texto: 'Catálogo', icono: BookOpen },
+        ]} />
       </div>
-
-      {/* Mensajes globales */}
-      {maq.msg && (
-        <div className="gt-alert gt-alert-success" style={{ marginBottom: 12 }}>
-          {maq.msg}
-          <button onClick={() => maq.setMsg(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-        </div>
-      )}
-      {maq.error && tab === 'mis' && (
-        <div className="gt-alert gt-alert-error" style={{ marginBottom: 12 }}>
-          {maq.error}
-          <button onClick={() => maq.setError(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-        </div>
-      )}
-      {mant.mantMsg && (
-        <div className="gt-alert gt-alert-success" style={{ marginBottom: 12 }}>
-          {mant.mantMsg}
-          <button onClick={() => mant.setMantMsg(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: -1, position: 'relative', zIndex: 1 }}>
-        <button style={tabStyle('catalogo')} onClick={() => setTab('catalogo')}>
-          📚 Catálogo ({MACHINES_CATALOG.length})
-        </button>
-        <button style={tabStyle('mis')} onClick={() => setTab('mis')}>
-          ⭐ Mis máquinas ({maq.maquinas.filter(m => m.activa).length})
-        </button>
-        <button style={tabStyle('mantenimiento')} onClick={() => setTab('mantenimiento')}>
-          🔧 Mantenimiento ({mant.mantenimientos.filter(m => m.tipo === 'PENDIENTE').length} pendientes)
-        </button>
-      </div>
-
-      {tab === 'catalogo' && (
-        <CatalogoMaquinasTab
-          maquinas={maq.maquinas}
-          ejercicios={maq.ejercicios}
-          guardandoCat={maq.guardandoCat}
-          catError={maq.catError}
-          setCatError={maq.setCatError}
-          onGuardar={maq.guardarDeCatalogo}
-        />
-      )}
 
       {tab === 'mis' && (
-        <MisMaquinasTab
-          maquinas={maq.maquinas}
-          ejercicios={maq.ejercicios}
-          filtradas={maq.filtradas}
-          busqueda={maq.busqueda}
-          setBusqueda={maq.setBusqueda}
-          filtroGrupo={maq.filtroGrupo}
-          setFiltroGrupo={maq.setFiltroGrupo}
-          verInactivas={maq.verInactivas}
-          setVerInactivas={maq.setVerInactivas}
-          showForm={maq.showForm}
-          form={maq.form}
-          setForm={maq.setForm}
-          editandoId={maq.editandoId}
-          guardando={maq.guardando}
-          error={maq.error}
-          setError={maq.setError}
-          expandedId={maq.expandedId}
-          statsCache={maq.statsCache}
-          loadingStats={maq.loadingStats}
-          abrirNuevo={maq.abrirNuevo}
-          abrirEditar={maq.abrirEditar}
-          cancelar={maq.cancelar}
-          guardar={maq.guardar}
-          toggleActiva={maq.toggleActiva}
-          toggleExpand={maq.toggleExpand}
-          toggleGrupoForm={maq.toggleGrupoForm}
-          ejerciciosCompatibles={maq.ejerciciosCompatibles}
-          onIrCatalogo={() => setTab('catalogo')}
-          reportarId={maq.reportarId}
-          reportarTipo={maq.reportarTipo}
-          reportarDesc={maq.reportarDesc}
-          setReportarDesc={maq.setReportarDesc}
-          reportarCosto={maq.reportarCosto}
-          setReportarCosto={maq.setReportarCosto}
-          reportarGuardando={maq.reportarGuardando}
-          reportarError={maq.reportarError}
-          abrirMenuReportar={maq.abrirMenuReportar}
-          abrirReportar={maq.abrirReportar}
-          cerrarReportar={maq.cerrarReportar}
-          submitReportar={maq.submitReportar}
-        />
+        <MisMaquinasTab maq={maq} pendientes={pendientes} filtro={filtro} setFiltro={setFiltro}
+          onAbrir={setDetalleId} onIrCatalogo={() => setTab('catalogo')} />
+      )}
+      {tab === 'mantenimiento' && (
+        <MantenimientoTab mant={mant} maquinas={maq.maquinas} onEliminar={id => mant.setConfirmarEliminarMantId(id)} />
+      )}
+      {tab === 'catalogo' && (
+        <CatalogoMaquinasTab maquinas={maq.maquinas} guardandoCat={maq.guardandoCat}
+          catError={maq.catError} setCatError={maq.setCatError} onGuardar={maq.guardarDeCatalogo} />
       )}
 
-      {tab === 'mantenimiento' && (
-        <MantenimientoTab
-          maquinas={maq.maquinas}
-          mantenimientos={mant.mantenimientos}
-          mantFiltrados={mant.mantFiltrados}
-          mantForm={mant.mantForm}
-          setMantForm={mant.setMantForm}
-          mantEditId={mant.mantEditId}
-          mantShowForm={mant.mantShowForm}
-          mantGuardando={mant.mantGuardando}
-          mantError={mant.mantError}
-          setMantError={mant.setMantError}
-          mantFiltroMaquina={mant.mantFiltroMaquina}
-          setMantFiltroMaquina={mant.setMantFiltroMaquina}
-          mantFiltroTipo={mant.mantFiltroTipo}
-          setMantFiltroTipo={mant.setMantFiltroTipo}
-          abrirNuevoMant={mant.abrirNuevoMant}
-          abrirEditarMant={mant.abrirEditarMant}
-          cancelarMant={mant.cancelarMant}
-          guardarMant={mant.guardarMant}
-          onEliminar={id => mant.setConfirmarEliminarMantId(id)}
-          cargarMantenimientos={mant.cargarMantenimientos}
-        />
+      {/* Ventanas */}
+      {detalle && (
+        <MaquinaDetalleModal maquina={detalle} estado={estadoMaquina(detalle, pendientes.get(detalle.id!))}
+          mantenimientos={mant.mantenimientos.filter(r => r.maquinaId === detalle.id)}
+          ejercicios={maq.ejercicios}
+          onCerrar={() => setDetalleId(null)}
+          onEditar={() => { setDetalleId(null); maq.abrirEditar(detalle) }}
+          onReportar={() => { setDetalleId(null); maq.abrirReportar(detalle.id!) }}
+          onToggleActiva={() => maq.toggleActiva(detalle)}
+          onMarcarRealizado={mant.marcarRealizado}
+          onCambioEjercicios={maq.cargar} />
+      )}
+      {maq.showForm && (
+        <MaquinaFormModal editando={maq.editandoId !== null} form={maq.form} setForm={maq.setForm} toggleGrupo={maq.toggleGrupoForm}
+          guardando={maq.guardando} error={maq.error} onGuardar={maq.guardar} onCerrar={maq.cancelar} />
+      )}
+      {reportando && maq.reportarTipo && (
+        <ReportarModal maquina={reportando} tipo={maq.reportarTipo} setTipo={maq.setReportarTipo}
+          descripcion={maq.reportarDesc} setDescripcion={maq.setReportarDesc} costo={maq.reportarCosto} setCosto={maq.setReportarCosto}
+          guardando={maq.reportarGuardando} error={maq.reportarError} onGuardar={maq.submitReportar} onCerrar={maq.cerrarReportar} />
+      )}
+      {mant.mantShowForm && (
+        <MantenimientoFormModal maquinas={maq.maquinas} form={mant.mantForm} setForm={mant.setMantForm} editando={mant.mantEditId !== null}
+          guardando={mant.mantGuardando} error={mant.mantError} onGuardar={mant.guardarMant} onCerrar={mant.cancelarMant} />
       )}
 
       <ConfirmModal
         open={mant.confirmarEliminarMantId !== null}
-        title="Eliminar mantenimiento"
-        message="¿Estás seguro que querés eliminar este registro de mantenimiento? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
-        danger
-        onConfirm={() => {
-          const id = mant.confirmarEliminarMantId!
-          mant.setConfirmarEliminarMantId(null)
-          mant.eliminarMant(id)
-        }}
+        title="Eliminar registro"
+        message="Se borra este registro de mantenimiento y deja de contar en el historial de la máquina."
+        confirmLabel="Eliminar" cancelLabel="Cancelar" danger
+        onConfirm={() => { const id = mant.confirmarEliminarMantId!; mant.setConfirmarEliminarMantId(null); mant.eliminarMant(id) }}
         onCancel={() => mant.setConfirmarEliminarMantId(null)}
       />
     </div>

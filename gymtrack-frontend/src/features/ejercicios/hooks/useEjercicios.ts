@@ -41,6 +41,8 @@ export function useEjercicios() {
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [filtroGrupo, setFiltroGrupo] = useState('')
   const [busqueda, setBusqueda] = useState('')
+  /** Ver solo los ejercicios que todavía no tienen máquina asociada (para ordenarlos) */
+  const [soloSinMaquina, setSoloSinMaquina] = useState(false)
   const [form, setForm] = useState<Ejercicio>({ ...VACIO })
   const [editandoId, setEditandoId] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -65,7 +67,8 @@ export function useEjercicios() {
     if (!verInactivos && !e.activo) return false
     const matchBusq = e.nombre.toLowerCase().includes(busqueda.toLowerCase())
     const matchGrupo = !filtroGrupo || (e.grupos ?? []).includes(filtroGrupo)
-    return matchBusq && matchGrupo
+    const matchMaquina = !soloSinMaquina || (e.maquinaIds ?? []).length === 0
+    return matchBusq && matchGrupo && matchMaquina
   })
 
   const maquinasCompatibles = (grupos: string[]): Maquina[] => {
@@ -138,8 +141,20 @@ export function useEjercicios() {
     finally { setQuitandoMaquina(null) }
   }
 
+  const asignarMaquina = async (e: Ejercicio, maquinaId: number) => {
+    const key = `${e.id}-${maquinaId}`
+    setQuitandoMaquina(key)
+    try {
+      await actualizarEjercicio(e.id!, { ...e, maquinaIds: [...(e.maquinaIds ?? []), maquinaId] })
+      await cargarLocales()
+      setMsg('Máquina asociada')
+    } catch { setError('Error al asociar la máquina') }
+    finally { setQuitandoMaquina(null) }
+  }
+
   return {
     ejercicios, maquinas, filtrados,
+    soloSinMaquina, setSoloSinMaquina, asignarMaquina,
     filtroGrupo, setFiltroGrupo,
     busqueda, setBusqueda,
     form, setForm,

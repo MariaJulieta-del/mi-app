@@ -12,6 +12,9 @@ interface Props {
   setBusqueda: (v: string) => void
   verInactivos: boolean
   setVerInactivos: (v: boolean) => void
+  soloSinMaquina: boolean
+  setSoloSinMaquina: (v: boolean) => void
+  asignarMaquina: (e: Ejercicio, maquinaId: number) => void
   showForm: boolean
   form: Ejercicio
   setForm: (fn: (prev: Ejercicio) => Ejercicio) => void
@@ -39,12 +42,21 @@ interface Props {
 export default function MisEjerciciosTab({
   filtrados, ejercicios, maquinas,
   filtroGrupo, setFiltroGrupo, busqueda, setBusqueda, verInactivos, setVerInactivos,
+  soloSinMaquina, setSoloSinMaquina, asignarMaquina,
   showForm, form, setForm, editandoId, guardando, subiendoImg,
   expandedId, setExpandedId, quitandoMaquina, imgRef,
   maquinasCompatibles, abrirEditar, cancelar,
   toggleGrupoForm, toggleMaquinaForm, handleImagen, guardar,
   toggleActivo, quitarMaquina, setLightbox, onIrCatalogo,
 }: Props) {
+  // En el formulario se ven todas las máquinas activas: primero las que trabajan esos músculos
+  const compatiblesForm = maquinasCompatibles(form.grupos ?? [])
+  const maquinasForm = [
+    ...compatiblesForm,
+    ...maquinas.filter(m => m.activa && !compatiblesForm.some(c => c.id === m.id)),
+  ]
+  const sinMaquina = ejercicios.filter(e => !e.esMaquina && e.activo && (e.maquinaIds ?? []).length === 0).length
+
   return (
     <div>
       {/* Formulario inline */}
@@ -131,22 +143,20 @@ export default function MisEjerciciosTab({
                   <label className="gt-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>🔧 Máquinas asociadas</span>
                     {(form.maquinaIds ?? []).length > 0 && (
-                      <span style={{ fontSize: 11, background: '#2563EB', color: '#fff', borderRadius: 10, padding: '1px 8px', fontWeight: 700 }}>
+                      <span style={{ fontSize: 11, background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 8px', fontWeight: 700 }}>
                         {(form.maquinaIds ?? []).length} seleccionada{(form.maquinaIds ?? []).length !== 1 ? 's' : ''}
                       </span>
                     )}
                   </label>
-                  {maquinasCompatibles(form.grupos ?? []).length === 0 ? (
+                  {maquinasForm.length === 0 ? (
                     <div style={{ marginTop: 6, background: 'var(--bg-surface-3)', border: '1.5px dashed var(--border)', borderRadius: 8, padding: '14px', textAlign: 'center' }}>
                       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                        {(form.grupos ?? []).length === 0
-                          ? '👆 Seleccioná grupos musculares para ver máquinas compatibles'
-                          : 'Sin máquinas disponibles para estos grupos'}
+                        Todavía no hay máquinas cargadas. Agregalas en la sección Máquinas.
                       </p>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                      {maquinasCompatibles(form.grupos ?? []).map(m => {
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, maxHeight: 220, overflowY: 'auto' }}>
+                      {maquinasForm.map(m => {
                         const sel = (form.maquinaIds ?? []).includes(m.id!)
                         return (
                           <button key={m.id} type="button" onClick={() => toggleMaquinaForm(m.id!)}
@@ -161,8 +171,8 @@ export default function MisEjerciciosTab({
                               boxShadow: 'none',
                             }}>
                             <span style={{
-                              background: sel ? '#2563EB' : 'var(--bg-surface-3)',
-                              color: sel ? '#fff' : 'var(--text-muted)',
+                              background: sel ? 'var(--accent)' : 'var(--bg-surface-3)',
+                              color: sel ? 'var(--on-accent)' : 'var(--text-muted)',
                               borderRadius: 10, padding: '1px 6px',
                               fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
                               minWidth: 22, textAlign: 'center',
@@ -200,6 +210,11 @@ export default function MisEjerciciosTab({
             <input type="checkbox" checked={verInactivos} onChange={e => setVerInactivos(e.target.checked)} />
             Ver inactivos
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+            title="Para ir asociando cada ejercicio a la máquina donde se hace">
+            <input type="checkbox" checked={soloSinMaquina} onChange={e => setSoloSinMaquina(e.target.checked)} />
+            Sin máquina asociada{sinMaquina > 0 ? ` (${sinMaquina})` : ''}
+          </label>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -207,9 +222,9 @@ export default function MisEjerciciosTab({
               style={{
                 padding: '4px 12px', borderRadius: 20, fontSize: 12, border: '1px solid', cursor: 'pointer',
                 fontWeight: !filtroGrupo ? 700 : 400,
-                background: !filtroGrupo ? '#2563EB' : 'var(--bg-surface-2)',
-                color: !filtroGrupo ? '#fff' : 'var(--text-secondary)',
-                borderColor: !filtroGrupo ? '#2563EB' : 'var(--border)',
+                background: !filtroGrupo ? 'var(--accent)' : 'var(--bg-surface-2)',
+                color: !filtroGrupo ? 'var(--on-accent)' : 'var(--text-secondary)',
+                borderColor: !filtroGrupo ? 'var(--accent)' : 'var(--border)',
               }}>
               Todos
             </button>
@@ -224,9 +239,9 @@ export default function MisEjerciciosTab({
                   style={{
                     padding: '4px 12px', borderRadius: 20, fontSize: 12, border: '1px solid', cursor: 'pointer',
                     fontWeight: filtroGrupo === g ? 700 : 400,
-                    background: filtroGrupo === g ? '#2563EB' : 'var(--blue-bg)',
-                    color: filtroGrupo === g ? '#fff' : 'var(--blue-text)',
-                    borderColor: filtroGrupo === g ? '#2563EB' : 'var(--border)',
+                    background: filtroGrupo === g ? 'var(--accent)' : 'var(--blue-bg)',
+                    color: filtroGrupo === g ? 'var(--on-accent)' : 'var(--blue-text)',
+                    borderColor: filtroGrupo === g ? 'var(--accent)' : 'var(--border)',
                   }}>
                   {g}
                 </button>
@@ -311,9 +326,14 @@ export default function MisEjerciciosTab({
                       )}
                     </div>
 
-                    {maquinasEj.length > 0 && (
-                      <span style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 6, padding: '2px 8px', fontWeight: 600, flexShrink: 0 }}>
-                        ⚙ {maquinasEj.length} máq.
+                    {maquinasAsig.length > 0 ? (
+                      <span title={maquinasAsig.map(m => m.nombre).join(', ')}
+                        style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 6, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
+                        ⚙ {maquinasAsig.map(m => m.nroMaquina ? `N° ${m.nroMaquina}` : m.nombre).join(', ')}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 6, padding: '1px 8px', flexShrink: 0 }}>
+                        sin máquina
                       </span>
                     )}
                     <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{isExp ? '▲' : '▼'}</span>
@@ -377,22 +397,29 @@ export default function MisEjerciciosTab({
                       {maquinasEj.filter(m => !maquinasAsig.some(x => x.id === m.id)).length > 0 && (
                         <div>
                           <p style={{ margin: '0 0 7px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            Compatibles por grupo
+                            Compatibles por grupo — tocá para asociar
                           </p>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                            {maquinasEj.filter(m => !maquinasAsig.some(x => x.id === m.id)).map(m => (
-                              <span key={m.id} style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 5,
-                                fontSize: 12, background: 'var(--bg-surface-3)', color: 'var(--text-muted)',
-                                borderRadius: 20, padding: '3px 10px 3px 6px',
-                                border: '1.5px solid var(--border)', fontWeight: 500,
-                              }}>
-                                <span style={{ background: 'var(--bg-surface-3)', color: 'var(--text-muted)', borderRadius: 10, padding: '0 5px', fontSize: 10, fontWeight: 700, fontFamily: 'monospace' }}>
-                                  {m.nroMaquina ?? '?'}
-                                </span>
-                                {m.nombre}
-                              </span>
-                            ))}
+                            {maquinasEj.filter(m => !maquinasAsig.some(x => x.id === m.id)).map(m => {
+                              const cargando = quitandoMaquina === `${e.id}-${m.id}`
+                              return (
+                                <button key={m.id} type="button" disabled={cargando}
+                                  onClick={ev => { ev.stopPropagation(); asignarMaquina(e, m.id!) }}
+                                  title="Asociar esta máquina al ejercicio"
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 5, cursor: cargando ? 'wait' : 'pointer',
+                                    fontSize: 12, background: 'var(--bg-surface-3)', color: 'var(--text-secondary)',
+                                    borderRadius: 20, padding: '3px 10px 3px 6px',
+                                    border: '1.5px dashed var(--border)', fontWeight: 500, opacity: cargando ? 0.5 : 1,
+                                  }}>
+                                  <span style={{ background: 'var(--bg-surface-2)', color: 'var(--text-muted)', borderRadius: 10, padding: '0 5px', fontSize: 10, fontWeight: 700, fontFamily: 'monospace' }}>
+                                    {m.nroMaquina ?? '?'}
+                                  </span>
+                                  {m.nombre}
+                                  <span style={{ fontWeight: 700, color: 'var(--blue-text)' }}>+</span>
+                                </button>
+                              )
+                            })}
                           </div>
                         </div>
                       )}

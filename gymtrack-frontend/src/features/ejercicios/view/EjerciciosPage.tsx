@@ -90,6 +90,9 @@ export default function EjerciciosPage() {
           setFiltroGrupo={ej.setFiltroGrupo}
           busqueda={ej.busqueda}
           setBusqueda={ej.setBusqueda}
+          soloSinMaquina={ej.soloSinMaquina}
+          setSoloSinMaquina={ej.setSoloSinMaquina}
+          asignarMaquina={ej.asignarMaquina}
           verInactivos={ej.verInactivos}
           setVerInactivos={ej.setVerInactivos}
           showForm={ej.showForm}

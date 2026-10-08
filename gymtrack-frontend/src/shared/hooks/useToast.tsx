@@ -67,7 +67,7 @@ const ICON_COLORS: Record<ToastType, string> = {
   success: '#16A34A',
   error:   '#DC2626',
   warning: '#D97706',
-  info:    '#2563EB',
+  info:    'var(--accent)',
 }
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {

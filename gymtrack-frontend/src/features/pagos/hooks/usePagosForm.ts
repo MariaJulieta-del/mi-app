@@ -43,7 +43,10 @@ export function usePagosForm() {
   const [observaciones, setObservaciones] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
-  const [confirmar, setConfirmar] = useState(false)
+  /** Con cuánto paga (solo efectivo), para calcular el vuelto */
+  const [pagaCon, setPagaCon] = useState('')
+  /** Cobro recién hecho: se muestra la pantalla de listo */
+  const [hecho, setHecho] = useState<{ nombre: string; socioId: number; plan: string; monto: number; metodo: string; hasta: string | null; vuelto: number | null } | null>(null)
 
   const [socios, setSocios] = useState<Socio[]>([])
   const [planes, setPlanes] = useState<Tarifa[]>([])
@@ -81,6 +84,11 @@ export function usePagosForm() {
 
   const cambiarSocio = () => { setSocioSel(null); setMembresiaActual(null); setPlanSel(null) }
 
+  /** Dejar el formulario listo para el próximo cobro */
+  const nuevoCobro = () => {
+    cambiarSocio(); setMetodo(null); setObservaciones(''); setPagaCon(''); setError(null); setHecho(null)
+  }
+
   /** Qué va a pasar con la membresía al cobrar (misma regla que el backend) */
   const preview = useMemo(() => {
     if (!planSel) return null
@@ -94,9 +102,12 @@ export function usePagosForm() {
   const paso = !socioSel ? 1 : !planSel ? 2 : !metodo ? 3 : 4
   const listo = !!(socioSel && planSel && metodo)
 
+  const vuelto = metodo === 'EFECTIVO' && planSel && pagaCon !== '' ? Number(pagaCon) - planSel.precio : null
+
   const handleConfirmar = async () => {
     if (!listo) return
-    setConfirmar(false); setGuardando(true)
+    if (vuelto != null && vuelto < 0) { setError('Lo que entrega es menos que el precio del plan'); return }
+    setGuardando(true)
     try {
       await registrarConMembresia({
         socioId: socioSel!.id!,
@@ -106,8 +117,10 @@ export function usePagosForm() {
       })
       toast.success(preview?.esRenovacion ? 'Membresía renovada' : 'Plan cobrado',
         `${socioSel!.nombre} ${socioSel!.apellido} — ${planSel!.nombre}`)
-      // Después de cobrar, al perfil del socio (el profesor no tiene acceso a la lista de pagos)
-      navigate(`/socios/${socioSel!.id}/perfil`)
+      setHecho({
+        nombre: `${socioSel!.nombre} ${socioSel!.apellido}`, socioId: socioSel!.id!, plan: planSel!.nombre,
+        monto: planSel!.precio, metodo: metodo!, hasta: preview?.hasta ?? null, vuelto,
+      })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       setError(msg ?? 'Error al registrar el pago')
@@ -120,7 +133,7 @@ export function usePagosForm() {
     membresiaActual, cargandoMembresia,
     planes, planSel, setPlanSel, metodo, setMetodo,
     observaciones, setObservaciones, error, setError, guardando,
-    confirmar, setConfirmar, handleConfirmar,
+    handleConfirmar, pagaCon, setPagaCon, vuelto, hecho, nuevoCobro, esAdmin: user?.rol === 'ADMIN',
     busqueda, setBusqueda, sociosFiltrados,
     preview, paso, listo,
     volverA: socioIdParam ? `/socios/${socioIdParam}/perfil` : user?.rol === 'ADMIN' ? '/pagos' : '/membresias',

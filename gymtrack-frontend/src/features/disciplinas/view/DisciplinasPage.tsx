@@ -5,6 +5,7 @@ import DisciplinaCard from '../components/DisciplinaCard'
 import DisciplinaFormModal from '../components/DisciplinaFormModal'
 import AlumnosModal from '../components/AlumnosModal'
 import { colorDisciplina } from '../utils/disciplinaUtils'
+import { CargandoPagina } from '../../../shared/components/ui'
 
 /**
  * Disciplinas (clases grupales): calendario semanal o lista, alumnos por clase,
@@ -75,7 +76,7 @@ export default function DisciplinasPage() {
         </div>
       )}
 
-      {d.cargando ? <p className="gt-text-muted">Cargando…</p>
+      {d.cargando ? <CargandoPagina resumen={false} filas={4} />
         : d.disciplinas.length === 0 ? (
           <div className="gt-card gt-empty" style={{ padding: '40px 20px' }}>
             <p style={{ fontSize: 34, margin: 0 }}>🧘</p>

@@ -1,4 +1,5 @@
-import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { Link } from 'react-router-dom'
+import { CircleCheck } from 'lucide-react'
 import MembresiaResumen from '../../membresias/components/MembresiaResumen'
 import { textoPases } from '../../membresias/types/Tarifa'
 import { formatFecha } from '../../../shared/utils/fechas'
@@ -8,8 +9,35 @@ const PASOS = ['Socio', 'Plan', 'Método de pago', 'Confirmar']
 
 const pesos = (n: number) => `$${Number(n).toLocaleString('es-AR')}`
 
+/** Billetes con los que suele pagar la gente: el exacto y los redondeos siguientes */
+function sugerenciasPago(precio: number) {
+  const opciones = new Set<number>([precio])
+  for (const paso of [1000, 5000, 10000, 20000]) opciones.add(Math.ceil(precio / paso) * paso)
+  return [...opciones].sort((a, b) => a - b).slice(0, 4)
+}
+
 export default function PagosForm() {
   const f = usePagosForm()
+
+  if (f.hecho) {
+    const h = f.hecho
+    return (
+      <div className="gt-card gt-cobro-listo">
+        <CircleCheck size={44} aria-hidden />
+        <h1 className="gt-page-title" style={{ margin: 0 }}>Cobro registrado</h1>
+        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+          <strong>{pesos(h.monto)}</strong> en {METODOS.find(m => m.value === h.metodo)?.label.replace(/^\S+\s/, '').toLowerCase()} · {h.plan} · {h.nombre}
+        </p>
+        {h.hasta && <p className="gt-text-muted" style={{ margin: 0 }}>La membresía queda activa hasta el {formatFecha(h.hasta)}.</p>}
+        {h.vuelto != null && h.vuelto > 0 && <p className="gt-cobro-vuelto">Vuelto: <strong>{pesos(h.vuelto)}</strong></p>}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
+          <button type="button" className="gt-btn gt-btn-primary" onClick={f.nuevoCobro} autoFocus>Cobrar a otro socio</button>
+          <Link to={`/socios/${h.socioId}/perfil`} className="gt-btn gt-btn-secondary">Ver perfil</Link>
+          {f.esAdmin && <Link to="/pagos" className="gt-btn gt-btn-secondary">Ir a la caja</Link>}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -47,7 +75,8 @@ export default function PagosForm() {
           ) : (
             <div style={{ maxWidth: 480 }}>
               <input className="gt-input" placeholder="Buscá por nombre, apellido o DNI…" autoFocus
-                value={f.busqueda} onChange={e => f.setBusqueda(e.target.value)} />
+                value={f.busqueda} onChange={e => f.setBusqueda(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && f.sociosFiltrados[0]) { e.preventDefault(); f.seleccionarSocio(f.sociosFiltrados[0]) } }} />
               {f.sociosFiltrados.length > 0 && (
                 <div className="gt-card-list" style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
                   {f.sociosFiltrados.map(s => (
@@ -103,6 +132,25 @@ export default function PagosForm() {
                 </button>
               ))}
             </div>
+            {f.metodo === 'EFECTIVO' && (
+              <div className="gt-vuelto">
+                <label className="gt-label" htmlFor="paga-con">¿Con cuánto paga?</label>
+                <div className="gt-vuelto-fila">
+                  <input id="paga-con" className="gt-input" type="number" inputMode="decimal" min={0} placeholder={pesos(f.planSel.precio)}
+                    value={f.pagaCon} onChange={e => f.setPagaCon(e.target.value)} style={{ maxWidth: 160 }} />
+                  {sugerenciasPago(f.planSel.precio).map(v => (
+                    <button key={v} type="button" className={`gt-filtro-chip${Number(f.pagaCon) === v ? ' activo' : ''}`} onClick={() => f.setPagaCon(String(v))}>
+                      {v === f.planSel!.precio ? 'Justo' : pesos(v)}
+                    </button>
+                  ))}
+                </div>
+                {f.vuelto != null && (
+                  <p className={`gt-vuelto-res${f.vuelto < 0 ? ' error' : ''}`}>
+                    {f.vuelto < 0 ? `Faltan ${pesos(-f.vuelto)}` : f.vuelto === 0 ? 'Sin vuelto' : <>Vuelto: <strong>{pesos(f.vuelto)}</strong></>}
+                  </p>
+                )}
+              </div>
+            )}
             <div className="gt-form-group" style={{ marginTop: 12, maxWidth: 480 }}>
               <label className="gt-label">Observaciones (opcional)</label>
               <input className="gt-input" value={f.observaciones} onChange={e => f.setObservaciones(e.target.value)}
@@ -132,23 +180,13 @@ export default function PagosForm() {
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="gt-btn gt-btn-primary" disabled={!f.listo || f.guardando}
-            onClick={() => f.setConfirmar(true)}>
+            onClick={f.handleConfirmar}>
             {f.guardando ? 'Registrando…' : `Cobrar${f.planSel ? ' ' + pesos(f.planSel.precio) : ''}`}
           </button>
           <button type="button" className="gt-btn gt-btn-secondary" onClick={() => f.navigate(f.volverA)}>Volver</button>
         </div>
       </div>
 
-      <ConfirmModal
-        open={f.confirmar}
-        title="Confirmar cobro"
-        message={f.listo
-          ? `¿Confirmás el cobro de ${pesos(f.planSel!.precio)} (${f.planSel!.nombre}) a ${f.socioSel!.nombre} ${f.socioSel!.apellido}?`
-          : ''}
-        confirmLabel="Confirmar cobro"
-        onConfirm={f.handleConfirmar}
-        onCancel={() => f.setConfirmar(false)}
-      />
     </>
   )
 }

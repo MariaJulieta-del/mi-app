@@ -30,3 +30,6 @@ dist-ssr
 # Variables de entorno locales
 .env
 .env.local
+
+# Mails capturados por el servidor trucho de pruebas
+pruebas-e2e/mails-recibidos.json

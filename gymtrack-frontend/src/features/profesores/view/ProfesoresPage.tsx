@@ -1,10 +1,11 @@
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useProfesores } from '../hooks/useProfesores'
+import { CargandoPagina } from '../../../shared/components/ui'
 
 export default function ProfesoresPage() {
   const p = useProfesores()
 
-  if (p.cargando) return <div className="gt-page"><p style={{ color: 'var(--text-muted)' }}>Cargando...</p></div>
+  if (p.cargando) return <CargandoPagina resumen={false} filas={3} />
   if (p.error) return <div className="gt-page"><p style={{ color: 'var(--red)' }}>{p.error}</p></div>
 
   return (
@@ -46,7 +47,7 @@ export default function ProfesoresPage() {
               </div>
               <div>
                 <label className="gt-label">Contraseña *</label>
-                <input className="gt-input" type="password" value={p.password} onChange={e => p.setPassword(e.target.value)} placeholder="Mín. 4 caracteres" required />
+                <input className="gt-input" type="password" value={p.password} onChange={e => p.setPassword(e.target.value)} placeholder="Mín. 8, con letras y números" required />
               </div>
               <div>
                 <label className="gt-label">Email</label>

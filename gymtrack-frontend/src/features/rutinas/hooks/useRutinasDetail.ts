@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../../shared/context/AuthContext'
 import type { Rutina, Ejercicio, EjercicioRequestDTO } from '../types/Rutina'
 import {
-  obtenerRutina, obtenerEjercicios, agregarEjercicio, eliminarEjercicio, actualizarEjercicioEnRutina,
+  obtenerRutina, obtenerEjercicios, agregarEjercicio, eliminarEjercicio, actualizarEjercicioEnRutina, cambiarSuperserie,
 } from '../services/rutinaService'
 import { guardarProgreso, getProgresoRutina } from '../services/progresoService'
 import { obtenerPorSocio } from '../../membresias/services/membresiaService'
@@ -67,7 +67,7 @@ export function useRutinasDetail() {
   const [membresia, setMembresia] = useState<Membresia | null>(null)
 
   // Día activo
-  const [diaActivo, setDiaActivo] = useState(1)
+  const [diaActivo, setDiaActivo] = useState(() => Number(searchParams.get('dia')) || 1)
 
   // Edición inline
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -225,7 +225,15 @@ export function useRutinasDetail() {
     }
   }
 
+  /** Une un ejercicio con el siguiente en superserie, o lo separa */
+  const superserie = async (ejId: number, unir: boolean) => {
+    if (!rutina?.id) return
+    try { setEjercicios(await cambiarSuperserie(rutina.id, ejId, socioId, unir)) }
+    catch { setError('No se pudo cambiar la superserie') }
+  }
+
   return {
+    superserie,
     id, navigate,
     esAdmin, esSocio, esGeneral, socioId, linkEditar,
     rutina, ejercicios, maquinas, catalogo, cargando, error, setError,

@@ -1,11 +1,19 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense } from 'react'
+import {
+  Bell, CalendarCheck, CalendarDays, ChartColumn, TrendingUp, CircleUser, ClipboardList, Cog, Dumbbell, House, IdCard,
+  LogOut, Menu, Moon, ScanLine, Search, Sun, Settings, ShieldCheck, UserCog, Users, Wallet, type LucideIcon,
+} from 'lucide-react'
 import { useAuth } from './shared/context/AuthContext'
+import { useMarca } from './shared/context/MarcaContext'
+import { useTema } from './shared/hooks/useTema'
+import { SocioAppProvider } from './features/socioapp/SocioAppContext'
 import { ToastProvider } from './shared/hooks/useToast'
 import CommandPalette from './shared/components/CommandPalette'
 import ConfirmModal from './shared/components/ConfirmModal'
 import LoginPage from './features/auth/view/LoginPage'
 import ProtectedRoute from './shared/components/ProtectedRoute'
+import { CargandoPagina } from './shared/components/ui'
 
 // Páginas con carga diferida: cada módulo se descarga recién al navegar a él
 const SociosPage         = lazy(() => import('./features/socios/view/SociosPage'))
@@ -34,44 +42,88 @@ const SocioPerfilPage    = lazy(() => import('./features/socios/view/SocioPerfil
 const EjerciciosPage     = lazy(() => import('./features/ejercicios/view/EjerciciosPage'))
 const MaquinasPage       = lazy(() => import('./features/maquinas/view/MaquinasPage'))
 const ProfesoresPage     = lazy(() => import('./features/profesores/view/ProfesoresPage'))
+const MiCuentaPage       = lazy(() => import('./features/cuenta/view/MiCuentaPage'))
+const ConfiguracionPage  = lazy(() => import('./features/cuenta/view/ConfiguracionPage'))
+const SocioInicioPage    = lazy(() => import('./features/socioapp/view/SocioInicioPage'))
+const SocioRutinaPage    = lazy(() => import('./features/socioapp/view/SocioRutinaPage'))
+const SocioClasesPage    = lazy(() => import('./features/socioapp/view/SocioClasesPage'))
+const SocioProgresoPage  = lazy(() => import('./features/socioapp/view/SocioProgresoPage'))
+const SocioCuentaPage    = lazy(() => import('./features/socioapp/view/SocioCuentaPage'))
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
-const NAV_LINKS = [
-  { to: '/',               label: 'Inicio',          end: true,  roles: ['ADMIN'] },
-  { to: '/hoy',            label: 'Hoy',             end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/acceso',         label: 'Acceso',          end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/socios',         label: 'Socios',          end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/rutinas',        label: 'Rutinas',         end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/membresias',     label: 'Membresías',      end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/pagos',          label: 'Pagos',           end: false, roles: ['ADMIN'] },
-  { to: '/disciplinas',    label: 'Disciplinas',     end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/ejercicios',     label: 'Ejercicios',      end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/maquinas',       label: 'Máquinas',        end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/profesores',     label: 'Profesores',      end: false, roles: ['ADMIN'] },
-  { to: '/reportes',       label: 'Reportes',        end: false, roles: ['ADMIN'] },
-  { to: '/notificaciones', label: 'Notificaciones',  end: false, roles: ['ADMIN', 'PROFESOR'] },
-  { to: '/auditoria',      label: 'Auditoría',       end: false, roles: ['ADMIN'] },
+type Rol = 'ADMIN' | 'PROFESOR'
+interface NavItem { to: string; label: string; icono: LucideIcon; end?: boolean; roles: Rol[] }
+
+/** Menú del staff agrupado por tarea */
+const NAV_GRUPOS: { titulo: string; items: NavItem[] }[] = [
+  { titulo: 'Día a día', items: [
+    { to: '/',          label: 'Inicio',         icono: House,          end: true, roles: ['ADMIN'] },
+    { to: '/hoy',       label: 'Hoy',            icono: CalendarCheck,  roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/acceso',    label: 'Acceso',         icono: ScanLine,       roles: ['ADMIN', 'PROFESOR'] },
+  ] },
+  { titulo: 'Socios', items: [
+    { to: '/socios',     label: 'Socios',        icono: Users,          roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/membresias', label: 'Membresías',    icono: IdCard,         roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/pagos',      label: 'Pagos',         icono: Wallet,         roles: ['ADMIN'] },
+  ] },
+  { titulo: 'Entrenamiento', items: [
+    { to: '/rutinas',     label: 'Rutinas',      icono: ClipboardList,  roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/disciplinas', label: 'Disciplinas',  icono: CalendarDays,   roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/ejercicios',  label: 'Ejercicios',   icono: Dumbbell,       roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/maquinas',    label: 'Máquinas',     icono: Cog,            roles: ['ADMIN', 'PROFESOR'] },
+  ] },
+  { titulo: 'Negocio', items: [
+    { to: '/reportes',       label: 'Reportes',       icono: ChartColumn, roles: ['ADMIN'] },
+    { to: '/notificaciones', label: 'Notificaciones', icono: Bell,        roles: ['ADMIN', 'PROFESOR'] },
+    { to: '/auditoria',      label: 'Auditoría',      icono: ShieldCheck, roles: ['ADMIN'] },
+  ] },
+  { titulo: 'Configuración', items: [
+    { to: '/profesores',    label: 'Profesores',     icono: UserCog,     roles: ['ADMIN'] },
+    { to: '/configuracion', label: 'Gimnasio',       icono: Settings,    roles: ['ADMIN'] },
+    { to: '/cuenta',        label: 'Mi cuenta',      icono: CircleUser,  roles: ['ADMIN', 'PROFESOR'] },
+  ] },
 ]
 
 /** Barra inferior del staff en el celular: lo que más se usa en el salón */
 const BOTTOM_LINKS = [
-  { to: '/hoy',     label: 'Hoy',     icono: '🏠', end: false },
-  { to: '/acceso',  label: 'Acceso',  icono: '🚪', end: false },
-  { to: '/socios',  label: 'Socios',  icono: '👥', end: false },
-  { to: '/rutinas', label: 'Rutinas', icono: '📋', end: false },
+  { to: '/hoy',     label: 'Hoy',     icono: CalendarCheck },
+  { to: '/acceso',  label: 'Acceso',  icono: ScanLine },
+  { to: '/socios',  label: 'Socios',  icono: Users },
+  { to: '/rutinas', label: 'Rutinas', icono: ClipboardList },
 ]
 
 function BottomNav({ onMas }: { onMas: () => void }) {
   return (
     <nav className="gt-bottom-nav" aria-label="Navegación principal">
       {BOTTOM_LINKS.map(l => (
-        <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => 'gt-bottom-link' + (isActive ? ' active' : '')}>
-          <span aria-hidden>{l.icono}</span>{l.label}
+        <NavLink key={l.to} to={l.to} className={({ isActive }) => 'gt-bottom-link' + (isActive ? ' active' : '')}>
+          <l.icono size={22} aria-hidden />{l.label}
         </NavLink>
       ))}
       <button type="button" className="gt-bottom-link" onClick={onMas}>
-        <span aria-hidden>☰</span>Más
+        <Menu size={22} aria-hidden />Más
       </button>
+    </nav>
+  )
+}
+
+/** Barra inferior de la app del socio */
+const SOCIO_LINKS = [
+  { to: '/',         label: 'Inicio',   icono: House,         end: true },
+  { to: '/mi-rutina', label: 'Rutina',  icono: Dumbbell,      end: false },
+  { to: '/clases',   label: 'Clases',   icono: CalendarDays,  end: false },
+  { to: '/progreso', label: 'Progreso', icono: TrendingUp,    end: false },
+  { to: '/yo',       label: 'Yo',       icono: CircleUser,    end: false },
+]
+
+function SocioNav() {
+  return (
+    <nav className="gt-bottom-nav gt-socio-nav" aria-label="Navegación">
+      {SOCIO_LINKS.map(l => (
+        <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => 'gt-bottom-link' + (isActive ? ' active' : '')}>
+          <l.icono size={22} aria-hidden />{l.label}
+        </NavLink>
+      ))}
     </nav>
   )
 }
@@ -86,42 +138,25 @@ function Sidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void
     {abierto && <div className="gt-sidebar-backdrop" onClick={onCerrar} aria-hidden />}
     <aside className={`gt-sidebar${abierto ? ' abierto' : ''}`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
       <nav>
-        {NAV_LINKS.filter(l => l.roles.includes(rol)).map(l => (
-          <NavLink
-            key={l.to}
-            to={l.to}
-            end={l.end}
-            className={({ isActive }) => 'gt-sidebar-link' + (isActive ? ' active' : '')}
-            onClick={onCerrar}
-          >
-            {l.label}
-          </NavLink>
-        ))}
+        {NAV_GRUPOS.map(g => {
+          const items = g.items.filter(l => l.roles.includes(rol as Rol))
+          if (items.length === 0) return null
+          return (
+            <div key={g.titulo} className="gt-nav-grupo">
+              <span className="gt-nav-titulo">{g.titulo}</span>
+              {items.map(l => (
+                <NavLink key={l.to} to={l.to} end={l.end}
+                  className={({ isActive }) => 'gt-sidebar-link' + (isActive ? ' active' : '')} onClick={onCerrar}>
+                  <l.icono size={18} aria-hidden />{l.label}
+                </NavLink>
+              ))}
+            </div>
+          )
+        })}
       </nav>
-      <div style={{ padding: '16px 12px' }}>
-        <button
-          onClick={() => setConfirmLogout(true)}
-          style={{
-            width: '100%',
-            background: 'transparent',
-            border: '1px solid var(--red)',
-            color: 'var(--red)',
-            borderRadius: 6,
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Cerrar sesión
+      <div style={{ padding: '12px' }}>
+        <button type="button" className="gt-logout" onClick={() => setConfirmLogout(true)}>
+          <LogOut size={16} aria-hidden /> Cerrar sesión
         </button>
       </div>
 
@@ -140,78 +175,53 @@ function Sidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void
   )
 }
 
-// ── Icono sol / luna ──────────────────────────────────────────────────────
-function IconSun() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="5"/>
-      <line x1="12" y1="1" x2="12" y2="3"/>
-      <line x1="12" y1="21" x2="12" y2="23"/>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-      <line x1="1" y1="12" x2="3" y2="12"/>
-      <line x1="21" y1="12" x2="23" y2="12"/>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-    </svg>
-  )
-}
-
-function IconMoon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-    </svg>
-  )
-}
-
 // ── Layout principal (con sidebar + topbar) ───────────────────────────────
+/** Logo y nombre del gimnasio */
+function Marca() {
+  const { marca } = useMarca()
+  return (
+    <span className="gt-topbar-brand">
+      {marca.logo && <img src={marca.logo} alt="" className="gt-topbar-logo" />}
+      <span className="gt-topbar-nombre">{marca.nombre}</span>
+    </span>
+  )
+}
+
 function AppLayout() {
   const { user } = useAuth()
   const [menuAbierto, setMenuAbierto] = useState(false)
-  const [dark, setDark] = useState(() => {
-    try { return localStorage.getItem('gt-dark') === '1' } catch { return false }
-  })
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-    try { localStorage.setItem('gt-dark', dark ? '1' : '0') } catch { /* sin almacenamiento: no se recuerda el tema */ }
-  }, [dark])
+  const [dark, setDark] = useTema()
 
   return (
     <>
       <header className="gt-topbar">
-        <span className="gt-topbar-brand">GymTrack</span>
+        <Marca />
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {user?.rol !== 'SOCIO' && (
           <button
             onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
             style={{
               background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
-              color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+              color: 'inherit', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
               fontSize: 12, display: 'flex', alignItems: 'center', gap: 6,
             }}
             title="Buscar socio (Ctrl+K)"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
+            <Search size={13} aria-hidden />
             Buscar
             <kbd className="gt-topbar-kbd" style={{ fontSize: 10, opacity: 0.75, background: 'rgba(0,0,0,0.2)', padding: '1px 4px', borderRadius: 3 }}>Ctrl+K</kbd>
           </button>
           )}
-          <button
+          {user?.rol !== 'SOCIO' && <button
             className="gt-dark-toggle"
-            onClick={() => setDark(d => !d)}
+            onClick={() => setDark(!dark)}
             title={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
           >
-            {dark ? <IconSun /> : <IconMoon />}
+            {dark ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
             <span>{dark ? 'Modo claro' : 'Modo oscuro'}</span>
-          </button>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="gt-topbar-usuario" style={{ color: '#fff', fontSize: 13, opacity: 0.9 }}>
+          </button>}
+          {user?.rol !== 'SOCIO' && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="gt-topbar-usuario" style={{ color: 'inherit', fontSize: 13, opacity: 0.9 }}>
               {user?.username}
             </span>
             <span style={{
@@ -226,7 +236,7 @@ function AppLayout() {
             }}>
               {user?.rol}
             </span>
-          </span>
+          </span>}
         </div>
       </header>
 
@@ -234,18 +244,23 @@ function AppLayout() {
       <div className="gt-layout">
         {user?.rol !== 'SOCIO' && <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />}
         {user?.rol !== 'SOCIO' && <BottomNav onMas={() => setMenuAbierto(true)} />}
+        {user?.rol === 'SOCIO' && <SocioNav />}
         <main className={`gt-content${user?.rol === 'SOCIO' ? ' gt-content-socio' : ' gt-content-staff'}`}>
-          <Suspense fallback={<p className="gt-text-muted">Cargando...</p>}>
+          <SocioAppProvider>
+          <Suspense fallback={<CargandoPagina />}>
           <Routes>
             {/* ── Rutas SOCIO ── */}
             {user?.rol === 'SOCIO' && user.socioId && (
               <>
-                <Route path="/"       element={<Navigate to={`/socios/${user.socioId}/perfil`} replace />} />
-                <Route path="/socios/:socioId/perfil" element={<SocioPerfilPage />} />
+                <Route path="/"                       element={<SocioInicioPage />} />
+                <Route path="/mi-rutina"              element={<SocioRutinaPage />} />
+                <Route path="/clases"                 element={<SocioClasesPage />} />
+                <Route path="/progreso"               element={<SocioProgresoPage />} />
+                <Route path="/yo"                     element={<SocioCuentaPage />} />
                 <Route path="/rutinas/:id"            element={<RutinasDetail />} />
                 <Route path="/rutinas/:id/entrenar"   element={<EntrenarPage />} />
                 <Route path="/ingreso"                element={<EscanearIngresoPage />} />
-                <Route path="*"       element={<Navigate to={`/socios/${user.socioId}/perfil`} replace />} />
+                <Route path="*"                       element={<Navigate to="/" replace />} />
               </>
             )}
             {/* ── Rutas ADMIN y PROFESOR ── */}
@@ -273,6 +288,8 @@ function AppLayout() {
                 <Route path="/ejercicios"                  element={<EjerciciosPage />} />
                 <Route path="/maquinas"                    element={<MaquinasPage />} />
                 <Route path="/notificaciones"              element={<NotificacionesPage />} />
+                <Route path="/cuenta"                      element={<MiCuentaPage />} />
+                {user?.rol === 'ADMIN' && <Route path="/configuracion" element={<ConfiguracionPage />} />}
                 {user?.rol === 'ADMIN' && (
                   <>
                     <Route path="/profesores"              element={<ProfesoresPage />} />
@@ -285,6 +302,7 @@ function AppLayout() {
             )}
           </Routes>
           </Suspense>
+          </SocioAppProvider>
         </main>
       </div>
     </>

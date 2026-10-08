@@ -1,20 +1,33 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import MaquinasEjercicio from './MaquinasEjercicio'
+import { Link2 } from 'lucide-react'
 import { PasesMeter } from '../../membresias/components/MembresiaResumen'
 import { formatFecha } from '../../../shared/utils/fechas'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { etiquetaDia } from '../utils/rutinaUtils'
 import { useRutinasDetail, TREN_CONFIG, DIAS_ORDER, resolverImgEstatica } from '../hooks/useRutinasDetail'
+import { CargandoPagina } from '../../../shared/components/ui'
 
 export default function RutinasDetail() {
   const d = useRutinasDetail()
+  // Socio: los ejercicios se ven plegados (nombre, series y máquina) y se abren de a uno
+  const [abiertos, setAbiertos] = useState<Set<number>>(new Set())
+  const [calorAbierto, setCalorAbierto] = useState(false)
+  const toggleAbierto = (ejId: number) => setAbiertos(prev => {
+    const s = new Set(prev)
+    if (s.has(ejId)) s.delete(ejId); else s.add(ejId)
+    return s
+  })
 
-  if (d.cargando) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Cargando rutina…</div>
+  if (d.cargando) return <CargandoPagina resumen={false} filas={5} />
   if (!d.rutina) return <div className="gt-alert gt-alert-error">Rutina no encontrada</div>
 
   const { rutina, ejercicios } = d
   const calentamiento = ejercicios.filter(e => e.esCalentamiento)
   const principales = ejercicios.filter(e => !e.esCalentamiento)
   const dias = Array.from(new Set(principales.map(e => e.dia ?? 1))).sort((a, b) => a - b)
+  const delDia = principales.filter(e => dias.length === 1 || (e.dia ?? 1) === d.diaActivo)
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -22,7 +35,7 @@ export default function RutinasDetail() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <button className="gt-btn gt-btn-secondary" onClick={() => d.navigate('/rutinas')} style={{ marginBottom: 10 }}>← Volver a Rutinas</button>
+          <button className="gt-btn gt-btn-secondary" onClick={() => d.navigate(d.esSocio ? '/mi-rutina' : '/rutinas')} style={{ marginBottom: 10 }}>← {d.esSocio ? 'Mi rutina' : 'Volver a Rutinas'}</button>
           <h1 className="gt-page-title" style={{ margin: 0 }}>{rutina.nombre}</h1>
           {rutina.descripcion && <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>{rutina.descripcion}</p>}
         </div>
@@ -85,15 +98,28 @@ export default function RutinasDetail() {
       {/* Entrada en calor */}
       {calentamiento.length > 0 && (
         <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', border: '2px solid var(--yellow-text)' }}>
-          <div style={{ background: 'linear-gradient(90deg, #EA580C 0%, #F97316 100%)', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button type="button" disabled={!d.esSocio} onClick={() => setCalorAbierto(v => !v)} aria-expanded={!d.esSocio || calorAbierto}
+            style={{ width: '100%', border: 'none', cursor: d.esSocio ? 'pointer' : 'default', textAlign: 'left', background: 'linear-gradient(90deg, #EA580C 0%, #F97316 100%)', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 18 }}>🔥</span>
             <span style={{ fontWeight: 800, fontSize: 14, color: '#fff', letterSpacing: 0.3 }}>ENTRADA EN CALOR</span>
-            <span style={{ fontSize: 12, color: 'var(--yellow-text)', marginLeft: 6 }}>({calentamiento.length} ejercicios de movilidad — inamovibles)</span>
-          </div>
+            <span style={{ fontSize: 12, color: '#FFF7ED', marginLeft: 6, flex: 1 }}>({calentamiento.length} ejercicios de movilidad{d.esSocio ? '' : ' — inamovibles'})</span>
+            {d.esSocio && <span style={{ color: '#fff', fontSize: 16 }}>{calorAbierto ? '▾' : '▸'}</span>}
+          </button>
+          {(!d.esSocio || calorAbierto) && (
           <div style={{ background: 'var(--bg-surface-2)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {calentamiento.map((ej, idx) => (
               <div key={ej.id ?? idx} style={{ display: 'flex', gap: 10, padding: '10px 12px', background: 'var(--bg-surface-3)', borderRadius: 8, border: '1px solid var(--border)', alignItems: 'center' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--yellow-bg)', color: 'var(--yellow-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{idx + 1}</div>
+                {(() => {
+                  const img = ej.imagenUrl || resolverImgEstatica(ej.nombreEjercicio)
+                  return img ? (
+                    <button type="button" onClick={() => d.setLightbox({ url: img, nombre: ej.nombreEjercicio })} title="Ver demostración"
+                      style={{ background: '#fff', border: 'none', padding: 0, borderRadius: 7, cursor: 'zoom-in', flexShrink: 0 }}>
+                      <img src={img} alt={ej.nombreEjercicio} loading="lazy" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 7, display: 'block' }}
+                        onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
+                    </button>
+                  ) : null
+                })()}
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{ej.nombreEjercicio}</p>
                   <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
@@ -107,10 +133,11 @@ export default function RutinasDetail() {
                   <button type="button" onClick={() => d.abrirEdicion(ej)} title="Editar series/reps"
                     style={{ padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--yellow-text)', cursor: 'pointer' }}>✏</button>
                 )}
-                <span title="Ejercicio inamovible" style={{ fontSize: 16, color: 'var(--yellow-text)', marginLeft: 4 }}>🔒</span>
+                {!d.esSocio && <span title="Ejercicio inamovible" style={{ fontSize: 16, color: 'var(--yellow-text)', marginLeft: 4 }}>🔒</span>}
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
@@ -159,7 +186,7 @@ export default function RutinasDetail() {
               <label style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Agregar al día:</label>
               {Array.from({ length: Math.max(rutina.diasSemana?.length ?? 0, dias[dias.length - 1] ?? 1, 1) }, (_, i) => i + 1).map(dia => (
                 <button key={dia} type="button" onClick={() => d.setDiaAgregar(dia)}
-                  style={{ padding: '4px 12px', borderRadius: 14, border: '1.5px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', borderColor: d.diaAgregar === dia ? 'var(--accent)' : 'var(--border)', background: d.diaAgregar === dia ? 'var(--accent)' : 'transparent', color: d.diaAgregar === dia ? '#fff' : 'var(--text-muted)' }}>
+                  style={{ padding: '4px 12px', borderRadius: 14, border: '1.5px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', borderColor: d.diaAgregar === dia ? 'var(--accent)' : 'var(--border)', background: d.diaAgregar === dia ? 'var(--accent)' : 'transparent', color: d.diaAgregar === dia ? 'var(--on-accent)' : 'var(--text-muted)' }}>
                   {etiquetaDia(rutina.diasSemana, dia)}
                 </button>
               ))}
@@ -201,7 +228,7 @@ export default function RutinasDetail() {
               <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
                 {dias.map(dia => (
                   <button key={dia} type="button" onClick={() => d.setDiaActivo(dia)}
-                    style={{ padding: '6px 16px', borderRadius: 20, border: '2px solid', borderColor: d.diaActivo === dia ? 'var(--accent)' : 'var(--border)', background: d.diaActivo === dia ? 'var(--accent)' : 'var(--bg-surface)', color: d.diaActivo === dia ? '#fff' : 'var(--text-secondary)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    style={{ padding: '6px 16px', borderRadius: 20, border: '2px solid', borderColor: d.diaActivo === dia ? 'var(--accent)' : 'var(--border)', background: d.diaActivo === dia ? 'var(--accent)' : 'var(--bg-surface)', color: d.diaActivo === dia ? 'var(--on-accent)' : 'var(--text-secondary)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                     {etiquetaDia(rutina.diasSemana, dia)}
                     <span style={{ fontWeight: 400, marginLeft: 5, fontSize: 11, opacity: 0.8 }}>({principales.filter(e => (e.dia ?? 1) === dia).length} ej.)</span>
                   </button>
@@ -209,13 +236,81 @@ export default function RutinasDetail() {
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {principales.filter(e => dias.length === 1 || (e.dia ?? 1) === d.diaActivo).map((ej, idx) => {
+              {delDia.map((ej, idx) => {
+                const siguiente = delDia[idx + 1]
+                const unidoConSiguiente = ej.superserie != null && siguiente?.superserie === ej.superserie
+                const enSuperserie = ej.superserie != null && delDia.some(x => x.id !== ej.id && x.superserie === ej.superserie)
                 const maks = d.resolverMaquinas(ej.maquinaIds)
                 const ejGrupos = (ej.grupos && ej.grupos.length > 0) ? ej.grupos : d.gruposRutina
                 const maqRecomendadas = ejGrupos.length > 0
                   ? d.maquinas.filter(m => (m.grupos ?? []).some(g => ejGrupos.includes(g)) && !maks.some(a => a.id === m.id)).slice(0, 5)
                   : []
                 const gifUrl = ej.imagenUrl || d.gifCache[ej.nombreEjercicio] || resolverImgEstatica(ej.nombreEjercicio ?? '')
+
+                if (d.esSocio) {
+                  const abierto = abiertos.has(ej.id!)
+                  const nros = (ej.maquinas ?? []).map(m => m.nroMaquina).filter(Boolean)
+                  return (
+                    <div key={ej.id ?? idx} className="gt-ej-plegable">
+                      <button type="button" className="gt-ej-plegable-cab" onClick={() => toggleAbierto(ej.id!)} aria-expanded={abierto}>
+                        <span className="gt-ej-plegable-n" style={{ background: d.trenInfo?.bg ?? 'var(--bg-surface-3)', color: d.trenInfo?.color ?? 'var(--text-muted)' }}>{idx + 1}</span>
+                        {gifUrl
+                          ? <img src={gifUrl} alt="" className="gt-ej-plegable-img" loading="lazy" onError={e => { e.currentTarget.style.visibility = 'hidden' }} />
+                          : <span className="gt-ej-plegable-img" aria-hidden>{ej.esMaquina ? '⚙' : '💪'}</span>}
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span className="gt-ej-plegable-nombre">{ej.nombreEjercicio}</span>
+                          <span className="gt-ej-plegable-sub">
+                            {ej.series ?? '?'} × {ej.repeticiones ?? '?'}{ej.pesoKg != null ? ` · ${ej.pesoKg} kg` : ''}
+                            {nros.length > 0 && <> · <strong>⚙ N° {nros.join(', ')}</strong></>}
+                            {enSuperserie && <> · <span className="gt-superserie-chip"><Link2 size={11} aria-hidden /> superserie</span></>}
+                          </span>
+                        </span>
+                        <span aria-hidden style={{ fontSize: 18, color: 'var(--text-muted)' }}>{abierto ? '▾' : '▸'}</span>
+                      </button>
+                      {abierto && (
+                        <div className="gt-ej-plegable-cuerpo">
+                          {gifUrl && (
+                            <button type="button" onClick={() => d.setLightbox({ url: gifUrl, nombre: ej.nombreEjercicio })} title="Ver en grande"
+                              style={{ border: 'none', padding: 0, background: 'var(--bg-surface-2)', borderRadius: 10, cursor: 'zoom-in', width: '100%' }}>
+                              <img src={gifUrl} alt={ej.nombreEjercicio} style={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block', borderRadius: 10 }}
+                                onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
+                            </button>
+                          )}
+                          <MaquinasEjercicio maquinas={ej.maquinas} grande />
+                          {ej.descansoSeg != null && ej.descansoSeg > 0 && <p className="gt-text-sm gt-text-muted" style={{ margin: 0 }}>Descanso entre series: {ej.descansoSeg}s</p>}
+                          {ej.notas && <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic', borderLeft: '3px solid var(--accent)', paddingLeft: 10 }}>{ej.notas}</p>}
+                          {ej.descripcionEjercicio && (
+                            <details>
+                              <summary className="gt-text-sm" style={{ cursor: 'pointer', color: 'var(--accent)', fontWeight: 600 }}>¿Cómo se hace?</summary>
+                              <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{ej.descripcionEjercicio}</p>
+                            </details>
+                          )}
+                          {ej.id && (
+                            <div style={{ padding: '10px 12px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px dashed var(--border)', display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                              <span style={{ width: '100%', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>📊 Mi sesión de hoy</span>
+                              {[
+                                { label: 'Series',    field: 'seriesRealizadas'  as const, placeholder: String(ej.series ?? '—') },
+                                { label: 'Reps',      field: 'repeticionesReales' as const, placeholder: String(ej.repeticiones ?? '—') },
+                                { label: 'Peso (kg)', field: 'pesoKg'            as const, placeholder: ej.pesoKg != null ? String(ej.pesoKg) : '—' },
+                              ].map(({ label, field, placeholder }) => (
+                                <div key={field} style={{ flex: '1 1 60px', maxWidth: 90 }}>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>{label}</label>
+                                  <input type="number" inputMode="decimal" min={0} max={999} className="gt-input"
+                                    value={d.progresoHoy[ej.id!]?.[field] ?? ''}
+                                    onChange={e => d.setProgresoHoy(p => ({ ...p, [ej.id!]: { ...p[ej.id!], [field]: e.target.value ? Number(e.target.value) : undefined } }))}
+                                    style={{ textAlign: 'center', padding: '5px 6px' }} placeholder={placeholder} />
+                                </div>
+                              ))}
+                              <button type="button" className="gt-btn gt-btn-primary gt-btn-sm" disabled={d.guardandoProgreso === ej.id} onClick={() => d.handleGuardarProgreso(ej.id!)}>
+                                {d.guardandoProgreso === ej.id ? '…' : '✓ Guardar'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
 
                 return (
                   <div key={ej.id ?? idx}>
@@ -281,28 +376,17 @@ export default function RutinasDetail() {
                       )}
                     </div>
 
-                    {/* Panel progreso (solo SOCIO) */}
-                    {d.esSocio && ej.id && (
-                      <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px dashed var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginRight: 4 }}>📊 Mi sesión de hoy:</span>
-                        {[
-                          { label: 'Series',    field: 'seriesRealizadas'  as const, width: 54, placeholder: String(ej.series ?? '—') },
-                          { label: 'Reps',      field: 'repeticionesReales' as const, width: 54, placeholder: String(ej.repeticiones ?? '—') },
-                          { label: 'Peso (kg)', field: 'pesoKg'            as const, width: 64, placeholder: ej.pesoKg != null ? String(ej.pesoKg) : '—' },
-                        ].map(({ label, field, width, placeholder }) => (
-                          <div key={field}>
-                            <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>{label}</label>
-                            <input type="number" min={0} max={999}
-                              value={d.progresoHoy[ej.id!]?.[field] ?? ''}
-                              onChange={e => d.setProgresoHoy(p => ({ ...p, [ej.id!]: { ...p[ej.id!], [field]: e.target.value ? Number(e.target.value) : undefined } }))}
-                              style={{ width, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, textAlign: 'center' }}
-                              placeholder={placeholder} />
-                          </div>
-                        ))}
-                        <button type="button" disabled={d.guardandoProgreso === ej.id} onClick={() => d.handleGuardarProgreso(ej.id!)}
-                          style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', marginTop: 12, alignSelf: 'flex-end' }}>
-                          {d.guardandoProgreso === ej.id ? '…' : '✓ Guardar'}
-                        </button>
+                    {/* Unir con el siguiente en superserie */}
+                    {d.esAdmin && siguiente && (
+                      <div className={`gt-superserie-union${unidoConSiguiente ? ' unidos' : ''}`}>
+                        {unidoConSiguiente ? (
+                          <>
+                            <span><Link2 size={14} aria-hidden /> Superserie con el siguiente</span>
+                            <button type="button" onClick={() => d.superserie(siguiente.id!, false)}>Separar</button>
+                          </>
+                        ) : (
+                          <button type="button" onClick={() => d.superserie(ej.id!, true)}><Link2 size={14} aria-hidden /> Unir con el siguiente en superserie</button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -328,7 +412,7 @@ export default function RutinasDetail() {
       {/* Modal edición */}
       {d.editingId !== null && (
         <div onClick={() => d.setEditingId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, padding: 24, width: 340, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', borderRadius: 12, padding: 24, width: 340, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
             <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>✏ Editar ejercicio</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               {[

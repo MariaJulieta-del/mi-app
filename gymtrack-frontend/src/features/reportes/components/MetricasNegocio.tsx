@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getMetricas, type Metricas } from '../services/reporteService'
+import FuenteDatos from './FuenteDatos'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -54,10 +55,15 @@ function MapaOcupacion({ m }: { m: Metricas }) {
   )
 }
 
-/** Indicadores del negocio: retención, ingreso por socio y ocupación */
-export default function MetricasNegocio() {
+function useMetricas() {
   const [m, setM] = useState<Metricas | null>(null)
   useEffect(() => { getMetricas().then(setM).catch(() => {}) }, [])
+  return m
+}
+
+/** Retención mes a mes: de los que pagaron el mes anterior, cuántos renovaron, y cuántos nuevos entraron */
+export function RetencionMensual() {
+  const m = useMetricas()
   if (!m) return null
 
   // Último mes con base para medir retención (el mes en curso puede estar incompleto)
@@ -65,58 +71,57 @@ export default function MetricasNegocio() {
   const ultimoCompleto = conBase.length > 1 ? conBase[conBase.length - 2] : conBase[conBase.length - 1]
 
   return (
-    <>
-      <div className="gt-hoy-stats">
-        <div className="gt-stat-card">
-          <div className="gt-stat-number">{m.sociosVigentes}</div>
-          <div className="gt-stat-label">socios con membresía vigente</div>
-        </div>
-        <div className="gt-stat-card">
-          <div className="gt-stat-number" style={{ fontSize: 26 }}>{pesos(m.ingresoPromedioPorSocio)}</div>
-          <div className="gt-stat-label">ingreso promedio por socio (este mes)</div>
-        </div>
-        <div className="gt-stat-card">
-          <div className="gt-stat-number">{ultimoCompleto?.porcentaje != null ? `${ultimoCompleto.porcentaje}%` : '—'}</div>
-          <div className="gt-stat-label">
-            retención {ultimoCompleto ? `en ${fmtMes(ultimoCompleto.mes)}` : ''}
-            <span style={{ display: 'block', fontSize: 11 }}>de los que pagaron el mes anterior, cuántos renovaron</span>
-          </div>
-        </div>
+    <div className="gt-card" style={{ marginBottom: 20 }}>
+      <div className="gt-card-cabecera">
+        <p className="gt-card-title" style={{ margin: 0 }}>Retención y altas por mes</p>
+        {ultimoCompleto?.porcentaje != null && (
+          <span className="gt-text-sm gt-text-muted"><strong className="gt-numero-destacado">{ultimoCompleto.porcentaje}%</strong> renovó en {fmtMes(ultimoCompleto.mes)}</span>
+        )}
       </div>
-
-      <div className="gt-hoy-grid" style={{ marginBottom: 20 }}>
-        <div className="gt-card">
-          <p className="gt-card-title" style={{ marginTop: 0 }}>Retención y altas por mes</p>
-          <div className="gt-table-wrap">
-            <table className="gt-table">
-              <thead><tr><th>Mes</th><th>Renovaron</th><th style={{ width: '40%' }}>Retención</th><th>Nuevos</th></tr></thead>
-              <tbody>
-                {m.meses.map(x => (
-                  <tr key={x.mes}>
-                    <td className="gt-fw-600">{fmtMes(x.mes)}</td>
-                    <td>{x.base ? `${x.retenidos} de ${x.base}` : '—'}</td>
-                    <td>
-                      {x.porcentaje != null ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div className="gt-barra-pct"><div style={{ width: `${x.porcentaje}%` }} /></div>
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)', minWidth: 36 }}>{x.porcentaje}%</span>
-                        </div>
-                      ) : '—'}
-                    </td>
-                    <td>{x.nuevos}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="gt-text-muted gt-text-sm" style={{ margin: '8px 0 0' }}>El mes en curso se completa a medida que la gente renueva.</p>
-        </div>
-
-        <div className="gt-card">
-          <p className="gt-card-title" style={{ marginTop: 0 }}>Ocupación por horario</p>
-          <MapaOcupacion m={m} />
-        </div>
+      <div className="gt-table-wrap">
+        <table className="gt-table">
+          <thead><tr><th>Mes</th><th>Renovaron</th><th style={{ width: '40%' }}>Retención</th><th>Nuevos</th><th>Recaudado</th></tr></thead>
+          <tbody>
+            {m.meses.map(x => (
+              <tr key={x.mes}>
+                <td className="gt-fw-600">{fmtMes(x.mes)}</td>
+                <td>{x.base ? `${x.retenidos} de ${x.base}` : '—'}</td>
+                <td>
+                  {x.porcentaje != null ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="gt-barra-pct"><div style={{ width: `${x.porcentaje}%` }} /></div>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', minWidth: 36 }}>{x.porcentaje}%</span>
+                    </div>
+                  ) : '—'}
+                </td>
+                <td>{x.nuevos}</td>
+                <td>{pesos(Number(x.recaudado))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </>
+      <FuenteDatos>
+        <li><b>Renovaron:</b> socios que tienen un pago completado en el mes anterior y también en ese mes (sale de Pagos).</li>
+        <li><b>Nuevos:</b> socios cuyo primer pago fue en ese mes.</li>
+        <li>El mes en curso se completa a medida que la gente renueva.</li>
+      </FuenteDatos>
+    </div>
+  )
+}
+
+/** Ocupación por día y hora (mapa de calor) */
+export function OcupacionHoraria() {
+  const m = useMetricas()
+  if (!m) return null
+  return (
+    <div className="gt-card" style={{ marginBottom: 20 }}>
+      <p className="gt-card-title" style={{ marginTop: 0 }}>Ocupación por día y horario</p>
+      <MapaOcupacion m={m} />
+      <FuenteDatos>
+        <li>Sale de los ingresos registrados en recepción o con el QR (solo entradas permitidas), de las últimas {m.semanasOcupacion} semanas.</li>
+        <li>Cada casillero es el promedio de ingresos de ese día de la semana en esa hora.</li>
+      </FuenteDatos>
+    </div>
   )
 }

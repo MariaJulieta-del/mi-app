@@ -1,5 +1,5 @@
 import axiosInstance from '../../../shared/services/axiosInstance'
-import type { Socio } from '../types/Socio'
+import type { Genero, Socio } from '../types/Socio'
 
 const API = '/api/v1/socios'
 
@@ -9,6 +9,8 @@ export interface AltaSocioRequestDTO {
   dni: string
   telefono?: string
   email?: string
+  fechaNacimiento?: string
+  genero?: Genero | ''
   tipoMembresia: string
   formaDePago: 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA'
 }
@@ -52,9 +54,24 @@ export const actualizarSocio = async (id: number, socio: Socio): Promise<Socio> 
  const res = await axiosInstance.put(`${API}/${id}`, socio)
  return res.data
 }
-export const darDeBaja = async (id: number): Promise<void> => {
- await axiosInstance.delete(`${API}/${id}`)
+export const darDeBaja = async (id: number, motivo: string, detalle?: string): Promise<void> => {
+ await axiosInstance.put(`${API}/${id}/baja`, { motivo, detalle })
 }
+
+/** Una baja registrada, con su motivo */
+export interface BajaSocio {
+ id: number
+ socioId: number | null
+ socioNombre: string
+ /** true si el socio volvió después de esta baja */
+ socioActivo: boolean
+ fecha: string
+ motivo: string
+ detalle?: string | null
+ registradoPor?: string | null
+}
+export const listarBajas = async (): Promise<BajaSocio[]> =>
+ (await axiosInstance.get(`${API}/bajas`)).data
 export const obtenerConInactivos = async (): Promise<Socio[]> => {
  const res = await axiosInstance.get(`${API}/todos`)
  return res.data

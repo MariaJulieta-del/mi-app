@@ -1,19 +1,20 @@
 import { useFichaMedica } from '../hooks/useFichaMedica'
+import { CargandoPagina } from '../../../shared/components/ui'
 
 export default function FichaMedicaPage() {
   const f = useFichaMedica()
 
-  if (f.cargando) return <p className="gt-text-muted">Cargando...</p>
+  if (f.cargando) return <CargandoPagina resumen={false} filas={4} />
 
   return (
     <>
       <button className="gt-btn gt-btn-secondary" style={{ marginBottom: 16 }} onClick={() => f.navigate(-1)}>← Volver</button>
       <h1 className="gt-page-title">Observaciones</h1>
-      <p style={{ color: '#6B7280', marginTop: -8, marginBottom: 16, fontSize: 13 }}>
+      <p style={{ color: 'var(--text-muted)', marginTop: -8, marginBottom: 16, fontSize: 13 }}>
         Anotaciones sobre el socio: lesiones, antecedentes, restricciones, objetivos, lo que sea útil.
       </p>
       {f.exito && (
-        <div className="gt-alert" style={{ background: '#F0FDF4', borderColor: '#BBF7D0', color: '#16A34A', marginBottom: 12 }}>
+        <div className="gt-alert" style={{ background: 'var(--accent-light)', borderColor: 'var(--accent-border)', color: 'var(--green-text)', marginBottom: 12 }}>
           Observaciones guardadas.
           <button onClick={() => f.setExito(false)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
         </div>

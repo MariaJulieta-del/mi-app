@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
 import SociosEnRiesgo from '../../reportes/components/SociosEnRiesgo'
 import { useDashboard } from '../hooks/useDashboard'
+import { Eye, EyeOff } from 'lucide-react'
+import { CargandoPagina, IconButton } from '../../../shared/components/ui'
+import { useMontosVisibles } from '../../../shared/hooks/useMontosVisibles'
 
 function BellIcon() {
   return (
@@ -12,8 +15,9 @@ function BellIcon() {
 
 export default function DashboardPage() {
   const d = useDashboard()
+  const montos = useMontosVisibles()
 
-  if (d.cargando) return <p className="gt-text-muted">Cargando dashboard...</p>
+  if (d.cargando) return <CargandoPagina />
   if (d.error) return <div className="gt-alert gt-alert-error">{d.error}</div>
   if (!d.stats) return null
 
@@ -39,8 +43,13 @@ export default function DashboardPage() {
           {d.sinAsist.length > 0 && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--yellow-text)', fontWeight: 600 }}>{d.sinAsist.length} sin venir en +2 meses</div>}
         </div>
         <div className="gt-stat-card">
-          <div className="gt-stat-number" style={{ fontSize: 28 }}>${d.stats.totalRecaudadoMes.toLocaleString('es-AR')}</div>
-          <div className="gt-stat-label">Recaudado este mes</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div className="gt-stat-number" style={{ fontSize: 28 }} aria-live="polite">
+              {montos.visibles ? `$${d.stats.totalRecaudadoMes.toLocaleString('es-AR')}` : '$ ••••••'}
+            </div>
+            <IconButton icono={montos.visibles ? EyeOff : Eye} etiqueta={montos.visibles ? 'Ocultar monto' : 'Mostrar monto'} onClick={montos.alternar} />
+          </div>
+          <div className="gt-stat-label">Recaudado este mes · solo admin</div>
           <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>{d.stats.mesReporte}</div>
         </div>
       </div>
