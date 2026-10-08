@@ -96,6 +96,25 @@ public class AuthController {
         return ResponseEntity.ok(authService.tokenSocio(usuario));
     }
 
+    // ── Admin o profesor cambia su propia contraseña (devuelve un token nuevo) ──
+    @PostMapping("/cambiar-password")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<?> cambiarPassword(@RequestBody Map<String, String> body,
+                                             org.springframework.security.core.Authentication auth) {
+        String clave = "password:" + auth.getName();
+        if (rateLimiter.bloqueado(clave, LoginRateLimiter.MAX_FALLOS_STAFF, LoginRateLimiter.VENTANA_STAFF)) {
+            return demasiados("Demasiados intentos fallidos. Esperá 15 minutos y probá de nuevo.");
+        }
+        try {
+            LoginResponseDTO resp = authService.cambiarPassword(auth.getName(), body.get("actual"), body.get("nueva"));
+            rateLimiter.limpiar(clave);
+            return ResponseEntity.ok(resp);
+        } catch (AuthenticationException e) {
+            rateLimiter.registrar(clave, LoginRateLimiter.VENTANA_STAFF);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ── Generar PIN para todos los socios activos que no tienen (solo ADMIN) ──
     // Devuelve la lista con los PIN en claro para imprimir y entregar. Solo se ven esta vez.
     @PostMapping("/pines-pendientes")

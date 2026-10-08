@@ -35,6 +35,14 @@ public class CierreCaja {
     @Column(name = "balance_calculado", nullable = false)
     private BigDecimal balanceCalculado = BigDecimal.ZERO;
 
+    /** Cambio con el que arrancó la caja (lo que quedó del cierre anterior) */
+    @Column(name = "fondo_inicial", nullable = false)
+    private BigDecimal fondoInicial = BigDecimal.ZERO;
+
+    /** Lo que se dejó en la caja para el día siguiente */
+    @Column(name = "deja_en_caja")
+    private BigDecimal dejaEnCaja;
+
     /** Lo que el encargado contó físicamente en la caja */
     @Column(name = "monto_contado")
     private BigDecimal montoContado;

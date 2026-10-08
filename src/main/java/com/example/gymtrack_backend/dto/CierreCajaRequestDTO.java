@@ -10,6 +10,8 @@ public class CierreCajaRequestDTO {
     private LocalDate fecha;
     /** Monto que contó físicamente el encargado en la caja (opcional) */
     private BigDecimal montoContado;
+    /** Cuánto efectivo queda en la caja para arrancar el día siguiente */
+    private BigDecimal dejaEnCaja;
     private String observaciones;
     private String creadoPor;
 }

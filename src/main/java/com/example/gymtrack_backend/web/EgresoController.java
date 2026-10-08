@@ -63,8 +63,9 @@ public class EgresoController {
     /** POST /api/v1/egresos */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<EgresoResponseDTO> registrar(@Valid @RequestBody EgresoRequestDTO dto) {
-        return ResponseEntity.ok(egresoService.registrar(dto));
+    public ResponseEntity<EgresoResponseDTO> registrar(@Valid @RequestBody EgresoRequestDTO dto,
+                                                       org.springframework.security.core.Authentication auth) {
+        return ResponseEntity.ok(egresoService.registrar(dto, auth.getName()));
     }
 
     /** DELETE /api/v1/egresos/{id} */

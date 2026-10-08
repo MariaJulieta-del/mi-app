@@ -69,6 +69,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/v1/asistencias/qr-actual", "/api/v1/kiosco/ultimos").authenticated()
                     // Salud del servicio (lo consulta Render)
                     .requestMatchers(HttpMethod.GET, "/api/v1/salud").permitAll()
+                    // Marca del gimnasio (nombre, logo, color): se muestra antes de iniciar sesión
+                    .requestMatchers(HttpMethod.GET, "/api/v1/configuracion/marca").permitAll()
                     // El resto requiere un usuario autenticado que NO sea una pantalla de recepción
                     .anyRequest().access(AuthorizationManagers.allOf(
                             AuthenticatedAuthorizationManager.authenticated(),

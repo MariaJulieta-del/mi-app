@@ -38,6 +38,10 @@ public class ProgresoEjercicio {
     @Column(columnDefinition = "TEXT")
     private String observacion;
 
+    /** Esfuerzo percibido (1 a 10): 6 fácil, 8 justo, 10 al límite */
+    @Column(name = "rpe")
+    private Short rpe;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }

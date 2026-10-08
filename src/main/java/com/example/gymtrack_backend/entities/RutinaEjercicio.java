@@ -65,6 +65,10 @@ public class RutinaEjercicio {
     @Column(name = "es_calentamiento", nullable = false)
     private boolean esCalentamiento = false;
 
+    /** Superserie: los ejercicios seguidos con el mismo número se hacen alternando series (null = solo) */
+    @Column(name = "superserie")
+    private Integer superserie;
+
     /** Día al que pertenece este ejercicio dentro de la rutina (Día 1, Día 2, etc.) */
     @Column(nullable = false)
     private Integer dia = 1;

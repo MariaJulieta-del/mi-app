@@ -98,6 +98,34 @@ public class AuthService {
     @org.springframework.beans.factory.annotation.Value("${jwt.expiration-socio-ms:2592000000}")
     private long expirationSocioMs;
 
+    // ── Cambio de contraseña del staff (admin o profesor, la suya) ──────────
+    /**
+     * Verifica la contraseña actual, guarda la nueva y devuelve un token nuevo:
+     * las sesiones abiertas en otros dispositivos se cierran.
+     */
+    @Transactional
+    public LoginResponseDTO cambiarPassword(String username, String actual, String nueva) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new BadCredentialsException("Usuario no encontrado"));
+        if (usuario.getRol() == Rol.SOCIO) {
+            throw new IllegalArgumentException("Los socios usan PIN, no contraseña");
+        }
+        if (actual == null || !passwordEncoder.matches(actual, usuario.getPassword())) {
+            throw new BadCredentialsException("La contraseña actual no es correcta");
+        }
+        String errorPass = com.example.gymtrack_backend.security.PoliticaPassword.validar(nueva);
+        if (errorPass != null) throw new IllegalArgumentException(errorPass);
+        if (passwordEncoder.matches(nueva, usuario.getPassword())) {
+            throw new IllegalArgumentException("La contraseña nueva tiene que ser distinta de la actual");
+        }
+        usuario.setPassword(passwordEncoder.encode(nueva));
+        usuario.setPinActualizado(java.time.LocalDateTime.now());
+        usuarioRepository.save(usuario);
+        // Mismo segundo que el cambio: el token nuevo sigue valiendo (la comparación ignora los nanos)
+        return new LoginResponseDTO(jwtUtil.generateToken(usuario, usuario.getRol().name()),
+                usuario.getUsername(), usuario.getRol().name(), null);
+    }
+
     // ── Registro ─────────────────────────────────────────────────────────────
     public void register(RegisterRequestDTO dto) {
         String errorPass = com.example.gymtrack_backend.security.PoliticaPassword.validar(dto.getPassword());

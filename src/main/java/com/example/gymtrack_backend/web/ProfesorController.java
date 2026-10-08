@@ -90,6 +90,7 @@ public class ProfesorController {
             String errorPass = com.example.gymtrack_backend.security.PoliticaPassword.validar(body.get("password"));
             if (errorPass != null) return ResponseEntity.badRequest().body(errorPass);
             u.setPassword(passwordEncoder.encode(body.get("password")));
+            u.setPinActualizado(java.time.LocalDateTime.now());   // cierra sus sesiones abiertas
         }
 
         usuarioRepository.save(u);

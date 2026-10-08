@@ -27,6 +27,10 @@ public class Mantenimiento {
     @Column(name = "tipo", nullable = false)
     private TipoMantenimiento tipo;
 
+    /** PREVENTIVO o CORRECTIVO (null en los registros viejos) */
+    @Column(name = "categoria", length = 20)
+    private String categoria;
+
     /** Descripción del trabajo a realizar o realizado */
     @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;

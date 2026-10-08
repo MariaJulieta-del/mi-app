@@ -159,7 +159,7 @@ public class DisciplinaService {
                     if ("PROXIMA".equals(estado)) continue;
                     conteo.computeIfAbsent(s.getId(), k -> new int[2])[1]++;
                     LocalTime entrada = ingresos.getOrDefault(s.getId(), Map.of()).getOrDefault(f, List.of()).stream()
-                            .filter(t -> !t.isBefore(ini.minusMinutes(MINUTOS_ANTES)) && t.isBefore(fin))
+                            .filter(t -> !t.isBefore(desdeAntes(ini)) && t.isBefore(fin))
                             .min(Comparator.naturalOrder()).orElse(null);
                     if (entrada != null) {
                         presentes.add(new Presente(s.getId(), s.getNombre() + " " + s.getApellido(), entrada.toString().substring(0, 5)));
@@ -184,6 +184,15 @@ public class DisciplinaService {
                         .thenComparing(ResumenAlumno::nombre, String.CASE_INSENSITIVE_ORDER))
                 .toList();
         return new AsistenciaClase(sesiones, alumnos, MINUTOS_ANTES, sem);
+    }
+
+    /**
+     * Desde cuándo un ingreso cuenta para la clase: MINUTOS_ANTES antes del inicio.
+     * Si la clase empieza cerca de la medianoche no se "da la vuelta" al día anterior.
+     */
+    static LocalTime desdeAntes(LocalTime inicio) {
+        LocalTime desde = inicio.minusMinutes(MINUTOS_ANTES);
+        return desde.isAfter(inicio) ? LocalTime.MIN : desde;
     }
 
     // ── Alta / edición ───────────────────────────────────────────────────────
@@ -397,7 +406,7 @@ public class DisciplinaService {
         return dto;
     }
 
-    private static String nombreInstructor(Disciplina d) {
+    static String nombreInstructor(Disciplina d) {
         return d.getProfesor() != null ? nombreDe(d.getProfesor()) : d.getInstructor();
     }
 

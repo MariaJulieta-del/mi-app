@@ -27,12 +27,20 @@ public class Socio {
     private String telefono;
     private String email;
     private LocalDate fechaNacimiento;
+
+    /** FEMENINO, MASCULINO o NO_BINARIO (null = sin dato) */
+    @Column(length = 20)
+    private String genero;
     private LocalDate fechaInicio;
     private LocalDate fechaVencimiento;
     private String estado; // ACTIVO, INACTIVO
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    /** Eligió aparecer en el ranking mensual de entrenamientos */
+    @Column(name = "ranking_visible", nullable = false)
+    private Boolean rankingVisible = false;
 
     // Historial: fecha de alta en el sistema (se setea automáticamente)
     @Column(name = "fecha_creacion", updatable = false)

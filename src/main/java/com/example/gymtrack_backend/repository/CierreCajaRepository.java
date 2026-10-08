@@ -13,5 +13,8 @@ public interface CierreCajaRepository extends JpaRepository<CierreCaja, Long> {
 
     boolean existsByFecha(LocalDate fecha);
 
+    /** El último cierre antes de esa fecha (de ahí sale el fondo inicial) */
+    Optional<CierreCaja> findFirstByFechaBeforeOrderByFechaDesc(LocalDate fecha);
+
     List<CierreCaja> findAllByOrderByFechaDesc();
 }

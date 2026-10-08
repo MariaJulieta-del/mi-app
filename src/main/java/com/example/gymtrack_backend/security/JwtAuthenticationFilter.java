@@ -106,6 +106,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
 
+            // Staff: los tokens emitidos antes del último cambio de contraseña ya no valen
+            if (!esSocio && userDetails instanceof com.example.gymtrack_backend.entities.Usuario u
+                    && u.getPinActualizado() != null) {
+                java.util.Date emitido = jwtUtil.extractIssuedAt(jwt);
+                if (emitido == null || emitido.toInstant().isBefore(u.getPinActualizado().withNano(0)
+                        .atZone(java.time.ZoneId.systemDefault()).toInstant())) {
+                    rechazar(response, "Tu sesión se cerró porque cambió tu contraseña. Volvé a ingresar.");
+                    return;
+                }
+            }
+
             // 5. Validar el token
             if (jwtUtil.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken =

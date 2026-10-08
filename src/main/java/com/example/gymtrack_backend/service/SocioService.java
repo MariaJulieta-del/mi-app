@@ -41,6 +41,9 @@ public class SocioService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.example.gymtrack_backend.repository.BajaSocioRepository bajaSocioRepository;
+
     // Obtener solo socios activos (comportamiento por defecto)
     public List<Socio> obtenerTodos() {
         return socioRepository.findByActivoTrue();
@@ -56,11 +59,31 @@ public class SocioService {
         return socioRepository.findById(id);
     }
 
+    public static final java.util.Set<String> GENEROS = java.util.Set.of("FEMENINO", "MASCULINO", "NO_BINARIO");
+
+    /** Vacío = sin dato; cualquier otro valor tiene que ser uno de los tres */
+    static String normalizarGenero(String genero) {
+        if (genero == null || genero.isBlank()) return null;
+        String g = genero.trim().toUpperCase().replace(' ', '_').replace('-', '_');
+        if (!GENEROS.contains(g)) throw new IllegalArgumentException("Género inválido: " + genero);
+        return g;
+    }
+
+    /** La fecha de nacimiento no puede ser futura ni dar una edad imposible */
+    static void validarNacimiento(java.time.LocalDate nacimiento) {
+        if (nacimiento == null) return;
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        if (nacimiento.isAfter(hoy)) throw new IllegalArgumentException("La fecha de nacimiento no puede ser futura");
+        if (nacimiento.isBefore(hoy.minusYears(110))) throw new IllegalArgumentException("Revisá la fecha de nacimiento");
+    }
+
     // Crear nuevo socio
     public Socio crear(Socio socio) {
         if (socioRepository.existsByDni(socio.getDni())) {
             throw new RuntimeException("Ya existe un socio con ese DNI");
         }
+        socio.setGenero(normalizarGenero(socio.getGenero()));
+        validarNacimiento(socio.getFechaNacimiento());
         socio.setActivo(true);
         return socioRepository.save(socio);
     }
@@ -73,19 +96,51 @@ public class SocioService {
         socio.setApellido(socioActualizado.getApellido());
         socio.setTelefono(socioActualizado.getTelefono());
         socio.setEmail(socioActualizado.getEmail());
+        validarNacimiento(socioActualizado.getFechaNacimiento());
         socio.setFechaNacimiento(socioActualizado.getFechaNacimiento());
+        socio.setGenero(normalizarGenero(socioActualizado.getGenero()));
         socio.setFechaVencimiento(socioActualizado.getFechaVencimiento());
         socio.setEstado(socioActualizado.getEstado());
         return socioRepository.save(socio);
     }
 
-    // Baja lógica (no borra, marca como inactivo)
-    public void darDeBaja(Long id) {
+    // Baja lógica (no borra, marca como inactivo) y registra el motivo
+    @Transactional
+    public void darDeBaja(Long id, String motivo, String detalle, String usuario) {
+        String m = motivo == null || motivo.isBlank() ? "SIN_ESPECIFICAR" : motivo.trim().toUpperCase();
+        if (!com.example.gymtrack_backend.entities.BajaSocio.MOTIVOS.contains(m)) {
+            throw new IllegalArgumentException("Motivo de baja inválido: " + motivo);
+        }
         Socio socio = socioRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
+        if (!Boolean.TRUE.equals(socio.getActivo())) {
+            throw new IllegalStateException("El socio ya está dado de baja");
+        }
         socio.setActivo(false);
         socio.setEstado("INACTIVO");
         socioRepository.save(socio);
+
+        var baja = new com.example.gymtrack_backend.entities.BajaSocio();
+        baja.setSocio(socio);
+        baja.setSocioNombre(socio.getNombre() + " " + socio.getApellido());
+        baja.setFecha(java.time.LocalDateTime.now());
+        baja.setMotivo(m);
+        baja.setDetalle(detalle == null || detalle.isBlank() ? null : detalle.trim());
+        baja.setRegistradoPor(usuario);
+        bajaSocioRepository.save(baja);
+    }
+
+    // Historial de bajas (la más nueva primero)
+    @Transactional(readOnly = true)
+    public List<com.example.gymtrack_backend.dto.BajaSocioDTO> listarBajas() {
+        return bajaSocioRepository.findAllConSocio().stream()
+            .map(b -> new com.example.gymtrack_backend.dto.BajaSocioDTO(
+                b.getId(),
+                b.getSocio() != null ? b.getSocio().getId() : null,
+                b.getSocioNombre(),
+                b.getSocio() != null && Boolean.TRUE.equals(b.getSocio().getActivo()),
+                b.getFecha(), b.getMotivo(), b.getDetalle(), b.getRegistradoPor()))
+            .toList();
     }
 
     // Eliminación física (solo para socios inactivos)
@@ -136,7 +191,9 @@ public class SocioService {
         socio.setDni(req.getDni().trim());
         socio.setTelefono(req.getTelefono());
         socio.setEmail(req.getEmail());
+        validarNacimiento(req.getFechaNacimiento());
         socio.setFechaNacimiento(req.getFechaNacimiento());
+        socio.setGenero(normalizarGenero(req.getGenero()));
         socio.setActivo(true);
         socio.setEstado("ACTIVO");
         Socio socioGuardado = socioRepository.save(socio);

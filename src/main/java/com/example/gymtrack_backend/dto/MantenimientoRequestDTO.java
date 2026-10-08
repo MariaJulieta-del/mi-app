@@ -6,6 +6,8 @@ import java.time.LocalDate;
 public class MantenimientoRequestDTO {
     private Long maquinaId;
     private String tipo;          // "PENDIENTE" | "REALIZADO"
+    /** "PREVENTIVO" | "CORRECTIVO" (opcional) */
+    private String categoria;
     private String descripcion;
     private LocalDate fechaMantenimiento;
     private String tecnico;
@@ -20,6 +22,9 @@ public class MantenimientoRequestDTO {
 
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

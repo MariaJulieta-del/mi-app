@@ -42,7 +42,8 @@ public class GlobalExceptionHandler {
 
     /** JSON mal formado o tipos inválidos en el body → 400 */
     @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,
-                       org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+                       org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+                       java.time.format.DateTimeParseException.class, NumberFormatException.class})
     public ResponseEntity<Map<String, Object>> handleBodyInvalido(Exception ex) {
         return ResponseEntity.badRequest().body(Map.of("error", "Datos inválidos en la solicitud"));
     }

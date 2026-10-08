@@ -24,10 +24,18 @@ public class EjercicioResponseDTO {
     private java.util.List<String> grupos;
     private String imagenUrl;
     private java.util.List<Long> maquinaIds;
+    /** Máquinas activas asociadas al ejercicio, con su número */
+    private java.util.List<MaquinaResumen> maquinas = new java.util.ArrayList<>();
+
+    /** sugerida = no está asociada en el catálogo, se dedujo por el nombre */
+    public record MaquinaResumen(Long id, String nombre, String nroMaquina, boolean sugerida) {}
 
     /** true → pertenece al bloque inamovible de Entrada en Calor */
     private boolean esCalentamiento;
 
     /** Día al que pertenece este ejercicio dentro de la rutina (1, 2, 3...) */
     private Integer dia;
+
+    /** Superserie (los seguidos con el mismo número se alternan); null = solo */
+    private Integer superserie;
 }

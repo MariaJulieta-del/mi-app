@@ -43,6 +43,9 @@ public class RutinaService {
     @Autowired
     private ProgresoEjercicioRepository progresoEjercicioRepository;
 
+    @Autowired
+    private com.example.gymtrack_backend.repository.MaquinaRepository maquinaRepository;
+
     // ──────────────────────────────────────────────
     // RUTINAS - CRUD
     // ──────────────────────────────────────────────
@@ -163,9 +166,12 @@ public class RutinaService {
     @Transactional(readOnly = true)
     public List<EjercicioResponseDTO> obtenerEjercicios(Long rutinaId, Long socioId) {
         findRutina(rutinaId, socioId);
+        // Las máquinas del gimnasio son pocas: se cargan una vez para toda la rutina
+        java.util.Map<Long, com.example.gymtrack_backend.entities.Maquina> maquinas = maquinaRepository.findAll().stream()
+            .collect(Collectors.toMap(com.example.gymtrack_backend.entities.Maquina::getId, m -> m));
         return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId)
             .stream()
-            .map(this::mapearEjercicioADTO)
+            .map(ej -> mapearEjercicioADTO(ej, maquinas))
             .collect(Collectors.toList());
     }
 
@@ -218,6 +224,45 @@ public class RutinaService {
         if (dto.getDescansoSeg() != null)  ej.setDescansoSeg(dto.getDescansoSeg());
         if (dto.getNotas() != null)        ej.setNotas(dto.getNotas());
         return mapearEjercicioADTO(rutinaEjercicioRepository.save(ej));
+    }
+
+    /**
+     * Superserie: une el ejercicio con el que le sigue en el mismo día (se hacen alternando series),
+     * o lo separa de su superserie.
+     */
+    @Transactional
+    public List<EjercicioResponseDTO> cambiarSuperserie(Long ejercicioId, Long rutinaId, Long socioId, boolean unirConSiguiente) {
+        findRutina(rutinaId, socioId);
+        List<RutinaEjercicio> todos = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId);
+        RutinaEjercicio ej = todos.stream().filter(x -> x.getId().equals(ejercicioId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Ejercicio no encontrado en la rutina"));
+        if (ej.isEsCalentamiento()) throw new IllegalArgumentException("La entrada en calor no va en superserie");
+        int dia = ej.getDia() != null ? ej.getDia() : 1;
+        List<RutinaEjercicio> delDia = todos.stream()
+            .filter(x -> !x.isEsCalentamiento() && (x.getDia() != null ? x.getDia() : 1) == dia).toList();
+        int pos = delDia.indexOf(ej);
+
+        if (unirConSiguiente) {
+            if (pos < 0 || pos == delDia.size() - 1) throw new IllegalArgumentException("Es el último ejercicio del día: no hay con cuál unirlo");
+            RutinaEjercicio sig = delDia.get(pos + 1);
+            Integer grupo = ej.getSuperserie() != null ? ej.getSuperserie()
+                : sig.getSuperserie() != null ? sig.getSuperserie()
+                : todos.stream().map(RutinaEjercicio::getSuperserie).filter(java.util.Objects::nonNull).max(Integer::compare).orElse(0) + 1;
+            // Si el siguiente estaba en otra superserie, se unen las dos
+            Integer viejo = sig.getSuperserie();
+            for (RutinaEjercicio x : todos) {
+                if (x == ej || x == sig || (viejo != null && viejo.equals(x.getSuperserie()))) x.setSuperserie(grupo);
+            }
+        } else if (ej.getSuperserie() != null) {
+            Integer grupo = ej.getSuperserie();
+            ej.setSuperserie(null);
+            List<RutinaEjercicio> resto = todos.stream().filter(x -> grupo.equals(x.getSuperserie())).toList();
+            if (resto.size() < 2) resto.forEach(x -> x.setSuperserie(null));
+        }
+        rutinaEjercicioRepository.saveAll(todos);
+        java.util.Map<Long, com.example.gymtrack_backend.entities.Maquina> maquinas = maquinaRepository.findAll().stream()
+            .collect(Collectors.toMap(com.example.gymtrack_backend.entities.Maquina::getId, m -> m));
+        return todos.stream().map(x -> mapearEjercicioADTO(x, maquinas)).toList();
     }
 
     /**
@@ -281,6 +326,7 @@ public class RutinaService {
             copia.setEjercicioCatalogo(ej.getEjercicioCatalogo());
             copia.setEsCalentamiento(ej.isEsCalentamiento());
             copia.setDia(ej.getDia());
+            copia.setSuperserie(ej.getSuperserie());
             rutinaEjercicioRepository.save(copia);
         }
 
@@ -338,6 +384,13 @@ public class RutinaService {
     }
 
     private EjercicioResponseDTO mapearEjercicioADTO(RutinaEjercicio ej) {
+        java.util.Map<Long, com.example.gymtrack_backend.entities.Maquina> maquinas = maquinaRepository.findAll().stream()
+            .collect(Collectors.toMap(com.example.gymtrack_backend.entities.Maquina::getId, m -> m));
+        return mapearEjercicioADTO(ej, maquinas);
+    }
+
+    private EjercicioResponseDTO mapearEjercicioADTO(RutinaEjercicio ej,
+                                                     java.util.Map<Long, com.example.gymtrack_backend.entities.Maquina> maquinas) {
         EjercicioResponseDTO dto = new EjercicioResponseDTO();
         dto.setId(ej.getId());
         dto.setNombreEjercicio(ej.getNombreEjercicio());
@@ -356,9 +409,23 @@ public class RutinaService {
             dto.setGrupos(cat.getGrupos() != null ? cat.getGrupos() : new java.util.ArrayList<>());
             dto.setImagenUrl(cat.getImagenUrl());
             dto.setMaquinaIds(cat.getMaquinaIds() != null ? cat.getMaquinaIds() : new java.util.ArrayList<>());
+            // Máquinas asociadas con su número, para que el socio sepa a cuál ir
+            dto.setMaquinas(dto.getMaquinaIds().stream()
+                .map(maquinas::get)
+                .filter(m -> m != null && Boolean.TRUE.equals(m.getActiva()))
+                .map(m -> new EjercicioResponseDTO.MaquinaResumen(m.getId(), m.getNombre(), m.getNroMaquina(), false))
+                .toList());
+        }
+        // Sin máquina asociada: se sugiere la del gimnasio con el mismo nombre (si la coincidencia es clara)
+        if (!ej.isEsCalentamiento() && dto.getMaquinas().isEmpty()) {
+            String nombre = cat != null ? cat.getNombre() + " " + ej.getNombreEjercicio() : ej.getNombreEjercicio();
+            dto.setMaquinas(SugerenciaMaquinas.sugerir(nombre, maquinas.values()).stream()
+                .map(m -> new EjercicioResponseDTO.MaquinaResumen(m.getId(), m.getNombre(), m.getNroMaquina(), true))
+                .toList());
         }
         dto.setEsCalentamiento(ej.isEsCalentamiento());
         dto.setDia(ej.getDia() != null ? ej.getDia() : 1);
+        dto.setSuperserie(ej.getSuperserie());
         return dto;
     }
 

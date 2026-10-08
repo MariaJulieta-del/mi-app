@@ -10,6 +10,8 @@ public class MantenimientoResponseDTO {
     private String maquinaNombre;
     private String maquinaNroMaquina;
     private String tipo;
+    /** "PREVENTIVO" | "CORRECTIVO" (opcional) */
+    private String categoria;
     private String descripcion;
     private LocalDate fechaMantenimiento;
     private String tecnico;
@@ -36,6 +38,9 @@ public class MantenimientoResponseDTO {
 
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

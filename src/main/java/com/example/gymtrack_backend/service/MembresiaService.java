@@ -44,6 +44,9 @@ public class MembresiaService {
     @Autowired
     private AsistenciaRepository asistenciaRepository;
 
+    @Autowired
+    private com.example.gymtrack_backend.repository.ReservaClaseRepository reservaRepository;
+
     // ──────────────────────────────────────────────
     // RENOVAR / ASIGNAR PLAN (siempre asociado a un pago)
     // ──────────────────────────────────────────────
@@ -112,7 +115,9 @@ public class MembresiaService {
             cicloFin = m.getFechaVencimiento();
         }
 
-        int usados = (int) asistenciaRepository.countDiasConIngreso(m.getSocio().getId(), cicloInicio, cicloFin);
+        // Días con ingreso + clases reservadas a las que no vino (el faltazo cuenta como pase usado)
+        int usados = (int) asistenciaRepository.countDiasConIngreso(m.getSocio().getId(), cicloInicio, cicloFin)
+                + (int) reservaRepository.contarAusentes(m.getSocio().getId(), cicloInicio, cicloFin);
         Integer total = m.getPasesMensuales();
         boolean libre = total == null || total <= 0;
         Integer restantes = libre ? null : Math.max(0, total - usados);

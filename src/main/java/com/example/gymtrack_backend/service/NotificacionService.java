@@ -28,7 +28,9 @@ public class NotificacionService {
     // ── Listar notificaciones activas (staff) ─────────────────────────────────
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<NotificacionResponseDTO> listar() {
-        return repo.findByActivaTrueOrderByFechaCreacionDesc().stream().map(NotificacionService::dto).toList();
+        return repo.findByActivaTrueOrderByFechaCreacionDesc().stream()
+                .filter(n -> !"RETENCION".equals(n.getTipo()) && !"RESERVA".equals(n.getTipo()))
+                .map(NotificacionService::dto).toList();
     }
 
     /** Avisos de los últimos 60 días que le corresponden a un socio */

@@ -84,16 +84,32 @@ public class SocioController {
         }
     }
 
-    // DELETE - Baja lógica
+    // PUT - Baja lógica con motivo: { motivo, detalle }
+    @PutMapping("/{id}/baja")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<Void> darDeBaja(@PathVariable Long id,
+                                          @RequestBody(required = false) java.util.Map<String, String> body,
+                                          org.springframework.security.core.Authentication auth) {
+        String motivo = body == null ? null : body.get("motivo");
+        String detalle = body == null ? null : body.get("detalle");
+        socioService.darDeBaja(id, motivo, detalle, auth.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    // DELETE - Baja lógica sin motivo (compatibilidad)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<Void> darDeBaja(@PathVariable Long id) {
-        try {
-            socioService.darDeBaja(id);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> darDeBajaSinMotivo(@PathVariable Long id,
+                                                   org.springframework.security.core.Authentication auth) {
+        socioService.darDeBaja(id, null, null, auth.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    // GET - Historial de bajas con su motivo
+    @GetMapping("/bajas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public List<com.example.gymtrack_backend.dto.BajaSocioDTO> bajas() {
+        return socioService.listarBajas();
     }
 
     // DELETE - Eliminación física (solo socios inactivos)

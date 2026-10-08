@@ -30,16 +30,20 @@ public class MantenimientoService {
         Maquina maquina = maquinaRepository.findById(dto.getMaquinaId())
                 .orElseThrow(() -> new RuntimeException("Máquina no encontrada: " + dto.getMaquinaId()));
 
-        TipoMantenimiento tipo;
-        try {
-            tipo = TipoMantenimiento.valueOf(dto.getTipo().toUpperCase());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Tipo inválido: " + dto.getTipo() + ". Debe ser PENDIENTE o REALIZADO.");
+        // Compatibilidad: un reporte que llega con tipo PREVENTIVO/CORRECTIVO es una categoría,
+        // y queda PENDIENTE hasta que se haga el trabajo
+        String categoria = categoria(dto.getCategoria());
+        String tipoTexto = dto.getTipo() == null ? "PENDIENTE" : dto.getTipo().toUpperCase();
+        if (CATEGORIAS.contains(tipoTexto)) {
+            if (categoria == null) categoria = tipoTexto;
+            tipoTexto = "PENDIENTE";
         }
+        TipoMantenimiento tipo = tipo(tipoTexto);
 
         Mantenimiento m = new Mantenimiento();
         m.setMaquina(maquina);
         m.setTipo(tipo);
+        m.setCategoria(categoria);
         m.setDescripcion(dto.getDescripcion());
         m.setFechaMantenimiento(dto.getFechaMantenimiento());
         m.setTecnico(dto.getTecnico());
@@ -76,8 +80,11 @@ public class MantenimientoService {
             m.setMaquina(maquina);
         }
         if (dto.getTipo() != null) {
-            m.setTipo(TipoMantenimiento.valueOf(dto.getTipo().toUpperCase()));
+            String tipoTexto = dto.getTipo().toUpperCase();
+            if (CATEGORIAS.contains(tipoTexto)) m.setCategoria(tipoTexto);
+            else m.setTipo(tipo(tipoTexto));
         }
+        if (dto.getCategoria() != null) m.setCategoria(categoria(dto.getCategoria()));
         if (dto.getDescripcion() != null) m.setDescripcion(dto.getDescripcion());
         if (dto.getFechaMantenimiento() != null) m.setFechaMantenimiento(dto.getFechaMantenimiento());
         if (dto.getTecnico() != null) m.setTecnico(dto.getTecnico());
@@ -138,6 +145,26 @@ public class MantenimientoService {
         );
     }
 
+    private static final java.util.Set<String> CATEGORIAS = java.util.Set.of("PREVENTIVO", "CORRECTIVO");
+
+    private static TipoMantenimiento tipo(String texto) {
+        try {
+            return TipoMantenimiento.valueOf(texto);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Estado inválido: " + texto + ". Debe ser PENDIENTE o REALIZADO.");
+        }
+    }
+
+    /** null si viene vacía; error si no es PREVENTIVO ni CORRECTIVO */
+    private static String categoria(String texto) {
+        if (texto == null || texto.isBlank()) return null;
+        String c = texto.trim().toUpperCase();
+        if (!CATEGORIAS.contains(c)) {
+            throw new IllegalArgumentException("Categoría inválida: " + texto + ". Debe ser PREVENTIVO o CORRECTIVO.");
+        }
+        return c;
+    }
+
     private MantenimientoResponseDTO mapear(Mantenimiento m) {
         MantenimientoResponseDTO dto = new MantenimientoResponseDTO();
         dto.setId(m.getId());
@@ -145,6 +172,7 @@ public class MantenimientoService {
         dto.setMaquinaNombre(m.getMaquina().getNombre());
         dto.setMaquinaNroMaquina(m.getMaquina().getNroMaquina());
         dto.setTipo(m.getTipo().name());
+        dto.setCategoria(m.getCategoria());
         dto.setDescripcion(m.getDescripcion());
         dto.setFechaMantenimiento(m.getFechaMantenimiento());
         dto.setTecnico(m.getTecnico());

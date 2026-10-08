@@ -17,6 +17,8 @@ public class AltaSocioRequestDTO {
     private String telefono;
     private String email;
     private LocalDate fechaNacimiento;
+    /** FEMENINO, MASCULINO o NO_BINARIO (opcional) */
+    private String genero;
 
     // ── Membresía ─────────────────────────────────────
     /** Tipo de plan según tarifas_membresia.tipo (ej: "MENSUAL", "TRIMESTRAL") */

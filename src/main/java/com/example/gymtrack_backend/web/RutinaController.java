@@ -187,6 +187,18 @@ public class RutinaController {
         }
     }
 
+    /** POST /api/v1/rutinas/{id}/ejercicios/{ejId}/superserie — { unir: true } une con el siguiente; false lo separa */
+    @PostMapping("/{id}/ejercicios/{ejId}/superserie")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public List<EjercicioResponseDTO> superserie(
+            @PathVariable Long id,
+            @PathVariable Long ejId,
+            @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
+            @RequestBody java.util.Map<String, Boolean> body) {
+        socioId = acceso.socioEfectivo(socioId);
+        return rutinaService.cambiarSuperserie(ejId, id, socioId, Boolean.TRUE.equals(body.get("unir")));
+    }
+
     /** DELETE /api/v1/rutinas/{id}/ejercicios/{ejId} — eliminar un ejercicio */
     @DeleteMapping("/{id}/ejercicios/{ejId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")

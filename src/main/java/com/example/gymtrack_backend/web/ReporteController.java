@@ -30,6 +30,7 @@ public class ReporteController {
     private final PagoRepository       pagoRepo;
     private final AsistenciaRepository asistenciaRepo;
     private final com.example.gymtrack_backend.service.MetricasService metricasService;
+    private final com.example.gymtrack_backend.service.DemografiaService demografiaService;
 
     /**
      * Estadísticas principales del Dashboard:
@@ -39,6 +40,18 @@ public class ReporteController {
      *  - total recaudado este mes
      *  - asistentes hoy
      */
+    /** Indicadores del dueño: ingreso recurrente, bajas, valor por socio y retención por mes de alta */
+    @GetMapping("/indicadores")
+    public com.example.gymtrack_backend.service.MetricasService.Indicadores indicadores() {
+        return metricasService.indicadores();
+    }
+
+    /** Público del gimnasio: edad y género de los socios y a qué hora viene cada grupo */
+    @GetMapping("/demografia")
+    public com.example.gymtrack_backend.service.DemografiaService.Demografia demografia(@RequestParam(defaultValue = "60") int dias) {
+        return demografiaService.demografia(dias);
+    }
+
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> dashboard() {
         LocalDate hoy      = LocalDate.now();
@@ -63,7 +76,7 @@ public class ReporteController {
                 "membresiasVencidas",    membresiasVencidas,
                 "totalRecaudadoMes",     recaudadoMes,
                 "asistentesHoy",         asistentesHoy,
-                "mesReporte",            hoy.getMonth().toString() + " " + hoy.getYear()
+                "mesReporte",            hoy.getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.of("es", "AR")) + " " + hoy.getYear()
         ));
     }
 

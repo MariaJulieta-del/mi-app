@@ -33,12 +33,19 @@ public class CierreCajaController {
     /** POST /api/v1/cierre-caja — cerrar la caja del día (solo ADMIN) */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> cerrar(@RequestBody CierreCajaRequestDTO dto) {
+    public ResponseEntity<?> cerrar(@RequestBody CierreCajaRequestDTO dto, org.springframework.security.core.Authentication auth) {
         try {
-            return ResponseEntity.ok(service.cerrar(dto));
+            return ResponseEntity.ok(service.cerrar(dto, auth.getName()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /** GET /api/v1/cierre-caja/pendientes — días anteriores con movimientos que no se cerraron */
+    @GetMapping("/pendientes")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<LocalDate> pendientes() {
+        return service.pendientes();
     }
 
     /** GET /api/v1/cierre-caja — historial de cierres */

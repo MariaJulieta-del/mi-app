@@ -14,17 +14,23 @@ import java.time.LocalDateTime;
 public class CierreCajaResponseDTO {
     private Long id;
     private LocalDate fecha;
+    /** Cambio con el que arrancó la caja */
+    private BigDecimal fondoInicial;
     private BigDecimal totalEfectivo;
     private BigDecimal totalTarjeta;
     private BigDecimal totalTransferencia;
     /** totalEfectivo + totalTarjeta + totalTransferencia */
     private BigDecimal totalIngresos;
     private BigDecimal totalEgresos;
-    /** totalEfectivo - totalEgresos (plata física en caja) */
+    /** fondoInicial + totalEfectivo - totalEgresos (plata física que debería haber) */
     private BigDecimal balanceCalculado;
     private BigDecimal montoContado;
     /** montoContado - balanceCalculado (positivo = sobrante, negativo = faltante) */
     private BigDecimal diferencia;
+    /** Lo que quedó en la caja para el día siguiente */
+    private BigDecimal dejaEnCaja;
+    /** Lo que se retiró al cerrar (contado − lo que quedó) */
+    private BigDecimal retiro;
     private int cantidadPagos;
     private String observaciones;
     private String creadoPor;

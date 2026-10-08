@@ -16,6 +16,13 @@ import java.util.List;
 public class EgresoService {
 
     private final EgresoRepository egresoRepo;
+    private final com.example.gymtrack_backend.repository.CierreCajaRepository cierreRepo;
+
+    private void verificarAbierta(LocalDate fecha) {
+        if (cierreRepo.existsByFecha(fecha)) {
+            throw new IllegalStateException("La caja de ese día ya está cerrada: no se pueden cambiar sus gastos.");
+        }
+    }
 
     public List<EgresoResponseDTO> listarHoy() {
         return egresoRepo.findByFechaOrderByCreatedAtDesc(LocalDate.now())
@@ -34,18 +41,23 @@ public class EgresoService {
                 .map(this::mapear).toList();
     }
 
-    public EgresoResponseDTO registrar(EgresoRequestDTO dto) {
+    public EgresoResponseDTO registrar(EgresoRequestDTO dto, String usuario) {
+        LocalDate fecha = dto.getFecha() != null ? dto.getFecha() : LocalDate.now();
+        if (fecha.isAfter(LocalDate.now())) throw new IllegalArgumentException("El gasto no puede tener fecha futura.");
+        verificarAbierta(fecha);
         Egreso e = new Egreso();
-        e.setFecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now());
-        e.setDescripcion(dto.getDescripcion());
+        e.setFecha(fecha);
+        e.setDescripcion(dto.getDescripcion().trim());
         e.setMonto(dto.getMonto());
         e.setCategoria(dto.getCategoria() != null ? dto.getCategoria().toUpperCase() : "VARIOS");
-        e.setRegistradoPor(dto.getRegistradoPor());
+        e.setRegistradoPor(usuario);
         return mapear(egresoRepo.save(e));
     }
 
     public void eliminar(Long id) {
-        egresoRepo.deleteById(id);
+        Egreso e = egresoRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Gasto no encontrado"));
+        verificarAbierta(e.getFecha());
+        egresoRepo.delete(e);
     }
 
     public BigDecimal totalHoy() {

@@ -40,8 +40,9 @@ public class Usuario implements UserDetails {
     private boolean activo = true;
 
     /**
-     * Solo socios: cuándo se asignó su PIN actual. null = todavía no tiene PIN (no puede entrar).
-     * Los tokens emitidos antes de esta fecha dejan de valer (al regenerar el PIN se cierran las sesiones viejas).
+     * Cuándo cambió por última vez la credencial (PIN del socio o contraseña del staff).
+     * Los tokens emitidos antes de esta fecha dejan de valer: al cambiarla se cierran las sesiones viejas.
+     * Socios: null = todavía no tiene PIN (no puede entrar). Staff: null = nunca la cambió.
      */
     private java.time.LocalDateTime pinActualizado;
 

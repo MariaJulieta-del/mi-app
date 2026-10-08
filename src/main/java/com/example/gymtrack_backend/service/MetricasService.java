@@ -37,6 +37,8 @@ public class MetricasService {
     private final PagoRepository       pagoRepo;
     private final MembresiaRepository  membresiaRepo;
     private final AsistenciaRepository asistenciaRepo;
+    private final com.example.gymtrack_backend.repository.BajaSocioRepository bajaRepo;
+    private final com.example.gymtrack_backend.repository.SocioRepository socioRepo;
 
     // ── Socios en riesgo ─────────────────────────────────────────────────────
 
@@ -140,4 +142,99 @@ public class MetricasService {
         return new Metricas(vigentes, recaudadoMes, promedio, meses, ocupacion, semanas);
     }
 
+
+    // ── Indicadores del dueño ────────────────────────────────────────────────
+
+    public record Cohorte(String mes, int altas, List<Integer> retencion) {}
+    public record MesBajas(String mes, int perdidos, int base, Integer tasa) {}
+    public record Indicadores(BigDecimal ingresoMensualRecurrente, BigDecimal ticketPromedio, int sociosVigentes,
+                              Double bajaMensualPromedio, BigDecimal valorPorSocio, Double vidaPromedioMeses,
+                              Double antiguedadPromedioMeses, List<MesBajas> bajasPorMes, List<Cohorte> cohortes) {}
+
+    /**
+     * Números para decidir:
+     *  - Ingreso mensual recurrente: lo que entra por mes con las membresías vigentes (un trimestral cuenta un tercio).
+     *  - Baja mensual: de los que estaban el mes anterior, cuántos se dieron de baja o no renovaron (promedio 5 meses).
+     *  - Valor por socio: ingreso mensual promedio × cuántos meses se queda un socio en promedio (1 / baja mensual).
+     *  - Retención por mes de alta: de los que empezaron cada mes, qué porcentaje siguió 1, 2 y 3 meses después.
+     */
+    public Indicadores indicadores() {
+        LocalDate hoy = LocalDate.now();
+        YearMonth mesActual = YearMonth.from(hoy);
+
+        List<Membresia> vigentes = membresiaRepo.findByEstadoMembresia(EstadoMembresia.ACTIVA).stream()
+                .filter(m -> m.getFechaVencimiento() != null && !m.getFechaVencimiento().isBefore(hoy))
+                .filter(m -> m.getSocio() != null && Boolean.TRUE.equals(m.getSocio().getActivo()))
+                .toList();
+        BigDecimal mrr = BigDecimal.ZERO;
+        for (Membresia m : vigentes) {
+            if (m.getPrecio() == null) continue;
+            long dias = m.getFechaInicio() != null ? Math.max(1, ChronoUnit.DAYS.between(m.getFechaInicio(), m.getFechaVencimiento())) : 30;
+            mrr = mrr.add(m.getPrecio().multiply(BigDecimal.valueOf(30)).divide(BigDecimal.valueOf(Math.max(28, dias)), 2, RoundingMode.HALF_UP));
+        }
+        mrr = mrr.setScale(0, RoundingMode.HALF_UP);
+        BigDecimal ticket = vigentes.isEmpty() ? BigDecimal.ZERO : mrr.divide(BigDecimal.valueOf(vigentes.size()), 0, RoundingMode.HALF_UP);
+
+        // Primer pago de cada socio
+        Map<Long, YearMonth> primerPago = new HashMap<>();
+        for (Pago p : pagoRepo.findAll()) {
+            if (p.getEstadoPago() != EstadoPago.COMPLETADO || p.getFechaPago() == null || p.getMembresia() == null || p.getMembresia().getSocio() == null) continue;
+            primerPago.merge(p.getMembresia().getSocio().getId(), YearMonth.from(p.getFechaPago()), (a, b) -> a.isBefore(b) ? a : b);
+        }
+        // Un socio "sigue" en un mes si su membresía cubre algún día de ese mes y no estaba dado de baja antes
+        Map<Long, List<Membresia>> membresiasDe = new HashMap<>();
+        for (Membresia m : membresiaRepo.findAll()) {
+            if (m.getSocio() != null) membresiasDe.computeIfAbsent(m.getSocio().getId(), k -> new ArrayList<>()).add(m);
+        }
+        Map<Long, LocalDate> bajaDe = new HashMap<>();
+        Map<YearMonth, Integer> bajasEn = new HashMap<>();
+        bajaRepo.findAllConSocio().forEach(b -> {
+            bajasEn.merge(YearMonth.from(b.getFecha()), 1, Integer::sum);
+            if (b.getSocio() != null && !Boolean.TRUE.equals(b.getSocio().getActivo())) bajaDe.merge(b.getSocio().getId(), b.getFecha().toLocalDate(), (x, y) -> x.isAfter(y) ? x : y);
+        });
+        java.util.function.BiPredicate<Long, YearMonth> activoEn = (sid, ym) -> {
+            LocalDate baja = bajaDe.get(sid);
+            if (baja != null && baja.isBefore(ym.atDay(1))) return false;
+            return membresiasDe.getOrDefault(sid, List.of()).stream().anyMatch(m -> m.getFechaInicio() != null && m.getFechaVencimiento() != null
+                    && !m.getFechaInicio().isAfter(ym.atEndOfMonth()) && !m.getFechaVencimiento().isBefore(ym.atDay(1)));
+        };
+
+        // Bajas por mes: de los que estaban activos el mes anterior, cuántos ya no siguen
+        Set<Long> todos = membresiasDe.keySet();
+        List<MesBajas> bajasPorMes = new ArrayList<>();
+        List<Double> tasas = new ArrayList<>();
+        for (int i = 5; i >= 0; i--) {
+            YearMonth ym = mesActual.minusMonths(i);
+            List<Long> base = todos.stream().filter(sid -> activoEn.test(sid, ym.minusMonths(1))).toList();
+            int perdidos;
+            if (i == 0) perdidos = bajasEn.getOrDefault(ym, 0);   // el mes en curso: solo las bajas registradas
+            else perdidos = (int) base.stream().filter(sid -> !activoEn.test(sid, ym)).count();
+            Integer tasa = base.isEmpty() ? null : Math.round(perdidos * 100f / base.size());
+            if (tasa != null && i != 0) tasas.add(tasa.doubleValue());
+            bajasPorMes.add(new MesBajas(ym.toString(), perdidos, base.size(), tasa));
+        }
+        Double churn = tasas.isEmpty() ? null : Math.round(tasas.stream().mapToDouble(Double::doubleValue).average().orElse(0) * 10) / 10.0;
+        Double vida = churn == null || churn <= 0 ? null : Math.min(60, Math.round(1000 / churn) / 10.0);
+        BigDecimal valor = vida == null ? null : ticket.multiply(BigDecimal.valueOf(vida)).setScale(0, RoundingMode.HALF_UP);
+
+        double antig = socioRepo.findByActivoTrue().stream().filter(s -> s.getFechaCreacion() != null)
+                .mapToLong(s -> ChronoUnit.DAYS.between(s.getFechaCreacion().toLocalDate(), hoy)).average().orElse(0) / 30.4;
+
+        // Cohortes de los últimos 6 meses: % que sigue 1, 2 y 3 meses después de empezar
+        List<Cohorte> cohortes = new ArrayList<>();
+        for (int i = 6; i >= 1; i--) {
+            YearMonth ym = mesActual.minusMonths(i);
+            List<Long> altas = primerPago.entrySet().stream().filter(e -> e.getValue().equals(ym)).map(Map.Entry::getKey).toList();
+            List<Integer> ret = new ArrayList<>();
+            for (int k = 1; k <= 3; k++) {
+                YearMonth despues = ym.plusMonths(k);
+                if (despues.isAfter(mesActual) || altas.isEmpty()) { ret.add(null); continue; }
+                long siguen = altas.stream().filter(sid -> activoEn.test(sid, despues)).count();
+                ret.add(Math.round(siguen * 100f / altas.size()));
+            }
+            cohortes.add(new Cohorte(ym.toString(), altas.size(), ret));
+        }
+
+        return new Indicadores(mrr, ticket, vigentes.size(), churn, valor, vida, Math.round(antig * 10) / 10.0, bajasPorMes, cohortes);
+    }
 }
