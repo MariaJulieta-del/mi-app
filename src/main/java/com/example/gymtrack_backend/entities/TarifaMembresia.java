@@ -29,4 +29,8 @@ public class TarifaMembresia {
     private String descripcion;
 
     private String incluye;
+
+    /** false = ya no se vende (sigue sirviendo a quien lo tiene) */
+    @Column(nullable = false)
+    private Boolean activo = true;
 }

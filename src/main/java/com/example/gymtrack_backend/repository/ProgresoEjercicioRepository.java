@@ -35,4 +35,10 @@ public interface ProgresoEjercicioRepository extends JpaRepository<ProgresoEjerc
     @org.springframework.data.jpa.repository.Query(
         "DELETE FROM ProgresoEjercicio pe WHERE pe.rutinaEjercicio.rutina.id = :rutinaId")
     void deleteByRutinaId(@org.springframework.data.repository.query.Param("rutinaId") Long rutinaId);
+
+    /** Borra el progreso de un ejercicio de rutina (antes de sacarlo de la rutina) */
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(
+        "DELETE FROM ProgresoEjercicio pe WHERE pe.rutinaEjercicio.id = :ejId")
+    void deleteByRutinaEjercicioId(@org.springframework.data.repository.query.Param("ejId") Long ejId);
 }

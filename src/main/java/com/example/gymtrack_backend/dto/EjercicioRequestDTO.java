@@ -10,6 +10,9 @@ import lombok.Data;
 @Data
 public class EjercicioRequestDTO {
 
+    /** Solo para guardar todos juntos: id del ejercicio que ya estaba en la rutina */
+    private Long id;
+
     @NotBlank(message = "El nombre del ejercicio es obligatorio")
     @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
     private String nombreEjercicio;

@@ -31,4 +31,6 @@ public class RutinaRequestDTO {
 
     /** Objetivo: FUERZA, HIPERTROFIA, RESISTENCIA, PERDIDA_GRASA, SALUD (null = sin especificar) */
     private String objetivo;
+    /** Indicaciones personales del profe (rutinas de socio) */
+    private String notasProfe;
 }

@@ -56,11 +56,28 @@ public class TarifaMembresiaController {
         try {
             BigDecimal precio = body.get("precio") != null ? new BigDecimal(body.get("precio").toString()) : null;
             boolean cambiaPases = body.containsKey("pasesMensuales");
+            Object nombre = body.get("nombre"), incluye = body.get("incluye");
             return ResponseEntity.ok(tarifaService.actualizar(tipo.toUpperCase(), precio,
-                    cambiaPases, parsePases(body.get("pasesMensuales"))));
+                    cambiaPases, parsePases(body.get("pasesMensuales")),
+                    nombre != null ? nombre.toString() : null, incluye != null ? incluye.toString() : null));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /** PATCH /api/v1/tarifas/{tipo}/activo  { "activo": false } — deshabilitar / habilitar */
+    @PatchMapping("/{tipo}/activo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public TarifaMembresiaResponseDTO cambiarActivo(@PathVariable String tipo, @RequestBody Map<String, Boolean> body) {
+        return tarifaService.cambiarActivo(tipo, Boolean.TRUE.equals(body.get("activo")));
+    }
+
+    /** DELETE /api/v1/tarifas/{tipo} — solo si ningún socio lo usó */
+    @DeleteMapping("/{tipo}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> eliminar(@PathVariable String tipo) {
+        tarifaService.eliminar(tipo);
+        return ResponseEntity.noContent().build();
     }
 
     /** null, vacío o 0 = pase libre */

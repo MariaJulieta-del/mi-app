@@ -312,7 +312,8 @@ public class DisciplinaService {
         d.setNombre(nombre);
         d.setDescripcion(blancoANull(dto.getDescripcion()));
         d.setProfesor(profesor);
-        d.setInstructor(profesor != null ? null : blancoANull(dto.getInstructor()));
+        // Solo profesores registrados: el nombre escrito a mano (versiones viejas) se descarta al guardar
+        d.setInstructor(null);
         d.setCupoMaximo(dto.getCupoMaximo());
         d.setColor(dto.getColor() != null ? dto.getColor() : siguienteColor());
         if (dto.getActiva() != null) d.setActiva(dto.getActiva());
@@ -406,8 +407,9 @@ public class DisciplinaService {
         return dto;
     }
 
+    /** Nombre del profesor asignado (los nombres escritos a mano de versiones viejas no se muestran) */
     static String nombreInstructor(Disciplina d) {
-        return d.getProfesor() != null ? nombreDe(d.getProfesor()) : d.getInstructor();
+        return d.getProfesor() != null ? nombreDe(d.getProfesor()) : null;
     }
 
     private static String nombreDe(Usuario u) {

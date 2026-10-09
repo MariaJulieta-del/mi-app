@@ -44,4 +44,12 @@ public class Notificacion {
 
     @Column(nullable = false)
     private Boolean activa = true;
+
+    /** Se mandó también por mail */
+    @Column(name = "por_email", nullable = false)
+    private Boolean porEmail = true;
+
+    /** Se preparó para mandar por WhatsApp */
+    @Column(name = "por_whatsapp", nullable = false)
+    private Boolean porWhatsapp = false;
 }

@@ -33,6 +33,7 @@ public class RutinaResponseDTO {
 
     /** Objetivo: FUERZA, HIPERTROFIA, RESISTENCIA, PERDIDA_GRASA, SALUD (null = sin especificar) */
     private String objetivo;
+    private String notasProfe;
 
     /** Ejercicios de la rutina, sin contar la entrada en calor */
     private int cantidadEjercicios;

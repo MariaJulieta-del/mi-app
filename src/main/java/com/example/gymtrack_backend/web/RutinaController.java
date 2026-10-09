@@ -187,6 +187,17 @@ public class RutinaController {
         }
     }
 
+    /** PUT /api/v1/rutinas/{id}/ejercicios — guarda todos los ejercicios (sin la entrada en calor) en ese orden */
+    @PutMapping("/{id}/ejercicios")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public List<EjercicioResponseDTO> reemplazarEjercicios(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
+            @RequestBody List<EjercicioRequestDTO> lista) {
+        socioId = acceso.socioEfectivo(socioId);
+        return rutinaService.reemplazarEjercicios(id, socioId, lista);
+    }
+
     /** POST /api/v1/rutinas/{id}/ejercicios/{ejId}/superserie — { unir: true } une con el siguiente; false lo separa */
     @PostMapping("/{id}/ejercicios/{ejId}/superserie")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")

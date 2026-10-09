@@ -34,6 +34,20 @@ public class NotificacionController {
     }
 
     /** Avisos para el socio que está usando la app */
+    /** Qué canales están listos (mail configurado, cuántos socios tienen mail o teléfono) */
+    @GetMapping("/canales")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public NotificacionService.Canales canales() {
+        return service.canales();
+    }
+
+    /** Links de WhatsApp con el aviso listo para cada socio */
+    @GetMapping("/{id}/whatsapp")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public NotificacionService.Whatsapp whatsapp(@PathVariable Long id) {
+        return service.whatsapp(id);
+    }
+
     @GetMapping("/mias")
     @PreAuthorize("hasRole('SOCIO')")
     public ResponseEntity<List<NotificacionResponseDTO>> mias() {

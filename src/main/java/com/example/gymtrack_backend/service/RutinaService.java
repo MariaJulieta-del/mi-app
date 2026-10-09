@@ -59,6 +59,7 @@ public class RutinaService {
         rutina.setDescripcion(dto.getDescripcion());
         rutina.setDificultad(dto.getDificultad());
         rutina.setObjetivo(normalizarObjetivo(dto.getObjetivo()));
+        rutina.setNotasProfe(dto.getNotasProfe() == null || dto.getNotasProfe().isBlank() ? null : dto.getNotasProfe().trim());
         if (dto.getTrenes() != null) {
             rutina.getTrenes().clear();
             rutina.getTrenes().addAll(dto.getTrenes());
@@ -129,6 +130,7 @@ public class RutinaService {
         rutina.setDescripcion(dto.getDescripcion());
         rutina.setDificultad(dto.getDificultad());
         rutina.setObjetivo(normalizarObjetivo(dto.getObjetivo()));
+        rutina.setNotasProfe(dto.getNotasProfe() == null || dto.getNotasProfe().isBlank() ? null : dto.getNotasProfe().trim());
         if (dto.getTrenes() != null) {
             rutina.getTrenes().clear();
             rutina.getTrenes().addAll(dto.getTrenes());
@@ -277,7 +279,72 @@ public class RutinaService {
             throw new IllegalStateException(
                 "Los ejercicios de entrada en calor son inamovibles y no pueden eliminarse.");
         }
+        progresoEjercicioRepository.deleteByRutinaEjercicioId(ej.getId());
         rutinaEjercicioRepository.delete(ej);
+    }
+
+    /**
+     * Reemplaza los ejercicios de la rutina (sin tocar la entrada en calor) por la lista que llega,
+     * en ese orden: los que traen id se actualizan, los nuevos se crean y los que faltan se borran
+     * (junto con su progreso).
+     */
+    @Transactional
+    public List<EjercicioResponseDTO> reemplazarEjercicios(Long rutinaId, Long socioId, List<EjercicioRequestDTO> lista) {
+        Rutina rutina = findRutina(rutinaId, socioId);
+        List<RutinaEjercicio> actuales = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId);
+        java.util.Map<Long, RutinaEjercicio> porId = new java.util.HashMap<>();
+        actuales.stream().filter(e -> !e.isEsCalentamiento()).forEach(e -> porId.put(e.getId(), e));
+        // Los principales van después de la entrada en calor
+        int orden = actuales.stream().filter(RutinaEjercicio::isEsCalentamiento).mapToInt(e -> e.getOrden() != null ? e.getOrden() : 0).max().orElse(0);
+
+        // Validar antes de tocar nada
+        java.util.Set<Long> quedan = new java.util.HashSet<>();
+        for (EjercicioRequestDTO d : lista) {
+            if (d.getNombreEjercicio() == null || d.getNombreEjercicio().isBlank()) {
+                throw new IllegalArgumentException("Hay un ejercicio sin nombre");
+            }
+            if (d.getId() != null) {
+                if (!porId.containsKey(d.getId())) throw new IllegalArgumentException("El ejercicio " + d.getId() + " no es de esta rutina");
+                quedan.add(d.getId());
+            }
+        }
+        // 1. Sacar los que ya no están (con su progreso)
+        for (RutinaEjercicio e : porId.values()) {
+            if (quedan.contains(e.getId())) continue;
+            progresoEjercicioRepository.deleteByRutinaEjercicioId(e.getId());
+            rutinaEjercicioRepository.delete(e);
+        }
+        rutinaEjercicioRepository.flush();
+        // 2. Correr los que quedan a posiciones provisorias (el orden es único dentro de la rutina)
+        int provisorio = -1;
+        for (Long id : quedan) {
+            RutinaEjercicio e = porId.get(id);
+            e.setOrden(provisorio--);
+            rutinaEjercicioRepository.save(e);
+        }
+        rutinaEjercicioRepository.flush();
+        // 3. Guardar en el orden final
+        for (EjercicioRequestDTO d : lista) {
+            RutinaEjercicio ej = d.getId() != null ? porId.get(d.getId()) : null;
+            if (ej == null) {
+                ej = new RutinaEjercicio();
+                ej.setRutina(rutina);
+                ej.setNombreEjercicio(d.getNombreEjercicio().trim());
+                if (d.getEjercicioCatalogoId() != null) ejercicioRepository.findById(d.getEjercicioCatalogoId()).ifPresent(ej::setEjercicioCatalogo);
+            }
+            ej.setSeries(d.getSeries());
+            ej.setRepeticiones(d.getRepeticiones());
+            ej.setDescansoSeg(d.getDescansoSeg());
+            if (d.getPesoKg() != null) ej.setPesoKg(d.getPesoKg());
+            ej.setNotas(d.getNotas() == null || d.getNotas().isBlank() ? null : d.getNotas().trim());
+            int dia = d.getDia() != null && d.getDia() > 0 ? d.getDia() : 1;
+            if (ej.getDia() != null && ej.getDia() != dia) ej.setSuperserie(null);   // cambió de día: sale de la superserie
+            ej.setDia(dia);
+            ej.setOrden(++orden);
+            rutinaEjercicioRepository.save(ej);
+        }
+        rutinaEjercicioRepository.flush();
+        return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId).stream().map(this::mapearEjercicioADTO).toList();
     }
 
     // ──────────────────────────────────────────────
@@ -374,6 +441,7 @@ public class RutinaService {
         dto.setDiasSemana(rutina.getDiasSemana());
         dto.setDificultad(rutina.getDificultad());
         dto.setObjetivo(rutina.getObjetivo());
+        dto.setNotasProfe(rutina.getNotasProfe());
 
         // Resumen para tarjetas/previews (sin contar la entrada en calor)
         List<RutinaEjercicio> ejercicios = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutina.getId());

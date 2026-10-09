@@ -6,6 +6,9 @@ import java.util.List;
 
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
     List<Notificacion> findByActivaTrueOrderByFechaCreacionDesc();
+
+    /** Historial para el staff (activos y archivados), del más nuevo al más viejo */
+    List<Notificacion> findTop300ByOrderByFechaCreacionDesc();
     List<Notificacion> findBySocioIdAndActivaTrueOrderByFechaCreacionDesc(Long socioId);
 
     /** Avisos que le corresponden a un socio: a todos, a él, o a una disciplina en la que está inscripto */

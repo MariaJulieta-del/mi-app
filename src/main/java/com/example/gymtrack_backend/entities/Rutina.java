@@ -66,6 +66,10 @@ public class Rutina {
     @Column(length = 20)
     private String objetivo;
 
+    /** Indicaciones personales del profe para el socio (no se copian a las plantillas) */
+    @Column(name = "notas_profe", columnDefinition = "TEXT")
+    private String notasProfe;
+
     /** Días de la semana en que se realiza esta rutina, ej: ["LUNES", "MIÉRCOLES"] */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rutina_dias", joinColumns = @JoinColumn(name = "rutina_id"))

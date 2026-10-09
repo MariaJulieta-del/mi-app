@@ -46,11 +46,47 @@ public class TarifaMembresiaService {
     @Transactional
     public TarifaMembresiaResponseDTO actualizar(String tipo, BigDecimal nuevoPrecio,
                                                  boolean cambiaPases, Integer pasesMensuales) {
+        return actualizar(tipo, nuevoPrecio, cambiaPases, pasesMensuales, null, null);
+    }
+
+    /** Igual que arriba, y además nombre y "qué incluye" (null = no se cambia) */
+    @Transactional
+    public TarifaMembresiaResponseDTO actualizar(String tipo, BigDecimal nuevoPrecio, boolean cambiaPases,
+                                                 Integer pasesMensuales, String nombre, String incluye) {
         TarifaMembresia tarifa = repository.findById(tipo.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + tipo));
-        if (nuevoPrecio != null) tarifa.setPrecio(nuevoPrecio);
+        if (nombre != null && !nombre.isBlank()) tarifa.setNombre(nombre.trim());
+        if (incluye != null) tarifa.setIncluye(incluye.isBlank() ? null : incluye.trim());
+        if (nuevoPrecio != null) {
+            if (nuevoPrecio.signum() <= 0) throw new IllegalArgumentException("El precio tiene que ser mayor a cero");
+            tarifa.setPrecio(nuevoPrecio);
+        }
         if (cambiaPases) tarifa.setPasesMensuales(pasesMensuales);
         return toDTO(repository.save(tarifa));
+    }
+
+    /** Habilita o deshabilita un plan (deshabilitado = no se ofrece al cobrar) */
+    @Transactional
+    public TarifaMembresiaResponseDTO cambiarActivo(String tipo, boolean activo) {
+        TarifaMembresia t = repository.findById(tipo.toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("Plan no encontrado: " + tipo));
+        if (!activo && repository.findAll().stream().filter(x -> !Boolean.FALSE.equals(x.getActivo())).count() <= 1) {
+            throw new IllegalStateException("Tiene que quedar al menos un plan habilitado para poder cobrar.");
+        }
+        t.setActivo(activo);
+        return toDTO(repository.save(t));
+    }
+
+    /** Borra un plan que nunca se usó (si alguien lo tuvo, solo se puede deshabilitar) */
+    @Transactional
+    public void eliminar(String tipo) {
+        TarifaMembresia t = repository.findById(tipo.toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("Plan no encontrado: " + tipo));
+        if (membresiaRepository.existsByTipoMembresia(t.getTipo())) {
+            throw new IllegalStateException("Este plan ya lo usaron socios: deshabilitalo en lugar de borrarlo.");
+        }
+        if (repository.count() <= 1) throw new IllegalStateException("Tiene que quedar al menos un plan.");
+        repository.delete(t);
     }
 
     /** Obtiene el precio de un plan */
@@ -70,6 +106,8 @@ public class TarifaMembresiaService {
         dto.setDescripcion(t.getDescripcion());
         dto.setIncluye(t.getIncluye());
         dto.setSociosActivos(membresiaRepository.countActivosByTipo(t.getTipo()));
+        dto.setActivo(!Boolean.FALSE.equals(t.getActivo()));
+        dto.setUsado(membresiaRepository.existsByTipoMembresia(t.getTipo()));
         return dto;
     }
 }

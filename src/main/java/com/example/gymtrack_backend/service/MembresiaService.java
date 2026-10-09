@@ -67,6 +67,9 @@ public class MembresiaService {
 
         TarifaMembresia tarifa = tarifaRepository.findById(planTipo.toUpperCase())
             .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + planTipo));
+        if (Boolean.FALSE.equals(tarifa.getActivo())) {
+            throw new RuntimeException("El plan " + tarifa.getNombre() + " está deshabilitado. Elegí otro o habilitalo en Membresías.");
+        }
         if (tarifa.getDuracionDias() == null || tarifa.getDuracionDias() <= 0) {
             throw new RuntimeException("El plan no tiene duración configurada: " + planTipo);
         }
