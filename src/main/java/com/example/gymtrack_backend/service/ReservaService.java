@@ -104,6 +104,7 @@ public class ReservaService {
         Socio s = socioRepo.findById(socioId).orElseThrow(() -> new IllegalArgumentException("Socio no encontrado"));
         if (!Boolean.TRUE.equals(s.getActivo())) throw new IllegalArgumentException("El socio está dado de baja");
         if (!membresiaVigente(socioId)) throw new IllegalArgumentException("Necesitás la membresía vigente para reservar. Renovala en recepción.");
+        verificarPases(socioId, fecha);
 
         List<ReservaClase> rs = reservaRepo.deLaClase(disciplinaId, fecha, h.getHoraInicio());
         ReservaClase mia = rs.stream().filter(r -> r.getSocio().getId().equals(socioId)).findFirst().orElse(null);
@@ -307,6 +308,31 @@ public class ReservaService {
         LocalTime ahora = LocalTime.now();
         if (ahora.isBefore(LocalTime.parse(h.getHoraInicio()))) return "PROXIMA";
         return ahora.isBefore(LocalTime.parse(h.getHoraFin())) ? "EN_CURSO" : "PASADA";
+    }
+
+    /**
+     * Reservar no gasta un pase (se gasta al entrar, uno por día, o si reservó y faltó), pero no tiene
+     * sentido reservar si ya no le quedan pases: lo frenarían en la puerta. Se cuentan como comprometidos
+     * los días con otra reserva confirmada que todavía no usó.
+     */
+    void verificarPases(Long socioId, LocalDate fecha) {
+        Membresia m = membresiaRepo.findBySocioId(socioId).orElse(null);
+        if (m == null) return;
+        LocalDate hoy = LocalDate.now();
+        MembresiaService.PasesInfo p = membresiaService.calcularPases(m, hoy);
+        if (p.libre() || fecha.isAfter(p.cicloFin())) return;   // el mes que viene arranca con pases nuevos
+        // Ese día ya está cubierto si ya entró o ya tiene otra clase reservada
+        boolean yaEntro = !fecha.isAfter(hoy) && asistenciaRepo.countDiasConIngreso(socioId, fecha, fecha) > 0;
+        java.util.Set<LocalDate> reservados = new java.util.HashSet<>(reservaRepo.fechasConfirmadas(socioId, hoy, p.cicloFin()));
+        if (yaEntro || reservados.contains(fecha)) return;
+        // Los días reservados en que ya entró ya están contados como usados
+        long comprometidos = reservados.stream()
+                .filter(f -> f.isAfter(hoy) || asistenciaRepo.countDiasConIngreso(socioId, f, f) == 0).count();
+        if (p.restantes() - comprometidos <= 0) {
+            throw new IllegalArgumentException(comprometidos > 0
+                    ? "Ya tenés reservados los " + p.restantes() + " pases que te quedan este mes. Se renuevan el " + p.cicloFin().plusDays(1) + "."
+                    : "No te quedan pases este mes (usaste " + p.usados() + " de " + p.pasesMensuales() + "). Se renuevan el " + p.cicloFin().plusDays(1) + ".");
+        }
     }
 
     private boolean membresiaVigente(Long socioId) {

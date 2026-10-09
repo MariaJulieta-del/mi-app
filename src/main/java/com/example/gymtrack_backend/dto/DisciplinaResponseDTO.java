@@ -28,6 +28,8 @@ public class DisciplinaResponseDTO {
     private Boolean inscripto;
     /** Solo staff: true si la disciplina está a cargo de quien consulta */
     private Boolean esMia;
+    /** Advertencia al inscribir (por ejemplo: las clases superan los pases del plan) */
+    private String aviso;
 
     @Data
     public static class Inscripto {

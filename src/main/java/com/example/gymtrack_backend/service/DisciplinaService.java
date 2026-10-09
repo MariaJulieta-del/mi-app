@@ -251,7 +251,25 @@ public class DisciplinaService {
         inscripcionRepo.save(i);
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(socioId);
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle(d.getNombre());
-        return toDTO(d, true);
+        DisciplinaResponseDTO dto = toDTO(d, true);
+        dto.setAviso(avisoPases(socioId));
+        return dto;
+    }
+
+    /**
+     * Las clases fijas no gastan pases por anotarse: se gasta uno por cada día que entra al gimnasio.
+     * Si entre todas sus clases fijas va más días por mes que los pases del plan, se avisa.
+     */
+    String avisoPases(Long socioId) {
+        Integer pases = membresiaRepo.findBySocioId(socioId).map(com.example.gymtrack_backend.entities.Membresia::getPasesMensuales).orElse(null);
+        if (pases == null || pases <= 0) return null;
+        long diasPorSemana = inscripcionRepo.findConDisciplinaBySocioId(socioId).stream()
+                .flatMap(i -> i.getDisciplina().getHorarios().stream().map(Disciplina.Horario::getDia))
+                .distinct().count();
+        int porMes = (int) Math.round(diasPorSemana * 4.3);
+        if (porMes <= pases) return null;
+        return "Con sus clases fijas viene unos " + porMes + " días por mes y su plan tiene " + pases
+                + " pases: se le van a terminar antes de fin de mes.";
     }
 
     @Transactional
