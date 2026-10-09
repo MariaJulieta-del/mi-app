@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { PinGenerado } from '../services/socioService'
+import CampoClave from '../../../shared/components/CampoClave'
 
 function Modal({ onCerrar, children, ancho = 420 }: { onCerrar: () => void; children: React.ReactNode; ancho?: number }) {
   useEffect(() => {
@@ -101,7 +102,7 @@ export function CambiarPinModal({ onGuardar, onCerrar }: {
   const campo = (label: string, valor: string, set: (v: string) => void, auto = false) => (
     <div className="gt-form-group" style={{ marginBottom: 12 }}>
       <label className="gt-label">{label}</label>
-      <input className="gt-input gt-pin-input" type="password" inputMode="numeric" autoComplete="off" maxLength={4}
+      <CampoClave className="gt-input gt-pin-input" inputMode="numeric" autoComplete="off" maxLength={4}
         value={valor} onChange={e => set(soloNumeros(e.target.value))} autoFocus={auto} />
     </div>
   )

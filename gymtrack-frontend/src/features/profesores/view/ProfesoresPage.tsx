@@ -1,6 +1,7 @@
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useProfesores } from '../hooks/useProfesores'
 import { CargandoPagina } from '../../../shared/components/ui'
+import CampoClave from '../../../shared/components/CampoClave'
 
 export default function ProfesoresPage() {
   const p = useProfesores()
@@ -47,7 +48,7 @@ export default function ProfesoresPage() {
               </div>
               <div>
                 <label className="gt-label">Contraseña *</label>
-                <input className="gt-input" type="password" value={p.password} onChange={e => p.setPassword(e.target.value)} placeholder="Mín. 8, con letras y números" required />
+                <CampoClave className="gt-input" value={p.password} onChange={e => p.setPassword(e.target.value)} placeholder="Mín. 8, con letras y números" required />
               </div>
               <div>
                 <label className="gt-label">Email</label>
@@ -82,7 +83,7 @@ export default function ProfesoresPage() {
                     <div><label className="gt-label">Usuario</label><input className="gt-input" value={p.editUsername} onChange={e => p.setEditUsername(e.target.value)} /></div>
                     <div><label className="gt-label">Email</label><input className="gt-input" type="email" value={p.editEmail} onChange={e => p.setEditEmail(e.target.value)} /></div>
                     <div><label className="gt-label">Especialidad</label><input className="gt-input" value={p.editEspecialidad} onChange={e => p.setEditEspecialidad(e.target.value)} /></div>
-                    <div><label className="gt-label">Nueva contraseña</label><input className="gt-input" type="password" value={p.editPassword} onChange={e => p.setEditPassword(e.target.value)} placeholder="Vacío = no cambia" /></div>
+                    <div><label className="gt-label">Nueva contraseña</label><CampoClave className="gt-input" value={p.editPassword} onChange={e => p.setEditPassword(e.target.value)} placeholder="Vacío = no cambia" /></div>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardandoEdit}>{p.guardandoEdit ? 'Guardando...' : 'Guardar'}</button>

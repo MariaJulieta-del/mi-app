@@ -1061,14 +1061,6 @@ body {
 .gt-qr-visor video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* Pantalla de recepción */
-.gt-qr-kiosco { background: var(--bg-base); min-height: calc(100vh - 120px); padding: 8px; overflow: auto; }
-.gt-qr-kiosco-barra { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
-.gt-qr-kiosco-main { display: flex; gap: 32px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
-.gt-qr-marco { display: inline-block; padding: 16px; background: #fff; border-radius: 20px; box-shadow: var(--shadow-md); }
-.gt-qr-marco canvas { display: block; max-width: 72vw; height: auto !important; }
-.gt-qr-progreso { width: 340px; max-width: 72vw; height: 6px; margin: 14px auto 0; border-radius: 3px; background: var(--border); overflow: hidden; }
-.gt-qr-progreso > div { height: 100%; background: var(--accent); transition: width .25s linear; }
-.gt-qr-ultimos { width: 300px; max-width: 100%; }
 .gt-qr-ultimo { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
 .gt-qr-ultimo:last-child { border-bottom: none; }
 
@@ -2202,3 +2194,32 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-wa-item.enviado { opacity: .65; }
 .gt-wa-ir { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #128C7E; }
 .gt-wa-ok { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+
+/* Campo de contraseña con ojo */
+.gt-campo-clave { position: relative; display: block; }
+.gt-campo-clave > input { width: 100%; padding-right: 42px; }
+.gt-campo-clave-ojo { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); cursor: pointer; }
+.gt-campo-clave-ojo:hover { color: var(--text-primary); background: var(--bg-surface-2); }
+.gt-campo-clave-ojo:focus-visible { outline: 2px solid var(--accent); }
+.gt-campo-clave > input.gt-pin-input { padding-left: 42px; }
+
+/* ── Pantalla del QR de ingreso (staff y recepción) ───────── */
+.gt-qr-kiosco { background: var(--bg-base); min-height: calc(100vh - 120px); padding: 8px; display: flex; flex-direction: column; }
+.gt-qr-kiosco:fullscreen { min-height: 100vh; padding: 24px 32px; overflow: auto; }
+.gt-qr-kiosco-barra { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+/* El QR queda en el centro exacto; los últimos ingresos van a la derecha sin empujarlo */
+.gt-qr-kiosco-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr); align-items: center; gap: 32px; }
+.gt-qr-centro { grid-column: 2; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.gt-qr-titulo { margin: 0 0 4px; font-size: clamp(24px, 3.2vh, 40px); color: var(--text-primary); }
+.gt-qr-sub { margin: 0 0 20px; font-size: clamp(14px, 1.8vh, 20px); color: var(--text-muted); }
+.gt-qr-marco { padding: 16px 16px 12px; background: #fff; border-radius: 20px; box-shadow: var(--shadow-md); }
+.gt-qr-marco canvas { display: block; width: clamp(240px, min(58vh, 44vw), 640px); height: auto; aspect-ratio: 1 / 1; }
+.gt-qr-progreso { width: 100%; height: 6px; margin-top: 12px; border-radius: 3px; background: #e5e7eb; overflow: hidden; }
+.gt-qr-progreso > div { height: 100%; background: var(--accent); transition: width .25s linear; }
+.gt-qr-ultimos { grid-column: 3; justify-self: start; width: 300px; max-width: 100%; margin: 0; }
+@media (max-width: 1100px) {
+  .gt-qr-kiosco-main { grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: start; }
+  .gt-qr-centro, .gt-qr-ultimos { grid-column: 1; }
+  .gt-qr-ultimos { justify-self: center; width: min(420px, 100%); }
+  .gt-qr-marco canvas { width: clamp(220px, min(72vw, 52vh), 520px); }
+}

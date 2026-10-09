@@ -5,6 +5,7 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
 import type { LoginResponse } from '../../../shared/types/Auth'
+import CampoClave from '../../../shared/components/CampoClave'
 
 function Requisito({ ok, texto }: { ok: boolean; texto: string }) {
   return <li style={{ color: ok ? 'var(--green-text)' : 'var(--text-muted)' }}>{ok ? '✓' : '○'} {texto}</li>
@@ -58,17 +59,17 @@ export default function MiCuentaPage() {
         {error && <div className="gt-alert gt-alert-error">{error}</div>}
         <div className="gt-form-group">
           <label className="gt-label" htmlFor="pass-actual">Contraseña actual</label>
-          <input id="pass-actual" className="gt-input" type="password" autoComplete="current-password" required
+          <CampoClave id="pass-actual" className="gt-input" autoComplete="current-password" required
             value={actual} onChange={e => setActual(e.target.value)} />
         </div>
         <div className="gt-form-group">
           <label className="gt-label" htmlFor="pass-nueva">Contraseña nueva</label>
-          <input id="pass-nueva" className="gt-input" type="password" autoComplete="new-password" required
+          <CampoClave id="pass-nueva" className="gt-input" autoComplete="new-password" required
             value={nueva} onChange={e => setNueva(e.target.value)} />
         </div>
         <div className="gt-form-group">
           <label className="gt-label" htmlFor="pass-repetir">Repetí la contraseña nueva</label>
-          <input id="pass-repetir" className="gt-input" type="password" autoComplete="new-password" required
+          <CampoClave id="pass-repetir" className="gt-input" autoComplete="new-password" required
             value={repetir} onChange={e => setRepetir(e.target.value)} />
         </div>
         <ul className="gt-text-sm" style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>

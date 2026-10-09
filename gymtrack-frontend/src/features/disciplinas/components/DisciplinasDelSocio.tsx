@@ -32,7 +32,11 @@ export default function DisciplinasDelSocio({ socioId, editable }: { socioId: nu
   const inscribir = async () => {
     if (!elegida) return
     setTrabajando(true); setError(null)
-    try { await inscribirSocio(Number(elegida), socioId); setElegida(''); await recargar() }
+    try {
+      const r = await inscribirSocio(Number(elegida), socioId)
+      setElegida(''); await recargar()
+      if (r.aviso) setError(`Inscripto. Ojo: ${r.aviso}`)
+    }
     catch (err: unknown) { setError(mensajeError(err, 'No se pudo inscribir')) }
     finally { setTrabajando(false) }
   }

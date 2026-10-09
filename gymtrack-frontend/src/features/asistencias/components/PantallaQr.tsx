@@ -34,7 +34,10 @@ export default function PantallaQr({ obtenerQr, obtenerUltimos, onNoAutorizado }
         const qr = await obtenerQr()
         if (!activo) return
         if (canvasRef.current) {
-          await QRCode.toCanvas(canvasRef.current, contenidoQr(qr.codigo), { width: 340, margin: 1, errorCorrectionLevel: 'M' })
+          // Se dibuja grande para que se vea nítido; el tamaño en pantalla lo da el CSS (siempre cuadrado)
+          await QRCode.toCanvas(canvasRef.current, contenidoQr(qr.codigo), { width: 720, margin: 1, errorCorrectionLevel: 'M' })
+          canvasRef.current.style.removeProperty('width')
+          canvasRef.current.style.removeProperty('height')
         }
         vence = Date.now() + qr.expiraEnSeg * 1000
         setVentana(qr.ventanaSeg)
@@ -64,18 +67,18 @@ export default function PantallaQr({ obtenerQr, obtenerUltimos, onNoAutorizado }
 
   return (
     <div className="gt-qr-kiosco-main">
-      <div style={{ textAlign: 'center' }}>
-        <h1 style={{ margin: '0 0 4px', fontSize: 30, color: 'var(--text-primary)' }}>Registrá tu ingreso</h1>
-        <p className="gt-text-muted" style={{ margin: '0 0 20px', fontSize: 16 }}>
-          Entrá a tu cuenta de GymTrack y tocá <strong>“Escanear QR de ingreso”</strong>
+      <div className="gt-qr-centro">
+        <h1 className="gt-qr-titulo">Registrá tu ingreso</h1>
+        <p className="gt-qr-sub">
+          Entrá a tu cuenta del gimnasio y tocá <strong>“Escanear QR de ingreso”</strong>
         </p>
         <div className="gt-qr-marco">
           <canvas ref={canvasRef} aria-label="Código QR de ingreso" />
+          <div className="gt-qr-progreso" aria-hidden>
+            <div style={{ width: `${(restante / ventana) * 100}%` }} />
+          </div>
         </div>
-        <div className="gt-qr-progreso" aria-hidden>
-          <div style={{ width: `${(restante / ventana) * 100}%` }} />
-        </div>
-        <p className="gt-text-muted gt-text-sm" style={{ margin: '6px 0 0' }}>
+        <p className="gt-text-muted gt-text-sm" style={{ margin: '8px 0 0' }}>
           {error ?? `El código se renueva en ${restante} s`}
         </p>
       </div>

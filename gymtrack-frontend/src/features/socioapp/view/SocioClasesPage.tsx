@@ -66,7 +66,11 @@ export default function SocioClasesPage() {
   const fijo = async (disciplinaId: number, nombre: string, anotar: boolean) => {
     setOcupado('d' + disciplinaId)
     try {
-      if (anotar) { await anotarseFijo(disciplinaId); toast.success(`Te anotaste en ${nombre}`, 'Tu lugar queda reservado todas las semanas') }
+      if (anotar) {
+        const r = await anotarseFijo(disciplinaId)
+        if (r?.aviso) toast.warning(`Te anotaste en ${nombre}`, r.aviso.replace('Con sus clases fijas viene', 'Con tus clases fijas venís').replace('su plan tiene', 'tu plan tiene').replace('se le van', 'se te van'))
+        else toast.success(`Te anotaste en ${nombre}`, 'Tu lugar queda reservado todas las semanas')
+      }
       else { await salirFijo(disciplinaId); toast.success(`Saliste de ${nombre}`) }
       await cargar()
     } catch (e: unknown) {

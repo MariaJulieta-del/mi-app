@@ -1,5 +1,6 @@
 import { useLogin } from '../hooks/useLogin'
 import { useMarca } from '../../../shared/context/MarcaContext'
+import CampoClave from '../../../shared/components/CampoClave'
 
 type Modo = 'staff' | 'socio'
 
@@ -41,7 +42,7 @@ export default function LoginPage() {
             </div>
             <div className="gt-form-group" style={{ marginBottom: 24 }}>
               <label className="gt-label">Contraseña</label>
-              <input className="gt-input" type="password" value={l.password} onChange={e => l.setPassword(e.target.value)} placeholder="••••••••" />
+              <CampoClave className="gt-input" value={l.password} onChange={e => l.setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={l.loading}>
               {l.loading ? 'Iniciando sesión...' : 'Ingresar'}
@@ -62,7 +63,7 @@ export default function LoginPage() {
             </p>
             <div className="gt-form-group" style={{ marginBottom: 20 }}>
               <label className="gt-label">PIN</label>
-              <input className="gt-input gt-pin-input" type="password" inputMode="numeric" autoComplete="current-password"
+              <CampoClave className="gt-input gt-pin-input" inputMode="numeric" autoComplete="current-password"
                 maxLength={4} value={l.pin} placeholder="••••"
                 onChange={e => l.setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} />
             </div>

@@ -39,6 +39,8 @@ export interface DisciplinaApi {
   inscripto?: boolean
   /** Solo staff: la disciplina está a cargo de quien consulta */
   esMia?: boolean
+  /** Advertencia al inscribir (ej: las clases superan los pases del plan) */
+  aviso?: string | null
 }
 
 /** Lo que se envía al crear o editar */

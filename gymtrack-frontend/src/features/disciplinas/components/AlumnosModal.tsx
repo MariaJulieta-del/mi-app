@@ -53,9 +53,10 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
   }
 
   const inscribir = (s: Socio) => ejecutar(s.id!, async () => {
-    onCambio(await inscribirSocio(disciplina.id, s.id!))
+    const r = await inscribirSocio(disciplina.id, s.id!)
+    onCambio(r)
     setBusqueda('')
-    setAviso(`${s.nombre} ${s.apellido} quedó inscripto`)
+    setAviso(`${s.nombre} ${s.apellido} quedó inscripto${r.aviso ? `. Ojo: ${r.aviso}` : ''}`)
   })
 
   const confirmarQuitar = (socioId: number) => ejecutar(socioId, async () => {
