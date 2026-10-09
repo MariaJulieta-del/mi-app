@@ -4,7 +4,6 @@ import { mensajeError } from '../../../shared/utils/errores'
 import type { DisciplinaApi, DisciplinaRequest, Instructor } from '../services/disciplinaService'
 import { COLORES, DIAS, DIAS_CORTO, aFranjas, colorDisciplina, deFranjas, minutos, resumenHorarios, type Franja } from '../utils/disciplinaUtils'
 
-const OTRO = 'otro'
 
 /** Alta y edición de una disciplina, con sus horarios por día */
 export default function DisciplinaFormModal({ inicial, instructores, colorSugerido, onGuardar, onCerrar }: {
@@ -17,9 +16,7 @@ export default function DisciplinaFormModal({ inicial, instructores, colorSugeri
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [descripcion, setDescripcion] = useState(inicial?.descripcion ?? '')
   const [color, setColor] = useState<number>(inicial?.color ?? colorSugerido)
-  const [instructorSel, setInstructorSel] = useState<string>(
-    inicial?.profesorId ? String(inicial.profesorId) : inicial?.instructor ? OTRO : '')
-  const [instructorTexto, setInstructorTexto] = useState(inicial?.profesorId ? '' : inicial?.instructor ?? '')
+  const [instructorSel, setInstructorSel] = useState<string>(inicial?.profesorId ? String(inicial.profesorId) : '')
   const [cupo, setCupo] = useState<string>(inicial?.cupoMaximo != null ? String(inicial.cupoMaximo) : '')
   const [franjas, setFranjas] = useState<Franja[]>(() => {
     const f = aFranjas(inicial?.horarios ?? [])
@@ -49,8 +46,7 @@ export default function DisciplinaFormModal({ inicial, instructores, colorSugeri
       await onGuardar({
         nombre: nombre.trim(),
         descripcion: descripcion.trim() || undefined,
-        profesorId: instructorSel && instructorSel !== OTRO ? Number(instructorSel) : null,
-        instructor: instructorSel === OTRO ? instructorTexto.trim() || undefined : undefined,
+        profesorId: instructorSel ? Number(instructorSel) : null,
         cupoMaximo: cupoNum,
         color,
         activa: inicial?.activa ?? true,
@@ -90,15 +86,11 @@ export default function DisciplinaFormModal({ inicial, instructores, colorSugeri
             <select id="disc-instructor" className="gt-select" value={instructorSel} onChange={e => setInstructorSel(e.target.value)}>
               <option value="">Sin asignar</option>
               {instructores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-              <option value={OTRO}>Otro (escribir nombre)…</option>
             </select>
+            <span className="gt-hint">
+              {instructores.length === 0 ? 'Todavía no hay profesores. Se cargan en Profesores.' : 'Solo profesores registrados (se cargan en Profesores).'}
+            </span>
           </div>
-          {instructorSel === OTRO && (
-            <div className="gt-form-group">
-              <label className="gt-label" htmlFor="disc-instructor-txt">Nombre del instructor</label>
-              <input id="disc-instructor-txt" className="gt-input" value={instructorTexto} onChange={e => setInstructorTexto(e.target.value)} placeholder="Ej: Laura Gómez" />
-            </div>
-          )}
         </div>
 
         <div className="gt-form-group">

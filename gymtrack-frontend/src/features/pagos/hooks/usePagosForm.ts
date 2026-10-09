@@ -56,7 +56,7 @@ export function usePagosForm() {
 
   useEffect(() => {
     obtenerTodos().then(setSocios).catch(() => {})
-    listarTarifas().then(setPlanes).catch(() => {})
+    listarTarifas().then(t => setPlanes(t.filter(p => p.activo !== false))).catch(() => {})
     if (socioIdParam) {
       obtenerPorId(Number(socioIdParam)).then(seleccionarSocio).catch(() => {})
     }

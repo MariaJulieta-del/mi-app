@@ -116,5 +116,5 @@ Vercel sirve todo con HTTPS, así que el escáner de QR del celular funciona sin
 | `DB_POOL_SIZE` | `5` | Conexiones a la base |
 | `DDL_AUTO` | `validate` | Hibernate solo verifica el esquema (lo crea Flyway) |
 | `JWT_EXPIRATION_MS` | 24 h | Sesión del staff |
-| `MAIL_ENABLED` / `MAIL_PASSWORD` | `false` | Emails con Resend |
+| `MAIL_ENABLED` / `MAIL_USERNAME` / `MAIL_PASSWORD` | `false` | Mails de avisos por SMTP (Gmail u otro). Paso a paso en `gymtrack-backend/CONFIGURAR-MAIL.md` |
 | `PORT` | `8080` | Lo define Render |

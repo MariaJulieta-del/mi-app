@@ -50,6 +50,13 @@ export default function RutinasDetail() {
         </div>
       </div>
 
+      {rutina.notasProfe && (
+        <div className="gt-notas-profe" role="note">
+          <strong>{d.esSocio ? 'Indicaciones de tu profe' : 'Indicaciones para el socio'}</strong>
+          <p>{rutina.notasProfe}</p>
+        </div>
+      )}
+
       {d.error && (
         <div className="gt-alert gt-alert-error" style={{ marginBottom: 16 }}>
           {d.error}

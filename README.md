@@ -143,7 +143,7 @@ Los secretos **no** van en el código. El backend lee estas variables (entre par
 |----------|-----|
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Conexión a PostgreSQL (`gymtrack_db`, `postgres`, `1234`) |
 | `JWT_SECRET` | Clave de firma de tokens. **Obligatoria en producción** (mín. 32 caracteres) |
-| `MAIL_PASSWORD` | API key de Resend |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | Casilla y contraseña de aplicación para mandar los avisos (ver `gymtrack-backend/CONFIGURAR-MAIL.md`) |
 | `MAIL_ENABLED` | `true` para enviar emails (`false`) |
 
 Frontend: copiar `gymtrack-frontend/.env.example` a `.env.local` y ajustar `VITE_API_URL` (default `http://localhost:8080`).

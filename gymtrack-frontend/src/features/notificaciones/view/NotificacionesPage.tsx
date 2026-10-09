@@ -1,181 +1,192 @@
+import {
+  Archive, Bell, CalendarDays, Mail, MessageCircle, Search, Send, Smartphone, UserRound, Users, X,
+} from 'lucide-react'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
-import { useNotificaciones, TIPOS } from '../hooks/useNotificaciones'
+import { EmptyState, IconButton, PageHeader, Pill, Segmentado, SkeletonTarjetas } from '../../../shared/components/ui'
+import { useNotificaciones, TIPOS, TONO_TIPO, PLANTILLAS } from '../hooks/useNotificaciones'
+import WhatsappModal from '../components/WhatsappModal'
+import type { Notificacion } from '../services/notificacionService'
 
-function TipoBadge({ tipo }: { tipo: string }) {
-  const cfg = TIPOS.find(t => t.val === tipo) ?? { bg: 'var(--bg-surface-2)', color: 'var(--text-muted)', label: tipo }
-  return <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '2px 8px', background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
+const textoTipo = (t: string) => TIPOS.find(x => x.val === t)?.label ?? t
+const cuando = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+
+function aQuien(n: Notificacion) {
+  if (n.destinatario === 'TODOS') return { icono: Users, texto: 'Todos los socios' }
+  if (n.destinatario === 'DISCIPLINA') return { icono: CalendarDays, texto: n.disciplinaNombre ? `Clase de ${n.disciplinaNombre}` : 'Una clase' }
+  return { icono: UserRound, texto: n.socioNombre ?? `Socio #${n.socioId}` }
 }
 
 export default function NotificacionesPage() {
-  const { inputRef, ...n } = useNotificaciones()
+  const n = useNotificaciones()
+  const mailListo = !!n.canales?.email
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 className="gt-page-title" style={{ margin: 0 }}>Notificaciones</h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{n.activas.length} activa{n.activas.length !== 1 ? 's' : ''}</span>
-          {n.archivadas.length > 0 && (
-            <button className="gt-btn gt-btn-secondary" style={{ fontSize: 12 }} onClick={() => n.setVerArchivadas(v => !v)}>
-              {n.verArchivadas ? `Ver activas (${n.activas.length})` : `Ver archivadas (${n.archivadas.length})`}
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader titulo="Notificaciones" subtitulo="Llegan a la app del socio y, si querés, por mail y WhatsApp" />
 
-      <div className="gt-card" style={{ marginBottom: 20 }}>
-        <p className="gt-card-title" style={{ marginTop: 0 }}>Nueva notificación</p>
-        <form onSubmit={n.handleSubmit} noValidate>
-          <div className="gt-form-grid">
-            <div className="gt-form-group">
-              <label className="gt-label">Título <span style={{ color: 'var(--red)' }}>*</span></label>
-              <input className="gt-input" value={n.form.titulo} onChange={e => n.setForm({ ...n.form, titulo: e.target.value })} placeholder="Ej: Clase cancelada" />
-            </div>
-            <div className="gt-form-group">
-              <label className="gt-label">Tipo</label>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                {TIPOS.slice(0, 4).map(t => (
-                  <button key={t.val} type="button" onClick={() => n.setForm({ ...n.form, tipo: t.val })}
-                    style={{ padding: '5px 12px', borderRadius: 16, fontSize: 12, cursor: 'pointer',
-                      border: `1.5px solid ${n.form.tipo === t.val ? t.color : 'var(--border)'}`,
-                      background: n.form.tipo === t.val ? t.bg : 'var(--bg-surface)',
-                      color: n.form.tipo === t.val ? t.color : 'var(--text-secondary)',
-                      fontWeight: n.form.tipo === t.val ? 700 : 400 }}>
-                    {t.label}
-                  </button>
-                ))}
+      <div className="gt-avisos">
+        {/* ── Redactar ── */}
+        <form className="gt-card gt-aviso-nuevo" onSubmit={n.pedirEnvio} noValidate>
+          <div className="gt-card-cabecera">
+            <p className="gt-card-title" style={{ margin: 0 }}>Nuevo aviso</p>
+            <select className="gt-select gt-aviso-plantillas" value="" aria-label="Usar un mensaje frecuente"
+              onChange={e => { const p = PLANTILLAS.find(x => x.nombre === e.target.value); if (p) n.usarPlantilla(p) }}>
+              <option value="">Mensajes frecuentes…</option>
+              {PLANTILLAS.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
+            </select>
+          </div>
+
+          <div className="gt-form-group">
+            <span className="gt-label">Para</span>
+            <Segmentado etiqueta="Destinatarios" valor={n.para} onChange={n.setPara} opciones={[
+              { valor: 'TODOS', texto: 'Todos', icono: Users },
+              { valor: 'DISCIPLINA', texto: 'Una clase', icono: CalendarDays },
+              { valor: 'SOCIO', texto: 'Un socio', icono: UserRound },
+            ]} />
+            {n.para === 'DISCIPLINA' && (
+              <select className="gt-select" style={{ marginTop: 8 }} value={n.disciplinaId} aria-label="Clase"
+                onChange={e => n.setDisciplinaId(e.target.value ? Number(e.target.value) : '')}>
+                <option value="">Elegí la clase…</option>
+                {n.disciplinas.map(d => <option key={d.id} value={d.id}>{d.nombre} · {d.totalInscritos} {d.totalInscritos === 1 ? 'alumno' : 'alumnos'}</option>)}
+              </select>
+            )}
+            {n.para === 'SOCIO' && (n.socioSel ? (
+              <div className="gt-aviso-socio">
+                <UserRound size={16} aria-hidden />
+                <strong>{n.socioSel.nombre} {n.socioSel.apellido}</strong>
+                <span className="gt-text-sm gt-text-muted">{[n.socioSel.email && 'mail', n.socioSel.telefono && 'teléfono'].filter(Boolean).join(' · ') || 'sin mail ni teléfono'}</span>
+                <IconButton icono={X} etiqueta="Cambiar socio" onClick={() => n.setSocioSel(null)} />
               </div>
-            </div>
-            <div className="gt-form-group">
-              <label className="gt-label">Destinatario</label>
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                {[{ val: 'TODOS', label: 'Todos los socios' }, { val: 'SOCIO', label: 'Socio específico' }].map(opt => (
-                  <button key={opt.val} type="button" onClick={() => n.setDestinatario(opt.val)}
-                    style={{ padding: '6px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer',
-                      border: `1.5px solid ${n.form.destinatario === opt.val ? 'var(--accent)' : 'var(--border)'}`,
-                      background: n.form.destinatario === opt.val ? 'var(--accent-light)' : 'var(--bg-surface)',
-                      color: n.form.destinatario === opt.val ? 'var(--accent)' : 'var(--text-secondary)',
-                      fontWeight: n.form.destinatario === opt.val ? 700 : 400 }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {n.form.destinatario === 'SOCIO' && (
-              <div className="gt-form-group">
-                <label className="gt-label">Socio <span style={{ color: 'var(--red)' }}>*</span></label>
-                {n.socioSel ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 8 }}>
-                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>#{n.socioSel.id}</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{n.socioSel.nombre} {n.socioSel.apellido}</span>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>DNI {n.socioSel.dni}</span>
-                    <button type="button" onClick={() => { n.setMostrarBuscador(true) }}
-                      style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13 }}>cambiar</button>
-                  </div>
-                ) : (
-                  <div>
-                    <button type="button" className="gt-btn gt-btn-secondary" onClick={() => n.setMostrarBuscador(v => !v)}>
-                      {n.mostrarBuscador ? 'Cerrar buscador' : 'Buscar socio'}
-                    </button>
-                    {n.mostrarBuscador && (
-                      <div style={{ marginTop: 8, padding: 12, background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 8 }}>
-                        <input ref={inputRef} className="gt-input" placeholder="Nombre, apellido o DNI..."
-                          value={n.busquedaSocio} onChange={e => n.setBusquedaSocio(e.target.value)} style={{ marginBottom: 6 }} />
-                        {n.sociosFiltrados.length > 0 && (
-                          <div style={{ border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg-surface)' }}>
-                            {n.sociosFiltrados.map(s => (
-                              <div key={s.id} onClick={() => n.seleccionarSocio(s)}
-                                style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border-light)', display: 'flex', gap: 10, color: 'var(--text-secondary)' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-light)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-surface)')}>
-                                <span style={{ fontWeight: 600, color: 'var(--accent)' }}>#{s.id}</span>
-                                <span>{s.nombre} {s.apellido}</span>
-                                <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>DNI {s.dni}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {n.busquedaSocio.length > 0 && n.sociosFiltrados.length === 0 && (
-                          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>Sin resultados</p>
-                        )}
-                      </div>
-                    )}
+            ) : (
+              <div className="gt-busqueda" style={{ maxWidth: 'none', marginTop: 8 }}>
+                <Search size={16} aria-hidden />
+                <input className="gt-input" placeholder="Buscar por nombre o DNI…" value={n.busquedaSocio} autoFocus
+                  onChange={e => n.setBusquedaSocio(e.target.value)} aria-label="Buscar socio" />
+                {n.sociosFiltrados.length > 0 && (
+                  <div className="gt-builder-sugerencias">
+                    {n.sociosFiltrados.map(s => (
+                      <button type="button" key={s.id} className="gt-socio-opcion" onClick={() => { n.setSocioSel(s); n.setBusquedaSocio('') }}>
+                        <span>{s.nombre} {s.apellido}</span>
+                        <span className="gt-text-muted" style={{ marginLeft: 'auto', fontSize: 12 }}>DNI {s.dni}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-            )}
-            <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="gt-label">Mensaje <span style={{ color: 'var(--red)' }}>*</span></label>
-              <textarea className="gt-textarea" rows={3} value={n.form.mensaje} onChange={e => n.setForm({ ...n.form, mensaje: e.target.value })} placeholder="Contenido de la notificación..." />
+            ))}
+          </div>
+
+          <div className="gt-form-group">
+            <label className="gt-label" htmlFor="aviso-titulo">Título</label>
+            <input id="aviso-titulo" className="gt-input" maxLength={120} value={n.form.titulo} placeholder="Ej: Horario especial por feriado"
+              onChange={e => n.setForm({ ...n.form, titulo: e.target.value })} />
+          </div>
+          <div className="gt-form-group">
+            <label className="gt-label" htmlFor="aviso-mensaje">Mensaje <span className="gt-text-muted" style={{ fontWeight: 400 }}>· {n.form.mensaje.length}/1000</span></label>
+            <textarea id="aviso-mensaje" className="gt-textarea" rows={4} maxLength={1000} value={n.form.mensaje} placeholder="Lo que le querés contar al socio…"
+              onChange={e => n.setForm({ ...n.form, mensaje: e.target.value })} />
+            {/\[[^\]]+\]/.test(n.form.mensaje) && <span className="gt-hint" style={{ color: 'var(--yellow-text)' }}>Completá lo que está entre corchetes antes de enviar.</span>}
+          </div>
+          <div className="gt-form-group">
+            <span className="gt-label">Tipo</span>
+            <div className="gt-chips">
+              {TIPOS.filter(t => t.val !== 'CLASE').map(t => (
+                <button key={t.val} type="button" className={`gt-chip-btn chico${n.form.tipo === t.val ? ' activo' : ''}`} aria-pressed={n.form.tipo === t.val}
+                  onClick={() => n.setForm({ ...n.form, tipo: t.val })}>{t.label}</button>
+              ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
-            <button type="submit" className="gt-btn gt-btn-primary" disabled={n.creando}>{n.creando ? 'Enviando...' : 'Enviar notificación'}</button>
-            {n.form.destinatario === 'TODOS' && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Se enviará a todos los socios activos</span>}
+
+          <div className="gt-form-group">
+            <span className="gt-label">Por dónde</span>
+            <div className="gt-canales">
+              <label className="gt-canal activo fijo">
+                <input type="checkbox" checked disabled />
+                <Smartphone size={18} aria-hidden />
+                <span><strong>App</strong><small>Siempre: lo ve al entrar</small></span>
+              </label>
+              <label className={`gt-canal${n.porEmail && mailListo ? ' activo' : ''}${!mailListo ? ' deshabilitado' : ''}`}>
+                <input type="checkbox" checked={n.porEmail && mailListo} disabled={!mailListo} onChange={e => n.setPorEmail(e.target.checked)} />
+                <Mail size={18} aria-hidden />
+                <span><strong>Mail</strong><small>{mailListo ? `${n.canales!.conEmail} socios con mail` : 'Sin configurar todavía'}</small></span>
+              </label>
+              <label className={`gt-canal${n.porWhatsapp ? ' activo' : ''}`}>
+                <input type="checkbox" checked={n.porWhatsapp} onChange={e => n.setPorWhatsapp(e.target.checked)} />
+                <MessageCircle size={18} aria-hidden />
+                <span><strong>WhatsApp</strong><small>{n.canales ? `${n.canales.conTelefono} con teléfono` : 'Desde tu WhatsApp'}</small></span>
+              </label>
+            </div>
+            {!mailListo && n.canales && (
+              <span className="gt-hint">Para mandar mails hay que cargar la casilla del gimnasio en el servidor (instrucciones en CONFIGURAR-MAIL.md).</span>
+            )}
+          </div>
+
+          <div className="gt-aviso-enviar">
+            <span className="gt-text-sm gt-text-muted">
+              {n.para === 'TODOS' ? `Llega a ${n.alcance} socios activos` : n.para === 'DISCIPLINA' ? (n.disciplinaId ? `Llega a ${n.alcance} alumnos` : 'Elegí la clase') : n.socioSel ? `Para ${n.socioSel.nombre}` : 'Elegí el socio'}
+            </span>
+            <button type="submit" className="gt-btn gt-btn-primary" disabled={n.creando}><Send size={16} aria-hidden /> {n.creando ? 'Enviando…' : 'Enviar aviso'}</button>
           </div>
         </form>
+
+        {/* ── Historial ── */}
+        <section className="gt-card gt-avisos-historial">
+          <div className="gt-card-cabecera">
+            <Segmentado etiqueta="Ver" valor={n.verArchivadas ? 'archivados' : 'activos'} onChange={v => n.setVerArchivadas(v === 'archivados')}
+              opciones={[{ valor: 'activos', texto: 'Enviados', cuenta: n.activas.length }, { valor: 'archivados', texto: 'Archivados', cuenta: n.archivadas.length }]} />
+            <select className="gt-select" style={{ width: 'auto' }} value={n.filtroTipo} onChange={e => n.setFiltroTipo(e.target.value)} aria-label="Tipo">
+              <option value="">Todos los tipos</option>
+              {TIPOS.map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
+            </select>
+          </div>
+          <div className="gt-busqueda" style={{ maxWidth: 'none', marginBottom: 10 }}>
+            <Search size={16} aria-hidden />
+            <input className="gt-input" placeholder="Buscar en los avisos" value={n.busqueda} onChange={e => n.setBusqueda(e.target.value)} aria-label="Buscar aviso" />
+          </div>
+
+          {n.cargando ? <SkeletonTarjetas cantidad={3} alto={84} /> : n.listaVer.length === 0 ? (
+            <EmptyState icono={Bell} titulo={n.verArchivadas ? 'No hay avisos archivados' : 'Todavía no mandaste avisos'}
+              texto={!n.verArchivadas && !n.filtroTipo && !n.busqueda ? 'Escribí el primero a la izquierda: le llega a cada socio en su app.' : undefined} />
+          ) : (
+            <div className="gt-avisos-lista">
+              {n.listaVer.map(a => {
+                const q = aQuien(a)
+                return (
+                  <article key={a.id} className="gt-aviso">
+                    <div className="gt-aviso-meta">
+                      <Pill tono={TONO_TIPO[a.tipo] ?? 'neutral'}>{textoTipo(a.tipo)}</Pill>
+                      <span className="gt-aviso-para"><q.icono size={13} aria-hidden /> {q.texto}</span>
+                      <span className="gt-text-muted gt-text-sm" style={{ marginLeft: 'auto' }}>{cuando(a.fechaCreacion)}</span>
+                    </div>
+                    <strong className="gt-aviso-titulo">{a.titulo}</strong>
+                    <p className="gt-aviso-texto">{a.mensaje}</p>
+                    <div className="gt-aviso-pie">
+                      <span className="gt-aviso-canales" aria-label="Canales">
+                        <Smartphone size={14} aria-hidden /> App
+                        {a.porEmail && mailListo && <><Mail size={14} aria-hidden /> Mail</>}
+                      </span>
+                      <span style={{ flex: 1 }} />
+                      <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => n.setWhatsappDe(a)}>
+                        <MessageCircle size={14} aria-hidden /> WhatsApp
+                      </button>
+                      {a.activa && <IconButton icono={Archive} etiqueta="Archivar" onClick={() => n.setConfirmarArchivarId(a.id)} />}
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
       </div>
 
-      <div className="gt-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <p className="gt-card-title" style={{ marginTop: 0, marginBottom: 0 }}>{n.verArchivadas ? 'Archivadas' : 'Activas'} ({n.listaVer.length})</p>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button onClick={() => n.setFiltroTipo('')}
-              style={{ padding: '3px 10px', borderRadius: 14, fontSize: 12, cursor: 'pointer',
-                border: `1.5px solid ${!n.filtroTipo ? 'var(--accent)' : 'var(--border)'}`,
-                background: !n.filtroTipo ? 'var(--accent-light)' : 'var(--bg-surface)',
-                color: !n.filtroTipo ? 'var(--accent)' : 'var(--text-muted)' }}>
-              Todos
-            </button>
-            {TIPOS.map(t => (
-              <button key={t.val} onClick={() => n.setFiltroTipo(n.filtroTipo === t.val ? '' : t.val)}
-                style={{ padding: '3px 10px', borderRadius: 14, fontSize: 12, cursor: 'pointer',
-                  border: `1.5px solid ${n.filtroTipo === t.val ? t.color : 'var(--border)'}`,
-                  background: n.filtroTipo === t.val ? t.bg : 'var(--bg-surface)',
-                  color: n.filtroTipo === t.val ? t.color : 'var(--text-muted)' }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {n.listaVer.length === 0 ? (
-          <div className="gt-empty">
-            {n.filtroTipo ? 'No hay notificaciones de ese tipo.' : n.verArchivadas ? 'No hay notificaciones archivadas.' : 'No hay notificaciones activas.'}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {n.listaVer.map(notif => (
-              <div key={notif.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'var(--bg-surface)', opacity: notif.activa ? 1 : 0.7 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
-                    <TipoBadge tipo={notif.tipo} />
-                    <span style={{ fontSize: 11, background: 'var(--bg-surface-2)', color: 'var(--text-muted)', borderRadius: 6, padding: '2px 8px', border: '1px solid var(--border)' }}>
-                      {notif.destinatario === 'TODOS' ? 'Todos' : notif.destinatario === 'DISCIPLINA' ? `Clase: ${notif.disciplinaNombre ?? '—'}` : notif.socioNombre ? notif.socioNombre : `Socio #${notif.socioId}`}
-                    </span>
-                    <span style={{ fontSize: 12, color: 'var(--text-xmuted)' }}>{new Date(notif.fechaCreacion).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                  </div>
-                  <p style={{ fontWeight: 600, margin: '0 0 2px', fontSize: 14, color: 'var(--text-primary)' }}>{notif.titulo}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>{notif.mensaje}</p>
-                </div>
-                {notif.activa && (
-                  <button className="gt-btn gt-btn-secondary" style={{ marginLeft: 16, flexShrink: 0, fontSize: 12 }} onClick={() => n.setConfirmarArchivarId(notif.id)}>
-                    Archivar
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {n.whatsappDe && <WhatsappModal aviso={n.whatsappDe} onCerrar={() => n.setWhatsappDe(null)} />}
 
-      <ConfirmModal
-        open={n.confirmarArchivarId !== null}
-        title="Archivar notificación"
-        message="¿Archivar esta notificación? Se moverá al historial y dejará de estar activa."
-        confirmLabel="Archivar"
-        onConfirm={n.handleArchivar}
-        onCancel={() => n.setConfirmarArchivarId(null)}
-      />
+      <ConfirmModal open={n.confirmarEnvio} title="Enviar a todos"
+        message={`"${n.form.titulo}" le llega a los ${n.alcance} socios activos en la app${n.porEmail && mailListo ? ` y por mail a ${n.canales!.conEmail}` : ''}. ¿Enviar?`}
+        confirmLabel="Enviar" onConfirm={n.enviar} onCancel={() => n.setConfirmarEnvio(false)} />
+      <ConfirmModal open={n.confirmarArchivarId !== null} title="Archivar aviso"
+        message="Deja de mostrarse en la app de los socios. Lo vas a seguir viendo en Archivados."
+        confirmLabel="Archivar" onConfirm={n.handleArchivar} onCancel={() => n.setConfirmarArchivarId(null)} />
     </>
   )
 }

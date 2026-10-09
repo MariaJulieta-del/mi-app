@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import {
-  ArrowLeft, ChevronDown, ChevronUp, ClipboardList, Copy, Dumbbell, LayoutTemplate, Plus, Search, Trash2, UserRound, X,
+  ArrowLeft, ChevronDown, ChevronUp, ClipboardList, Copy, Dumbbell, LayoutTemplate, Plus, Search, StickyNote, Trash2, UserRound, X,
 } from 'lucide-react'
 import { NAME_TO_STATIC_IMG } from '../../ejercicios/assets/imagenesEjercicios'
 import { useRutinaForm, TRENES, DIAS, type EjItem } from '../hooks/useRutinaForm'
@@ -70,7 +70,9 @@ export default function RutinaForm() {
   const cantDias = Math.max(f.dias.length, 1)
   const etiquetaDia = (n: number) => (f.dias[n - 1] ? `Día ${n} · ${DIA_CORTO[f.dias[n - 1]] ?? f.dias[n - 1]}` : `Día ${n}`)
   const ejDelDia = f.ejercicios.map((ej, idx) => ({ ej, idx })).filter(({ ej }) => cantDias === 1 || (ej.dia ?? 1) === f.diaActivo)
-  const titulo = f.esEdicion ? 'Editar rutina' : f.sinSocio && f.esAdmin ? 'Nueva plantilla' : 'Nueva rutina'
+  const titulo = f.esEdicion ? (f.duenio?.id == null ? 'Editar plantilla' : 'Editar rutina') : f.sinSocio && f.esAdmin ? 'Nueva plantilla' : 'Nueva rutina'
+  // Rutina de un socio (no plantilla): lleva indicaciones personales del profe
+  const esDeSocio = f.esEdicion ? f.duenio?.id != null : !f.sinSocio
   const obj = f.objetivo ? OBJETIVO_CONFIG[f.objetivo] : null
 
   // Grupos para filtrar el catálogo: los de los trenes elegidos, o todos
@@ -93,7 +95,9 @@ export default function RutinaForm() {
           <div style={{ minWidth: 0 }}>
             <h1 className="gt-page-title" style={{ margin: 0 }}>{titulo}</h1>
             <p className="gt-text-muted gt-text-sm" style={{ margin: '2px 0 0' }}>
-              {f.esEdicion ? 'Datos generales. Los ejercicios se editan desde el detalle.' : 'Completá los datos, elegí los días y sumá ejercicios desde la biblioteca.'}
+              {f.esEdicion
+                ? (f.duenio?.nombre ? <>Rutina personal de <strong>{f.duenio.nombre}</strong></> : 'Plantilla: los cambios no tocan las rutinas ya asignadas.')
+                : 'Completá los datos, elegí los días y sumá ejercicios desde la biblioteca.'}
             </p>
           </div>
         </div>
@@ -207,6 +211,14 @@ export default function RutinaForm() {
               <input id="rutina-desc" className="gt-input" value={f.descripcion} onChange={e => f.setDescripcion(e.target.value)} placeholder="Opcional: foco, nivel, indicaciones" maxLength={300} />
             </div>
           </div>
+          {esDeSocio && (
+            <div className="gt-form-group gt-builder-notas">
+              <label className="gt-label" htmlFor="rutina-notas-profe"><StickyNote size={14} aria-hidden /> Indicaciones del profe para {f.duenio?.nombre?.split(' ')[0] ?? f.socioSel?.nombre ?? 'el socio'}</label>
+              <textarea id="rutina-notas-profe" className="gt-textarea" rows={2} maxLength={1000} value={f.notasProfe} onChange={e => f.setNotasProfe(e.target.value)}
+                placeholder="Ej: cuidá la rodilla derecha, bajá el peso si duele. Hidratate entre series." />
+              <span className="gt-hint">Las ve el socio arriba de su rutina. No se copian si la guardás como plantilla.</span>
+            </div>
+          )}
 
           <div className="gt-builder-fila">
             <span className="gt-label">Objetivo</span>
@@ -225,7 +237,7 @@ export default function RutinaForm() {
           {obj && (
             <p className="gt-builder-ayuda">
               {obj.desc} Los ejercicios nuevos se cargan con {obj.esquema.series}×{obj.esquema.reps} y {obj.esquema.descanso} s de descanso.
-              {!f.esEdicion && f.ejercicios.length > 0 && <> <button type="button" className="gt-btn-link" onClick={f.aplicarEsquema}>Aplicarlo a los {f.ejercicios.length} cargados</button></>}
+              {f.ejercicios.length > 0 && <> <button type="button" className="gt-btn-link" onClick={f.aplicarEsquema}>Aplicarlo a los {f.ejercicios.length} cargados</button></>}
             </p>
           )}
 
@@ -270,7 +282,7 @@ export default function RutinaForm() {
         </section>
 
         {/* ── Armado ── */}
-        {!f.esEdicion && (
+        {f.cargandoRutina ? <div className="gt-card"><p className="gt-text-muted" style={{ margin: 0 }}>Cargando ejercicios…</p></div> : (
           <div className="gt-builder">
             <section className="gt-card gt-builder-main">
               <div className="gt-card-cabecera">
@@ -329,19 +341,22 @@ export default function RutinaForm() {
 
             <aside className={`gt-card gt-builder-cat${f.mostrarCat ? ' abierto' : ''}`} aria-label="Biblioteca de ejercicios">
               <p className="gt-card-title" style={{ margin: '0 0 10px' }}>Biblioteca</p>
-              <div className="gt-busqueda" style={{ maxWidth: 'none', marginBottom: 8 }}>
-                <Search size={16} aria-hidden />
-                <input className="gt-input" placeholder="Buscar ejercicio…" value={f.busqEj} onChange={e => f.setBusqEj(e.target.value)} aria-label="Buscar ejercicio" />
-              </div>
-              {grupos.length > 0 && (
-                <div className="gt-chips gt-builder-grupos">
-                  <button type="button" className={`gt-chip-btn chico${!f.grupoCat ? ' activo' : ''}`} onClick={() => f.setGrupoCat('')}>Todos</button>
-                  {grupos.map(g => (
-                    <button key={g} type="button" className={`gt-chip-btn chico${f.grupoCat === g ? ' activo' : ''}`} onClick={() => f.setGrupoCat(f.grupoCat === g ? '' : g)}>{g}</button>
-                  ))}
+              <div className="gt-builder-filtros">
+                <div className="gt-busqueda">
+                  <Search size={16} aria-hidden />
+                  <input className="gt-input" placeholder="Buscar ejercicio…" value={f.busqEj} onChange={e => f.setBusqEj(e.target.value)} aria-label="Buscar ejercicio" />
                 </div>
-              )}
-              {cantDias > 1 && <p className="gt-text-sm gt-text-muted" style={{ margin: '0 0 8px' }}>Se agregan a <strong>{etiquetaDia(f.diaActivo)}</strong></p>}
+                {grupos.length > 0 && (
+                  <select className="gt-select" value={f.grupoCat} onChange={e => f.setGrupoCat(e.target.value)} aria-label="Músculo">
+                    <option value="">Todos los músculos</option>
+                    {grupos.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                )}
+              </div>
+              <p className="gt-text-sm gt-text-muted" style={{ margin: '0 0 8px' }}>
+                {f.catalogoFiltrado.length} {f.catalogoFiltrado.length === 1 ? 'ejercicio' : 'ejercicios'}
+                {cantDias > 1 && <> · se agregan a <strong>{etiquetaDia(f.diaActivo)}</strong></>}
+              </p>
               <div className="gt-builder-cat-lista">
                 {f.catalogoFiltrado.length === 0 ? (
                   <p className="gt-text-muted gt-text-sm" style={{ textAlign: 'center', padding: '16px 0', margin: 0 }}>
@@ -372,7 +387,7 @@ export default function RutinaForm() {
       {/* Barra fija para guardar */}
       <div className="gt-builder-barra">
         <span className="gt-text-sm gt-text-muted" style={{ flex: 1, minWidth: 0 }}>
-          {!f.esEdicion && <><strong style={{ color: 'var(--text-primary)' }}>{f.ejercicios.length}</strong> ejercicios{cantDias > 1 ? ` en ${cantDias} días` : ''}</>}
+          <strong style={{ color: 'var(--text-primary)' }}>{f.ejercicios.length}</strong> ejercicios{cantDias > 1 ? ` en ${cantDias} días` : ''}
           {obj && <> · {obj.label}</>}
         </span>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={() => f.navigate('/rutinas')}>Cancelar</button>

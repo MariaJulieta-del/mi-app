@@ -70,3 +70,9 @@ export const eliminarEjercicio = async (
 ): Promise<void> => {
  await axiosInstance.delete(`${API}/${rutinaId}/ejercicios/${ejId}`, { headers: headers(socioId) })
 }
+
+/** Guarda todos los ejercicios de la rutina (sin la entrada en calor) en ese orden: actualiza, agrega y quita */
+export const reemplazarEjercicios = async (
+  rutinaId: number, socioId: number | null, lista: EjercicioRequestDTO[],
+): Promise<Ejercicio[]> =>
+  (await axiosInstance.put(`${API}/${rutinaId}/ejercicios`, lista, { headers: headers(socioId) })).data

@@ -56,6 +56,7 @@ export function useDashboard() {
       const dias = diasRestantes(m.fechaVencimiento)
       await crearNotificacion({
         socioId: m.socioId,
+        titulo: dias <= 0 ? 'Tu membresía vence hoy' : 'Tu membresía está por vencer',
         mensaje: `Tu membresía (${m.tipoMembresia}) vence ${dias === 0 ? 'hoy' : `en ${dias} día${dias === 1 ? '' : 's'}`} (${m.fechaVencimiento}). ¡Renová para seguir entrenando!`,
         tipo: 'VENCIMIENTO',
       })
@@ -73,6 +74,7 @@ export function useDashboard() {
         const dias = diasRestantes(m.fechaVencimiento)
         await crearNotificacion({
           socioId: m.socioId,
+          titulo: dias <= 0 ? 'Tu membresía vence hoy' : 'Tu membresía está por vencer',
           mensaje: `Tu membresía (${m.tipoMembresia}) vence ${dias === 0 ? 'hoy' : `en ${dias} día${dias === 1 ? '' : 's'}`} (${m.fechaVencimiento}). ¡Renová para seguir entrenando!`,
           tipo: 'VENCIMIENTO',
         })

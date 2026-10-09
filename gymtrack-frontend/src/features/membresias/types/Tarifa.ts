@@ -8,6 +8,10 @@ export interface Tarifa {
   descripcion: string
   incluye: string
   sociosActivos: number
+  /** false = deshabilitado: no se ofrece al cobrar */
+  activo: boolean
+  /** algún socio lo tuvo: no se puede borrar, solo deshabilitar */
+  usado: boolean
 }
 
 export interface TarifaCreateDTO {

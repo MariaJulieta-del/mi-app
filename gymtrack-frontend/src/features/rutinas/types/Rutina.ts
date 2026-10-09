@@ -13,6 +13,8 @@ export interface Rutina {
   dificultad?: string
   /** Objetivo: FUERZA | HIPERTROFIA | RESISTENCIA | PERDIDA_GRASA | SALUD */
   objetivo?: string | null
+  /** Indicaciones personales del profe para el socio */
+  notasProfe?: string | null
   /** Ejercicios sin contar la entrada en calor */
   cantidadEjercicios?: number
   /** Cantidad de días (Día 1, Día 2…) */
@@ -29,6 +31,8 @@ export interface RutinaRequestDTO {
   dificultad?: string
   /** Objetivo: FUERZA | HIPERTROFIA | RESISTENCIA | PERDIDA_GRASA | SALUD */
   objetivo?: string
+  /** Indicaciones personales del profe (rutinas de socio) */
+  notasProfe?: string
 }
 export interface MaquinaDeEjercicio {
   id: number
@@ -65,6 +69,8 @@ export interface Ejercicio {
 }
 // DTO para agregar un ejercicio a una rutina
 export interface EjercicioRequestDTO {
+  /** Al guardar todos juntos: id del que ya estaba en la rutina */
+  id?: number
   nombreEjercicio: string
   series?: number
   repeticiones?: number

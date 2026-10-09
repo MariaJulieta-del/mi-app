@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import type { Rutina, Ejercicio } from '../types/Rutina'
 import { obtenerEjercicios } from '../services/rutinaService'
 import { TREN_CONFIG, TREN_DEFAULT, DIFICULTAD_CONFIG, OBJETIVO_CONFIG, DIAS_ORDER, etiquetaDia, esPlantilla } from '../utils/rutinaUtils'
@@ -16,13 +17,15 @@ interface Props {
   onSeleccionar?: () => void
   /** Mostrar a qué socio pertenece */
   mostrarSocio?: boolean
+  /** Toda la tarjeta abre el detalle */
+  href?: string
 }
 
 /**
  * Tarjeta de rutina/plantilla: trenes, dificultad, días, cantidad de ejercicios
  * y una vista previa desplegable de los ejercicios organizados por día.
  */
-export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccionar, mostrarSocio }: Props) {
+export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccionar, mostrarSocio, href }: Props) {
   const [abierta, setAbierta] = useState(false)
   const [ejercicios, setEjercicios] = useState<Ejercicio[] | null>(null)
   const [cargando, setCargando] = useState(false)
@@ -67,7 +70,8 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
         </div>
 
         <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>
-          {seleccionada && '✓ '}{rutina.nombre}
+          {seleccionada && '✓ '}
+          {href ? <Link to={href} className="gt-rutina-card-link">{rutina.nombre}</Link> : rutina.nombre}
         </p>
         {rutina.descripcion && (
           <p className="gt-text-muted" style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.4 }}>

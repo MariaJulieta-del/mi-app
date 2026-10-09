@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../../shared/context/AuthContext'
 import {
-  crearRutina, obtenerRutina, actualizarRutina, agregarEjercicio,
+  crearRutina, obtenerRutina, actualizarRutina, reemplazarEjercicios,
   obtenerRutinasGenerales, obtenerEjercicios, clonarRutina,
 } from '../services/rutinaService'
 import { DIAS_ORDER, ordenarDias, TREN_CONFIG, OBJETIVO_CONFIG } from '../utils/rutinaUtils'
@@ -24,6 +24,8 @@ export const TRENES = [
 export const DIAS = DIAS_ORDER
 
 export interface EjItem {
+  /** Id en la rutina (los que ya estaban guardados) */
+  id?: number
   catId?: number
   nombre: string
   series: number
@@ -54,6 +56,11 @@ export function useRutinaForm() {
   const [dias, setDias] = useState<string[]>([])
   const [dificultad, setDificultad] = useState('')
   const [objetivo, setObjetivo] = useState('')
+  /** Indicaciones personales del profe (solo rutinas de un socio) */
+  const [notasProfe, setNotasProfe] = useState('')
+  /** Al editar: de quién es la rutina */
+  const [duenio, setDuenio] = useState<{ id: number | null; nombre: string | null } | null>(null)
+  const [cargandoRutina, setCargandoRutina] = useState(esEdicion)
   const [ejercicios, setEjercicios] = useState<EjItem[]>([])
   /** Día que se está armando (pestaña activa); los ejercicios del catálogo se agregan a este día */
   const [diaActivo, setDiaActivo] = useState(1)
@@ -112,17 +119,31 @@ export function useRutinaForm() {
   useEffect(() => {
     if (!esEdicion || !id) return
     const sid = esAdmin ? (esGeneral ? null : socioIdParam) : socioIdAuth
-    obtenerRutina(Number(id), sid)
-      .then(r => {
+    Promise.all([obtenerRutina(Number(id), sid), obtenerEjercicios(Number(id), sid)])
+      .then(([r, ejs]) => {
         setNombre(r.nombre)
         setDescripcion(r.descripcion ?? '')
         setTrenesSel(r.trenes ?? [])
         setDias(ordenarDias(r.diasSemana))
         setDificultad(r.dificultad ?? '')
         setObjetivo(r.objetivo ?? '')
-        if (r.socioId === null) setSinSocio(true)
+        setNotasProfe(r.notasProfe ?? '')
+        setDuenio({ id: r.socioId ?? null, nombre: r.socioNombre ?? null })
+        setSinSocio(r.socioId == null)
+        setEjercicios(ejs.filter(e => !e.esCalentamiento).map(e => ({
+          id: e.id,
+          catId: e.ejercicioCatalogoId,
+          nombre: e.nombreEjercicio,
+          series: e.series ?? 3,
+          reps: e.repeticiones ?? 10,
+          descanso: e.descansoSeg ?? 60,
+          notas: e.notas ?? '',
+          imagenUrl: e.imagenUrl,
+          dia: e.dia ?? 1,
+        })))
       })
       .catch(() => setError('No se pudo cargar la rutina'))
+      .finally(() => setCargandoRutina(false))
   }, [id, esAdmin, esEdicion, esGeneral, socioIdAuth, socioIdParam])
 
   useEffect(() => {
@@ -162,7 +183,7 @@ export function useRutinaForm() {
     setRutinaBaseNombre(r.nombre)
     try {
       const ejsBase = await obtenerEjercicios(r.id!, null)
-      setEjercicios(ejsBase.map(e => ({
+      setEjercicios(ejsBase.filter(e => !e.esCalentamiento).map(e => ({
         catId: e.ejercicioCatalogoId,
         nombre: e.nombreEjercicio,
         series: e.series ?? 3,
@@ -186,6 +207,8 @@ export function useRutinaForm() {
 
   const getSocioId = (): number | null => {
     if (!esAdmin) return socioIdAuth
+    // Al editar, la rutina ya tiene dueño: no se vuelve a elegir
+    if (esEdicion) return duenio?.id ?? null
     if (sinSocio) return null
     return socioSel?.id ?? null
   }
@@ -288,7 +311,7 @@ export function useRutinaForm() {
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault()
     if (nombre.trim().length < 3) { setError('El nombre debe tener al menos 3 caracteres'); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
-    if (esAdmin && !sinSocio && !socioSel) { setError('Seleccioná un socio o marcá "Sin asignar a socio"'); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
+    if (esAdmin && !esEdicion && !sinSocio && !socioSel) { setError('Seleccioná un socio o marcá "Sin asignar a socio"'); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
 
     const sid = getSocioId()
     const datos = {
@@ -298,33 +321,38 @@ export function useRutinaForm() {
       diasSemana: dias.length > 0 ? dias : undefined,
       dificultad: dificultad || undefined,
       objetivo: objetivo || undefined,
+      notasProfe: sid !== null ? notasProfe.trim() : undefined,
     }
+    // Ordenados por día (y dentro del día, como están en pantalla)
+    const lista = [...ejercicios]
+      .map((e, i) => ({ e, i }))
+      .sort((a, b) => (a.e.dia ?? 1) - (b.e.dia ?? 1) || a.i - b.i)
+      .map(({ e }) => ({
+        id: e.id,
+        nombreEjercicio: e.nombre,
+        series: e.series,
+        repeticiones: e.reps,
+        descansoSeg: e.descanso,
+        notas: e.notas || undefined,
+        ejercicioCatalogoId: e.catId,
+        dia: e.dia ?? 1,
+      }))
 
     setGuardando(true); setError(null); window.scrollTo({ top: 0, behavior: 'smooth' })
     try {
       if (esEdicion && id) {
         await actualizarRutina(Number(id), sid, datos)
+        setProgreso('Guardando ejercicios…')
+        await reemplazarEjercicios(Number(id), sid, lista)
         navigate(esGeneral ? `/rutinas/${id}?general=true` : esAdmin ? `/rutinas/${id}?socioId=${sid}` : `/rutinas/${id}`)
         return
       }
 
       const nueva = await crearRutina(sid, datos)
       const rutinaId = nueva.id!
-      // Ordenados por día para que el detalle los muestre en orden
-      const ordenados = [...ejercicios].sort((a, b) => (a.dia ?? 1) - (b.dia ?? 1))
-
-      for (let i = 0; i < ordenados.length; i++) {
-        const ej = ordenados[i]
-        setProgreso(`Guardando ejercicios… (${i + 1}/${ordenados.length})`)
-        await agregarEjercicio(rutinaId, sid, {
-          nombreEjercicio: ej.nombre,
-          series: ej.series,
-          repeticiones: ej.reps,
-          descansoSeg: ej.descanso,
-          notas: ej.notas || undefined,
-          ejercicioCatalogoId: ej.catId,
-          dia: ej.dia ?? 1,
-        })
+      if (lista.length > 0) {
+        setProgreso('Guardando ejercicios…')
+        await reemplazarEjercicios(rutinaId, sid, lista.map(x => ({ ...x, id: undefined })))
       }
 
       if (sid !== null && esAdmin && tambienPlantilla) {
@@ -357,6 +385,7 @@ export function useRutinaForm() {
     dias, toggleDia,
     dificultad, setDificultad,
     objetivo, setObjetivo, aplicarEsquema,
+    notasProfe, setNotasProfe, duenio, cargandoRutina,
     ejercicios,
     diaActivo, setDiaActivo,
     tambienPlantilla, setTambienPlantilla,

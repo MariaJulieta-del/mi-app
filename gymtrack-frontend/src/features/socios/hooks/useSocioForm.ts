@@ -64,7 +64,7 @@ export function useSocioForm({ onGuardar, onAltaCompleta, socioEditar, onCancela
   useEffect(() => {
     if (socioEditar) return
     listarTarifas()
-      .then(data => setTarifas(data.filter(t => t.duracionDias > 0)))
+      .then(data => setTarifas(data.filter(t => t.duracionDias > 0 && t.activo !== false)))
       .catch(() => {})
       .finally(() => setLoadingTarifas(false))
   }, [socioEditar])

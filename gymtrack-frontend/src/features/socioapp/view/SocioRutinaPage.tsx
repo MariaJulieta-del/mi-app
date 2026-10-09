@@ -72,6 +72,12 @@ function RutinaActual({ r }: { r: Rutina }) {
         {obj && <Pill tono="info">{obj.emoji} {obj.label}</Pill>}
       </div>
       {r.descripcion && <p className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>{r.descripcion}</p>}
+      {r.notasProfe && (
+        <div className="gt-notas-profe" role="note">
+          <strong>Indicaciones de tu profe</strong>
+          <p>{r.notasProfe}</p>
+        </div>
+      )}
       <div className="gt-socio-dias-rutina">
         {Array.from({ length: cantidadDias }, (_, i) => {
           const n = i + 1

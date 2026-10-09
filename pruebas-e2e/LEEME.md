@@ -37,7 +37,7 @@ Variables: `E2E_API` (URL de la API), `E2E_ADMIN_USER` y `E2E_ADMIN_PASS` (por d
 
    ```bash
    cd gymtrack-backend
-   DB_URL=jdbc:postgresql://localhost:5432/gymtrack_test ADMIN_PASSWORD=Admin1234 PORT=8081 MAIL_ENABLED=true ./mvnw spring-boot:run "-Dspring-boot.run.arguments=--spring.mail.host=localhost --spring.mail.port=2525 --spring.mail.properties.mail.smtp.auth=false --spring.mail.properties.mail.smtp.starttls.enable=false"
+   DB_URL=jdbc:postgresql://localhost:5432/gymtrack_test ADMIN_PASSWORD=Admin1234 PORT=8081 MAIL_ENABLED=true MAIL_HOST=localhost MAIL_PORT=2525 MAIL_SMTP_AUTH=false MAIL_STARTTLS=false ./mvnw spring-boot:run
    ```
 
 3. Correr la prueba (o mandar avisos desde la app y mirar el archivo):

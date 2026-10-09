@@ -1,85 +1,119 @@
-import { useState, useEffect, useRef } from 'react'
-import { listarNotificaciones, crearNotificacion, archivarNotificacion } from '../services/notificacionService'
+import { useState, useEffect, useMemo } from 'react'
+import {
+  listarNotificaciones, crearNotificacion, archivarNotificacion, obtenerCanales,
+  type Canales, type Notificacion,
+} from '../services/notificacionService'
 import { obtenerTodos } from '../../socios/services/socioService'
+import { listarDisciplinas, type DisciplinaApi } from '../../disciplinas/services/disciplinaService'
 import type { Socio } from '../../socios/types/Socio'
 import { useToast } from '../../../shared/hooks/useToast'
-
-export interface Notificacion {
-  id: number; titulo: string; mensaje: string; tipo: string; destinatario: string
-  disciplinaNombre?: string | null
-  socioId?: number | null; socioNombre?: string; fechaCreacion: string; activa: boolean
-}
+import { mensajeError } from '../../../shared/utils/errores'
 
 export const TIPOS = [
-  { val: 'INFO',         label: 'Información',  bg: 'var(--blue-bg)',   color: 'var(--blue-text)' },
-  { val: 'ALERTA',       label: 'Alerta',       bg: 'var(--yellow-bg)', color: 'var(--yellow-text)' },
-  { val: 'URGENTE',      label: 'Urgente',      bg: 'var(--red-light)', color: 'var(--red-text)' },
-  { val: 'RECORDATORIO', label: 'Recordatorio', bg: 'var(--green-bg)',  color: 'var(--green-text)' },
-  { val: 'VENCIMIENTO',  label: 'Vencimiento',  bg: 'var(--yellow-bg)', color: 'var(--yellow-text)' },
-]
+  { val: 'INFO',         label: 'Información' },
+  { val: 'RECORDATORIO', label: 'Recordatorio' },
+  { val: 'ALERTA',       label: 'Importante' },
+  { val: 'URGENTE',      label: 'Urgente' },
+  { val: 'VENCIMIENTO',  label: 'Vencimiento' },
+  { val: 'CLASE',        label: 'Clase' },
+] as const
+export const TONO_TIPO: Record<string, 'info' | 'ok' | 'warn' | 'danger' | 'neutral'> = {
+  INFO: 'info', RECORDATORIO: 'ok', ALERTA: 'warn', URGENTE: 'danger', VENCIMIENTO: 'warn', CLASE: 'info',
+}
 
-const VACIO = { titulo: '', mensaje: '', tipo: 'INFO', destinatario: 'TODOS' }
+/** Mensajes de uso frecuente para no escribir siempre lo mismo */
+export const PLANTILLAS = [
+  { nombre: 'Feriado', tipo: 'INFO', titulo: 'Horario especial por feriado', mensaje: 'El [día] abrimos de [hora] a [hora]. ¡Te esperamos!' },
+  { nombre: 'Clase cancelada', tipo: 'ALERTA', titulo: 'Clase suspendida', mensaje: 'Hoy se suspende la clase de [disciplina] de las [hora]. Disculpá las molestias.' },
+  { nombre: 'Cambio de horario', tipo: 'INFO', titulo: 'Cambio de horario', mensaje: 'Desde el [fecha] el gimnasio abre de [hora] a [hora].' },
+  { nombre: 'Recordatorio de pago', tipo: 'VENCIMIENTO', titulo: 'Tu cuota está por vencer', mensaje: 'Te recordamos renovar tu membresía para seguir entrenando sin cortes. Podés pagar en recepción o por transferencia.' },
+  { nombre: 'Mantenimiento', tipo: 'INFO', titulo: 'Máquina en mantenimiento', mensaje: 'La [máquina] está en reparación hasta el [fecha]. Podés usar [alternativa].' },
+] as const
+
+export type Para = 'TODOS' | 'DISCIPLINA' | 'SOCIO'
+
+const VACIO = { titulo: '', mensaje: '', tipo: 'INFO' }
 
 export function useNotificaciones() {
   const toast = useToast()
-  const [notifs, setNotifs] = useState<Notificacion[]>([])
+  const [notifs, setNotifs] = useState<Notificacion[] | null>(null)
+  const [canales, setCanales] = useState<Canales | null>(null)
   const [form, setForm] = useState(VACIO)
+  const [para, setParaEstado] = useState<Para>('TODOS')
+  const [porEmail, setPorEmail] = useState(true)
+  const [porWhatsapp, setPorWhatsapp] = useState(false)
   const [creando, setCreando] = useState(false)
+  const [confirmarEnvio, setConfirmarEnvio] = useState(false)
   const [confirmarArchivarId, setConfirmarArchivarId] = useState<number | null>(null)
   const [filtroTipo, setFiltroTipo] = useState('')
   const [verArchivadas, setVerArchivadas] = useState(false)
+  const [busqueda, setBusqueda] = useState('')
+  /** Aviso del que se muestran los links de WhatsApp */
+  const [whatsappDe, setWhatsappDe] = useState<Notificacion | null>(null)
 
   const [socios, setSocios] = useState<Socio[]>([])
   const [socioSel, setSocioSel] = useState<Socio | null>(null)
   const [busquedaSocio, setBusquedaSocio] = useState('')
-  const [mostrarBuscador, setMostrarBuscador] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [disciplinas, setDisciplinas] = useState<DisciplinaApi[]>([])
+  const [disciplinaId, setDisciplinaId] = useState<number | ''>('')
 
-  const cargar = () => listarNotificaciones().then(setNotifs).catch(() => toast.error('Error', 'No se pudieron cargar las notificaciones'))
-
-  useEffect(() => { cargar() }, []) // eslint-disable-line react-hooks/exhaustive-deps -- solo al entrar a la página
+  const cargar = () => listarNotificaciones().then(setNotifs).catch(() => { setNotifs([]); toast.error('Error', 'No se pudieron cargar los avisos') })
 
   useEffect(() => {
-    if (mostrarBuscador && socios.length === 0) {
-      obtenerTodos().then(setSocios).catch(() => {})
-    }
-    if (mostrarBuscador) setTimeout(() => inputRef.current?.focus(), 50)
-  }, [mostrarBuscador, socios.length])
+    cargar()
+    obtenerCanales().then(c => { setCanales(c); if (!c.email) setPorEmail(false) }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- solo al entrar a la página
 
-  const sociosFiltrados = busquedaSocio.length >= 1
-    ? socios.filter(s => {
-        const q = busquedaSocio.toLowerCase()
-        return s.nombre.toLowerCase().includes(q) || s.apellido.toLowerCase().includes(q) || s.dni.includes(q)
-      }).slice(0, 6)
-    : []
-
-  const seleccionarSocio = (s: Socio) => {
-    setSocioSel(s); setBusquedaSocio(''); setMostrarBuscador(false)
+  const setPara = (p: Para) => {
+    setParaEstado(p)
+    setSocioSel(null); setBusquedaSocio(''); setDisciplinaId('')
+    if (p === 'SOCIO' && socios.length === 0) obtenerTodos().then(setSocios).catch(() => {})
+    if (p === 'DISCIPLINA' && disciplinas.length === 0) listarDisciplinas(true).then(setDisciplinas).catch(() => {})
   }
 
-  const setDestinatario = (val: string) => {
-    setForm(f => ({ ...f, destinatario: val }))
-    setSocioSel(null)
-    setMostrarBuscador(false)
+  const sociosFiltrados = useMemo(() => {
+    const q = busquedaSocio.trim().toLowerCase()
+    if (!q) return []
+    return socios.filter(s => `${s.nombre} ${s.apellido}`.toLowerCase().includes(q) || s.dni.includes(q)).slice(0, 6)
+  }, [busquedaSocio, socios])
+
+  const usarPlantilla = (p: (typeof PLANTILLAS)[number]) => setForm({ titulo: p.titulo, mensaje: p.mensaje, tipo: p.tipo })
+
+  /** A cuántos socios le llega (aprox.) */
+  const disciplinaSel = disciplinas.find(d => d.id === disciplinaId)
+  const alcance = para === 'SOCIO' ? (socioSel ? 1 : 0) : para === 'DISCIPLINA' ? (disciplinaSel?.totalInscritos ?? 0) : (canales?.socios ?? 0)
+
+  const validar = () => {
+    if (!form.titulo.trim() || !form.mensaje.trim()) { toast.error('Faltan datos', 'Poné un título y el mensaje'); return false }
+    if (para === 'SOCIO' && !socioSel) { toast.error('Faltan datos', 'Elegí a qué socio va'); return false }
+    if (para === 'DISCIPLINA' && !disciplinaId) { toast.error('Faltan datos', 'Elegí la clase'); return false }
+    return true
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const pedirEnvio = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.titulo.trim() || !form.mensaje.trim()) {
-      toast.error('Campos incompletos', 'Título y mensaje son obligatorios')
-      return
-    }
-    if (form.destinatario === 'SOCIO' && !socioSel) {
-      toast.error('Faltan datos', 'Seleccioná un socio para la notificación individual')
-      return
-    }
+    if (!validar()) return
+    // A todos se confirma antes (llega a mucha gente)
+    if (para === 'TODOS') setConfirmarEnvio(true)
+    else enviar()
+  }
+
+  const enviar = async () => {
+    setConfirmarEnvio(false)
     setCreando(true)
     try {
-      await crearNotificacion({ ...form, socioId: form.destinatario === 'SOCIO' ? socioSel!.id : null })
-      toast.success('Notificación enviada', form.titulo)
-      setForm(VACIO); setSocioSel(null); cargar()
-    } catch {
-      toast.error('Error', 'No se pudo enviar la notificación')
+      const nueva = await crearNotificacion({
+        titulo: form.titulo.trim(), mensaje: form.mensaje.trim(), tipo: form.tipo,
+        destinatario: para, socioId: para === 'SOCIO' ? socioSel!.id : null,
+        disciplinaId: para === 'DISCIPLINA' ? Number(disciplinaId) : null,
+        porEmail: porEmail && !!canales?.email, porWhatsapp,
+      })
+      toast.success('Aviso enviado', `${nueva.titulo}${porEmail && canales?.email ? ' · en la app y por mail' : ' · en la app'}`)
+      setForm(VACIO); setSocioSel(null); setBusquedaSocio(''); setDisciplinaId('')
+      cargar()
+      if (porWhatsapp) setWhatsappDe(nueva)
+    } catch (err) {
+      toast.error('No se pudo enviar', mensajeError(err, 'Error al enviar el aviso'))
     } finally {
       setCreando(false)
     }
@@ -89,25 +123,26 @@ export function useNotificaciones() {
     if (confirmarArchivarId === null) return
     const id = confirmarArchivarId
     setConfirmarArchivarId(null)
-    try {
-      await archivarNotificacion(id)
-      toast.success('Notificación archivada')
-      cargar()
-    } catch {
-      toast.error('Error', 'No se pudo archivar la notificación')
-    }
+    try { await archivarNotificacion(id); toast.success('Aviso archivado'); cargar() }
+    catch { toast.error('Error', 'No se pudo archivar') }
   }
 
-  const activas   = notifs.filter(n => n.activa)
-  const archivadas = notifs.filter(n => !n.activa)
-  const listaVer  = (verArchivadas ? archivadas : activas).filter(n => !filtroTipo || n.tipo === filtroTipo)
+  const lista = notifs ?? []
+  const activas = lista.filter(n => n.activa)
+  const archivadas = lista.filter(n => !n.activa)
+  const q = busqueda.trim().toLowerCase()
+  const listaVer = (verArchivadas ? archivadas : activas)
+    .filter(n => !filtroTipo || n.tipo === filtroTipo)
+    .filter(n => !q || n.titulo.toLowerCase().includes(q) || n.mensaje.toLowerCase().includes(q) || (n.socioNombre ?? '').toLowerCase().includes(q))
 
   return {
-    notifs, form, setForm, creando, filtroTipo, setFiltroTipo, verArchivadas, setVerArchivadas,
-    confirmarArchivarId, setConfirmarArchivarId,
-    socios, socioSel, busquedaSocio, setBusquedaSocio, mostrarBuscador, setMostrarBuscador,
-    inputRef, sociosFiltrados, seleccionarSocio, setDestinatario,
-    handleSubmit, handleArchivar,
+    cargando: notifs === null, canales, form, setForm, para, setPara, porEmail, setPorEmail, porWhatsapp, setPorWhatsapp,
+    creando, pedirEnvio, enviar, confirmarEnvio, setConfirmarEnvio, alcance,
+    filtroTipo, setFiltroTipo, verArchivadas, setVerArchivadas, busqueda, setBusqueda,
+    confirmarArchivarId, setConfirmarArchivarId, handleArchivar,
+    socioSel, setSocioSel, busquedaSocio, setBusquedaSocio, sociosFiltrados,
+    disciplinas, disciplinaId, setDisciplinaId, usarPlantilla,
+    whatsappDe, setWhatsappDe,
     activas, archivadas, listaVer,
   }
 }

@@ -75,10 +75,9 @@ export default function RutinasList() {
       ) : (
         <div className="gt-rutina-grid">
           {r.lista.map(rutina => (
-            <RutinaCard key={rutina.id} rutina={rutina} mostrarSocio={r.esStaff}
+            <RutinaCard key={rutina.id} rutina={rutina} mostrarSocio={r.esStaff} href={linkRutina(rutina, r.esStaff)}
               acciones={
                 <>
-                  <Link to={linkRutina(rutina, r.esStaff)}>Abrir</Link>
                   {r.esStaff && r.tab === 'plantillas' && (
                     <Link to={`/rutinas/asignar?plantillaId=${rutina.id}`}>Asignar</Link>
                   )}
