@@ -29,5 +29,8 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Copias de seguridad locales ###
+backups/
+
 ### VS Code ###
 .vscode/

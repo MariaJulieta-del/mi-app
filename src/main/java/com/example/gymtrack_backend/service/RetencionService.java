@@ -23,7 +23,7 @@ import java.util.*;
  *  - Primeros 30 días (es cuando más gente abandona): día 3 sin venir, día 7, día 14, fin del primer mes con pocas visitas.
  *  - Ausencia: se compara con su propia frecuencia (al que viene 4 veces por semana se lo extraña antes).
  *  - Rutina: sin rutina o con la misma hace más de 6 semanas (aburrirse es un motivo común de baja).
- *  - Membresía por vencer.
+ *  - (La membresía por vencer la avisa RecordatorioCuotaService.)
  *  - Bajas: a los 30, 60 y 90 días, un mensaje para que vuelva según el motivo por el que se fue.
  *
  * Cada caso se registra una sola vez por período para no repetir mensajes.
@@ -135,12 +135,7 @@ public class RetencionService {
                 }
             }
 
-            // ── Membresía por vencer ──
-            long venceEn = ChronoUnit.DAYS.between(hoy, m.getFechaVencimiento());
-            if (venceEn >= 0 && venceEn <= 3) {
-                aviso(s, "VENCE_PRONTO", 20, "Tu membresía vence " + (venceEn == 0 ? "hoy" : "en " + venceEn + (venceEn == 1 ? " día" : " días")),
-                        "Renovala en recepción para seguir entrenando sin cortar la racha 🔥", cuenta);
-            }
+            // La membresía por vencer la avisa RecordatorioCuotaService (app y mail, configurable)
         }
 
         // ── Bajas: recupero a los 30, 60 y 90 días ──

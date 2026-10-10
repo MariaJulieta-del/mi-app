@@ -40,7 +40,7 @@ public class NotificacionService {
     @Transactional(readOnly = true)
     public List<NotificacionResponseDTO> listar() {
         return repo.findTop300ByOrderByFechaCreacionDesc().stream()
-                .filter(n -> !"RETENCION".equals(n.getTipo()) && !"RESERVA".equals(n.getTipo()))
+                .filter(n -> !"RETENCION".equals(n.getTipo()) && !"RESERVA".equals(n.getTipo()) && !"CUOTA".equals(n.getTipo()))
                 .map(NotificacionService::dto).toList();
     }
 

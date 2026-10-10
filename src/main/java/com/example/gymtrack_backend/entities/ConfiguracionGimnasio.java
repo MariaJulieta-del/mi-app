@@ -32,4 +32,20 @@ public class ConfiguracionGimnasio {
     /** Semanas que un socio puede hacer la misma rutina antes de renovarla */
     @Column(name = "semanas_rutina", nullable = false)
     private Integer semanasRutina = 6;
+
+    // ── Recordatorio automático de vencimiento de cuota ──
+    @Column(name = "recordatorio_activo", nullable = false)
+    private Boolean recordatorioActivo = true;
+
+    /** Cuántos días antes del vencimiento se avisa */
+    @Column(name = "recordatorio_dias", nullable = false)
+    private Integer recordatorioDias = 3;
+
+    /** Además de la app, por mail (si el socio tiene mail y el servidor de mail está configurado) */
+    @Column(name = "recordatorio_mail", nullable = false)
+    private Boolean recordatorioMail = true;
+
+    /** También avisar cuando la cuota ya venció (al día siguiente) */
+    @Column(name = "recordatorio_vencida", nullable = false)
+    private Boolean recordatorioVencida = true;
 }
