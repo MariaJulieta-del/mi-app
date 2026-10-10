@@ -3,6 +3,7 @@ import { HeartHandshake } from 'lucide-react'
 import axiosInstance from '../../../shared/services/axiosInstance'
 import FuenteDatos from './FuenteDatos'
 import { celdaPct } from '../utils/celdas'
+import { useGlobo } from '../../../shared/hooks/useGlobo'
 
 interface Indicadores {
   ingresoMensualRecurrente: number
@@ -71,6 +72,7 @@ export default function IndicadoresDueno() {
 /** ¿Se quedan los nuevos? Retención por mes de alta + lo que hizo el staff para recuperar socios */
 export function CohortesRetencion() {
   const d = useIndicadores()
+  const globo = useGlobo()
   const [ret, setRet] = useState<ResumenRetencion | null>(null)
   useEffect(() => { axiosInstance.get<ResumenRetencion>('/api/v1/retencion/resumen').then(r => setRet(r.data)).catch(() => {}) }, [])
   if (!d) return null
@@ -88,11 +90,18 @@ export function CohortesRetencion() {
                   <tr key={c.mes}>
                     <td>{mesCorto(c.mes)}</td>
                     <td>{c.altas}</td>
-                    {c.retencion.map((v, i) => <td key={i} style={celdaPct(v)}>{v == null ? '—' : `${v}%`}</td>)}
+                    {c.retencion.map((v, i) => (
+                      <td key={i} style={celdaPct(v)} tabIndex={0} className="gt-celda-globo" {...globo.props(<>
+                        <strong>Empezaron en {mesCorto(c.mes)}</strong>
+                        <span>{v == null ? 'Todavía no pasó ese tiempo' : `${v}% seguía al día ${i + 1} ${i === 0 ? 'mes' : 'meses'} después`}</span>
+                        {v != null && <small>≈ {Math.round(c.altas * v / 100)} de {c.altas} {c.altas === 1 ? 'socio' : 'socios'}</small>}
+                      </>)}>{v == null ? '—' : `${v}%`}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
+            {globo.globo}
           </div>
           <p className="gt-text-sm gt-text-muted" style={{ margin: '6px 0 0' }}>Porcentaje de los que empezaron cada mes que siguen con la membresía al día.</p>
         </div>

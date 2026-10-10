@@ -28,11 +28,17 @@ export default function RutinasList() {
       )}
 
       {r.esStaff && (
-        <div style={{ marginBottom: 12, overflowX: 'auto' }}>
+        <div style={{ marginBottom: 12, overflowX: 'auto', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <Segmentado etiqueta="Tipo de rutina" valor={r.tab} onChange={r.cambiarTab} opciones={[
             { valor: 'plantillas', texto: 'Plantillas', icono: LayoutTemplate, cuenta: r.plantillas.length },
             { valor: 'asignadas', texto: 'De socios', icono: UserRound, cuenta: r.asignadas.length },
           ]} />
+          {r.paraRenovar > 0 && (
+            <button type="button" className={`gt-renovar-filtro${r.soloRenovar ? ' activo' : ''}`} aria-pressed={r.soloRenovar && r.tab === 'asignadas'}
+              onClick={() => { if (r.tab !== 'asignadas') r.cambiarTab('asignadas'); r.setSoloRenovar(!(r.soloRenovar && r.tab === 'asignadas')) }}>
+              ⏰ {r.paraRenovar} para renovar
+            </button>
+          )}
         </div>
       )}
 
@@ -64,7 +70,7 @@ export default function RutinasList() {
       ) : r.lista.length === 0 ? (
         <div className="gt-card">
           <EmptyState icono={ClipboardList}
-            titulo={r.hayFiltros ? 'Ninguna rutina coincide' : r.tab === 'plantillas' ? 'Todavía no hay plantillas' : 'Todavía no hay rutinas asignadas'}
+            titulo={r.soloRenovar && r.tab === 'asignadas' && r.lista.length === 0 && !r.busqueda.trim() ? 'Ninguna rutina para renovar' : r.hayFiltros ? 'Ninguna rutina coincide' : r.tab === 'plantillas' ? 'Todavía no hay plantillas' : 'Todavía no hay rutinas asignadas'}
             texto={r.hayFiltros ? 'Probá con otros filtros.' : r.tab === 'plantillas' ? 'Armá una vez y asignala a todos los socios que quieras.' : undefined}
             accion={r.esStaff && !r.hayFiltros && (
               <Link to={r.tab === 'plantillas' ? '/rutinas/nueva?general=true' : '/rutinas/asignar'} className="gt-btn gt-btn-primary">

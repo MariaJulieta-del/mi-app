@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyRound, Search, UserPlus, Users, X } from 'lucide-react'
+import { BellRing, KeyRound, Search, UserPlus, Users, X } from 'lucide-react'
 import SocioForm from '../components/SocioForm'
 import SocioTabla from '../components/SocioTabla'
 import BajaSocioModal from '../components/BajaSocioModal'
@@ -22,6 +22,8 @@ export default function SociosPage() {
     try { if (await p.handleAltaCompleta(data)) setAltaAbierta(false) } finally { setRegistrando(false) }
   }
   const filtrarMem = (f: '' | 'VENCIDA' | 'SIN_MEMBRESIA') => {
+    // Las vencidas tienen su propia solapa (con el botón para avisarles)
+    if (f === 'VENCIDA') { p.setFiltroMem(''); p.setVista(p.vista === 'vencidas' ? 'activos' : 'vencidas'); p.setPagina(1); return }
     p.setVista('activos'); p.setFiltroMem(p.filtroMem === f ? '' : f); p.setPagina(1)
   }
 
@@ -55,7 +57,7 @@ export default function SociosPage() {
         <Resumen items={[
           { valor: c.activos, texto: 'socios activos' },
           { valor: c.alDia, texto: 'al día', tono: 'ok' },
-          { valor: c.vencidas, texto: 'con la cuota vencida', tono: c.vencidas ? 'danger' : 'ok', onClick: () => filtrarMem('VENCIDA'), activo: p.filtroMem === 'VENCIDA' },
+          { valor: c.vencidas, texto: 'con la cuota vencida', tono: c.vencidas ? 'danger' : 'ok', onClick: () => filtrarMem('VENCIDA'), activo: p.vista === 'vencidas' },
           { valor: c.sinMembresia, texto: 'sin membresía', tono: c.sinMembresia ? 'warn' : 'ok', onClick: () => filtrarMem('SIN_MEMBRESIA'), activo: p.filtroMem === 'SIN_MEMBRESIA' },
         ]} />
       )}
@@ -68,6 +70,7 @@ export default function SociosPage() {
         </div>
         <Segmentado etiqueta="Socios" valor={p.vista} onChange={v => { p.setVista(v); p.setFiltroMem(''); p.setPagina(1) }} opciones={[
           { valor: 'activos', texto: 'Activos', cuenta: c?.activos },
+          { valor: 'vencidas', texto: 'Vencidas', cuenta: c?.vencidas },
           { valor: 'inactivos', texto: 'De baja', cuenta: c?.inactivos },
           { valor: 'todos', texto: 'Todos' },
         ]} />
@@ -75,6 +78,13 @@ export default function SociosPage() {
           <span className="gt-text-sm gt-text-muted" aria-live="polite">{d.total} resultado{d.total !== 1 ? 's' : ''}</span>
         )}
       </div>
+
+      {p.vista === 'vencidas' && c && c.vencidas > 0 && (
+        <div className="gt-alert gt-alert-warning gt-vencidas-aviso" role="note">
+          <BellRing size={16} aria-hidden />
+          <span><strong>{c.vencidas} {c.vencidas === 1 ? 'socio tiene' : 'socios tienen'} la cuota vencida</strong> y no {c.vencidas === 1 ? 'puede' : 'pueden'} entrar hasta renovar. Con <em>Avisar</em> le escribís un mensaje a cada uno.</span>
+        </div>
+      )}
 
       {p.cargando ? (
         <div className="gt-card gt-lista-cargando" aria-busy="true">
@@ -85,6 +95,10 @@ export default function SociosPage() {
           <EmptyState icono={Users} titulo="Todavía no hay socios"
             texto="Registrá el primero: se carga el socio, se cobra el plan y queda con la membresía activa."
             accion={<button type="button" className="gt-btn gt-btn-primary" onClick={() => setAltaAbierta(true)}><UserPlus size={16} aria-hidden /> Nuevo socio</button>} />
+        </div>
+      ) : d.items.length === 0 && p.vista === 'vencidas' && !p.busqueda.trim() ? (
+        <div className="gt-card">
+          <EmptyState icono={Users} titulo="Nadie tiene la cuota vencida" texto="Todos los socios activos están al día." />
         </div>
       ) : d.items.length === 0 ? (
         <div className="gt-card">

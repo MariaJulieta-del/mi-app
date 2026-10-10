@@ -64,6 +64,11 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
           })}
           {obj && <span className="gt-chip" style={{ background: obj.bg, color: obj.color }}>{obj.emoji} {obj.label}</span>}
           {dif && <span className="gt-chip" style={{ background: dif.bg, color: dif.color }}>Dificultad {dif.label.toLowerCase()}</span>}
+          {!esPlantilla(rutina) && rutina.semanasMax != null && (
+            rutina.paraRenovar
+              ? <span className="gt-chip gt-chip-renovar" title={`Lleva ${rutina.semanasActual} semanas con estos ejercicios (el límite es ${rutina.semanasMax})`}>⏰ Renovar · {rutina.semanasActual} sem.</span>
+              : <span className="gt-chip gt-chip-semana" title={`Se renueva a las ${rutina.semanasMax} semanas`}>Semana {(rutina.semanasActual ?? 0) + 1} de {rutina.semanasMax}</span>
+          )}
           {mostrarSocio && !esPlantilla(rutina) && (
             <span className="gt-chip" style={{ background: 'var(--blue-bg)', color: 'var(--blue-text)' }}>👤 {rutina.socioNombre}</span>
           )}

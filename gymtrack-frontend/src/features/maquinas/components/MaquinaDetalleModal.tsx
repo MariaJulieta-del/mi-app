@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CircleCheck, Dumbbell, Pencil, Plus, Power, Wrench, X } from 'lucide-react'
+import { CircleCheck, Dumbbell, Pencil, Plus, Power, PowerOff, Trash2, Wrench, X } from 'lucide-react'
 import Modal from '../../../shared/components/Modal'
 import { Pill } from '../../../shared/components/ui'
 import { formatFecha } from '../../../shared/utils/fechas'
@@ -16,7 +16,7 @@ const UMBRAL_COSTO = 50000
 const pesos = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
 /** Ficha de la máquina: estado, ejercicios que se hacen en ella, cómo se usa e historial de arreglos */
-export default function MaquinaDetalleModal({ maquina: m, estado, mantenimientos, ejercicios, onCerrar, onEditar, onReportar, onToggleActiva, onMarcarRealizado, onCambioEjercicios }: {
+export default function MaquinaDetalleModal({ maquina: m, estado, mantenimientos, ejercicios, onCerrar, onEditar, onReportar, onToggleActiva, onEliminar, onMarcarRealizado, onCambioEjercicios }: {
   maquina: Maquina
   estado: EstadoMaquina
   /** Todos los registros de esta máquina */
@@ -27,6 +27,7 @@ export default function MaquinaDetalleModal({ maquina: m, estado, mantenimientos
   onEditar: () => void
   onReportar: () => void
   onToggleActiva: () => void
+  onEliminar: () => void
   onMarcarRealizado: (r: Mantenimiento) => void
   onCambioEjercicios: () => Promise<unknown>
 }) {
@@ -74,8 +75,11 @@ export default function MaquinaDetalleModal({ maquina: m, estado, mantenimientos
         </span>
       }
       pie={<>
+        <button type="button" className="gt-btn gt-btn-danger-outline" onClick={onEliminar}>
+          <Trash2 size={15} aria-hidden /> Eliminar
+        </button>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onToggleActiva} style={{ marginRight: 'auto' }}>
-          <Power size={15} aria-hidden /> {m.activa ? 'Dar de baja' : 'Reactivar'}
+          {m.activa ? <><PowerOff size={15} aria-hidden /> Deshabilitar</> : <><Power size={15} aria-hidden /> Habilitar</>}
         </button>
         {m.activa && <button type="button" className="gt-btn gt-btn-secondary" onClick={onReportar}><Wrench size={15} aria-hidden /> Reportar</button>}
         <button type="button" className="gt-btn gt-btn-primary" onClick={onEditar}><Pencil size={15} aria-hidden /> Editar</button>

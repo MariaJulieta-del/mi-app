@@ -5,6 +5,8 @@ import { getDemografia, type Demografia, type GrupoPublico } from '../services/r
 import { EmptyState, Segmentado, Skeleton } from '../../../shared/components/ui'
 import { celdaPct } from '../utils/celdas'
 import FuenteDatos from './FuenteDatos'
+import { BarraPct } from './Graficos'
+import { useGlobo } from '../../../shared/hooks/useGlobo'
 
 const PERIODOS = [30, 60, 90] as const
 const num = (n: number | null | undefined, sufijo = '') => (n == null ? '—' : `${n.toLocaleString('es-AR')}${sufijo}`)
@@ -30,7 +32,12 @@ function TablaGrupos({ grupos, mostrarEdad }: { grupos: GrupoPublico[]; mostrarE
               <td className="gt-fw-600">{g.nombre}</td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div className="gt-barra-pct"><div style={{ width: `${(g.socios / max) * 100}%` }} /></div>
+                  <BarraPct pct={(g.socios / max) * 100} globo={<>
+                    <strong>{g.nombre}</strong>
+                    <span>{g.socios} {g.socios === 1 ? 'socio activo' : 'socios activos'}{g.porcentaje != null ? ` · ${g.porcentaje}% del total` : ''}</span>
+                    {g.visitasPorSemana != null && <span>{g.visitasPorSemana.toLocaleString('es-AR')} visitas por semana en promedio</span>}
+                    {g.horaPico && <small>Viene más a las {g.horaPico}</small>}
+                  </>} />
                   <span style={{ minWidth: 64, textAlign: 'right' }}><strong>{g.socios}</strong> <span className="gt-text-muted">{g.porcentaje != null ? `(${g.porcentaje}%)` : ''}</span></span>
                 </div>
               </td>
@@ -47,6 +54,7 @@ function TablaGrupos({ grupos, mostrarEdad }: { grupos: GrupoPublico[]; mostrarE
 
 /** Mapa grupo × franja horaria: de las visitas de cada grupo, qué porcentaje cae en cada franja */
 function MapaFranjas({ d, grupos }: { d: Demografia; grupos: GrupoPublico[] }) {
+  const globo = useGlobo()
   const conVisitas = grupos.filter(g => g.visitas > 0)
   if (conVisitas.length === 0) return <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>Todavía no hay ingresos de estos grupos en el período.</p>
   return (
@@ -59,7 +67,12 @@ function MapaFranjas({ d, grupos }: { d: Demografia; grupos: GrupoPublico[] }) {
           {conVisitas.map(g => (
             <tr key={g.clave}>
               <td className="gt-fw-600">{g.nombre}<span className="gt-text-muted" style={{ fontWeight: 400 }}> · {g.visitas}</span></td>
-              {g.franjas.map((p, i) => <td key={i} style={p > 0 ? celdaPct(p) : undefined}>{p > 0 ? `${p}%` : '—'}</td>)}
+              {g.franjas.map((p, i) => (
+                <td key={i} style={p > 0 ? celdaPct(p) : undefined} tabIndex={0} className="gt-celda-globo"
+                  {...globo.props(<><strong>{g.nombre} · {d.nombresFranjas[i]}</strong><span>{p > 0 ? `${p}% de sus ${g.visitas} visitas` : 'Sin visitas en esta franja'}</span></>)}>
+                  {p > 0 ? `${p}%` : '—'}
+                </td>
+              ))}
               <td>{g.horaPromedio ?? '—'}</td>
             </tr>
           ))}
@@ -70,6 +83,7 @@ function MapaFranjas({ d, grupos }: { d: Demografia; grupos: GrupoPublico[] }) {
           </tr>
         </tbody>
       </table>
+      {globo.globo}
     </div>
   )
 }

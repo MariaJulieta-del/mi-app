@@ -13,8 +13,16 @@ import MaquinaDetalleModal from '../components/MaquinaDetalleModal'
 import ReportarModal from '../components/ReportarModal'
 import MantenimientoFormModal from '../components/MantenimientoFormModal'
 import { estadoMaquina, pendientesPorMaquina } from '../utils/estadoMaquina'
+import type { Maquina } from '../types/Maquina'
 
 type Tab = 'mis' | 'mantenimiento' | 'catalogo'
+
+/** Qué es cada solapa (para que no se confundan "Mis máquinas" y el catálogo) */
+const AYUDA_TAB: Record<Tab, string> = {
+  mis: 'Las máquinas que tiene tu gimnasio: con su número, estado y los ejercicios que se hacen en cada una. Son las que aparecen al armar rutinas.',
+  mantenimiento: 'Fallas reportadas, revisiones y arreglos hechos, con lo que costó cada uno.',
+  catalogo: 'Modelos de máquinas comunes ya descriptos (grupos musculares, uso y ajustes). No son tuyas: elegí las que tenés y se suman a "Mis máquinas" para no cargarlas a mano.',
+}
 
 /**
  * Máquinas del gimnasio: estado de cada una (operativa / con falla), número visible,
@@ -24,6 +32,19 @@ export default function MaquinasPage() {
   const [tab, setTab] = useState<Tab>('mis')
   const [filtro, setFiltro] = useState<FiltroMaquinas>('todas')
   const [detalleId, setDetalleId] = useState<number | null>(null)
+  /** Máquina a deshabilitar o eliminar (se confirma antes) */
+  const [confirmar, setConfirmar] = useState<{ accion: 'deshabilitar' | 'eliminar'; maquina: Maquina } | null>(null)
+  const pedirToggle = (m: Maquina) => (m.activa ? setConfirmar({ accion: 'deshabilitar', maquina: m }) : maq.toggleActiva(m))
+  const pedirEliminar = (m: Maquina) => setConfirmar({ accion: 'eliminar', maquina: m })
+  const confirmarAccion = async () => {
+    if (!confirmar) return
+    const { accion, maquina } = confirmar
+    setConfirmar(null)
+    if (accion === 'deshabilitar') { await maq.toggleActiva(maquina); return }
+    const error = await maq.eliminar(maquina)
+    if (error) toast.error('No se eliminó', error)
+    else if (detalleId === maquina.id) setDetalleId(null)
+  }
   const toast = useToast()
   const mant = useMantenimientos()
   const maq = useMaquinas(mant.cargarMantenimientos)
@@ -70,13 +91,14 @@ export default function MaquinasPage() {
         <Segmentado etiqueta="Sección" valor={tab} onChange={setTab} opciones={[
           { valor: 'mis', texto: 'Mis máquinas', icono: Cog, cuenta: maq.cargando ? undefined : activas.length },
           { valor: 'mantenimiento', texto: 'Mantenimiento', icono: Wrench, cuenta: mant.mantCargando ? undefined : mant.mantenimientos.filter(m => m.tipo === 'PENDIENTE').length },
-          { valor: 'catalogo', texto: 'Catálogo', icono: BookOpen },
+          { valor: 'catalogo', texto: 'Agregar del catálogo', icono: BookOpen },
         ]} />
+        <p className="gt-tab-ayuda">{AYUDA_TAB[tab]}</p>
       </div>
 
       {tab === 'mis' && (
         <MisMaquinasTab maq={maq} pendientes={pendientes} filtro={filtro} setFiltro={setFiltro}
-          onAbrir={setDetalleId} onIrCatalogo={() => setTab('catalogo')} />
+          onAbrir={setDetalleId} onIrCatalogo={() => setTab('catalogo')} onToggleActiva={pedirToggle} onEliminar={pedirEliminar} />
       )}
       {tab === 'mantenimiento' && (
         <MantenimientoTab mant={mant} maquinas={maq.maquinas} onEliminar={id => mant.setConfirmarEliminarMantId(id)} />
@@ -94,7 +116,8 @@ export default function MaquinasPage() {
           onCerrar={() => setDetalleId(null)}
           onEditar={() => { setDetalleId(null); maq.abrirEditar(detalle) }}
           onReportar={() => { setDetalleId(null); maq.abrirReportar(detalle.id!) }}
-          onToggleActiva={() => maq.toggleActiva(detalle)}
+          onToggleActiva={() => pedirToggle(detalle)}
+          onEliminar={() => pedirEliminar(detalle)}
           onMarcarRealizado={mant.marcarRealizado}
           onCambioEjercicios={maq.cargar} />
       )}
@@ -112,6 +135,16 @@ export default function MaquinasPage() {
           guardando={mant.mantGuardando} error={mant.mantError} onGuardar={mant.guardarMant} onCerrar={mant.cancelarMant} />
       )}
 
+      <ConfirmModal
+        open={confirmar !== null}
+        title={confirmar?.accion === 'eliminar' ? `Eliminar "${confirmar.maquina.nombre}"` : `Deshabilitar "${confirmar?.maquina.nombre ?? ''}"`}
+        message={confirmar?.accion === 'eliminar'
+          ? 'Se borra para siempre y se saca de los ejercicios que la usaban. Si tiene arreglos registrados no se puede eliminar (se perdería el historial y lo gastado): en ese caso deshabilitala.'
+          : 'Deja de aparecer al armar rutinas y en el listado, pero se guarda su historial. La podés volver a habilitar cuando quieras desde "Ver deshabilitadas".'}
+        confirmLabel={confirmar?.accion === 'eliminar' ? 'Eliminar' : 'Deshabilitar'} cancelLabel="Cancelar" danger={confirmar?.accion === 'eliminar'}
+        onConfirm={confirmarAccion}
+        onCancel={() => setConfirmar(null)}
+      />
       <ConfirmModal
         open={mant.confirmarEliminarMantId !== null}
         title="Eliminar registro"

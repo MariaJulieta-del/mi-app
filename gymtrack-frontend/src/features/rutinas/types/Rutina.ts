@@ -19,6 +19,13 @@ export interface Rutina {
   cantidadEjercicios?: number
   /** Cantidad de días (Día 1, Día 2…) */
   cantidadDias?: number
+  /** Semanas que el socio lleva con esta rutina (desde que se cambiaron los ejercicios por última vez) */
+  semanasActual?: number
+  /** Límite de semanas que fijó el gimnasio (Configuración) */
+  semanasMax?: number
+  /** Rutina de un socio que ya superó el límite: hay que renovarla */
+  paraRenovar?: boolean
+  fechaRenovacion?: string
 }
 // DTO para crear o actualizar una rutina
 export interface RutinaRequestDTO {

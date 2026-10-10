@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, RotateCcw, Trash2 } from 'lucide-react'
 import axiosInstance from '../../../shared/services/axiosInstance'
 import { PageHeader } from '../../../shared/components/ui'
@@ -9,6 +9,53 @@ import { mensajeError } from '../../../shared/utils/errores'
 
 const VERDE = '#1B5E44'
 const SUGERIDOS = ['#1B5E44', '#0F766E', '#1D4ED8', '#4338CA', '#7C3AED', '#BE123C', '#C2410C', '#111827']
+
+/** Cada cuántas semanas hay que renovar la rutina de un socio */
+function DuracionRutinas() {
+  const toast = useToast()
+  const [semanas, setSemanas] = useState<number | null>(null)
+  const [guardadas, setGuardadas] = useState<number | null>(null)
+  const [guardando, setGuardando] = useState(false)
+  useEffect(() => {
+    axiosInstance.get('/api/v1/configuracion/rutinas')
+      .then(r => { setSemanas(r.data.semanasMax); setGuardadas(r.data.semanasMax) })
+      .catch(() => {})
+  }, [])
+
+  const guardar = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (semanas == null) return
+    setGuardando(true)
+    try {
+      const r = (await axiosInstance.put('/api/v1/configuracion/rutinas', { semanasMax: semanas })).data
+      setGuardadas(r.semanasMax)
+      toast.success('Listo', `Las rutinas se renuevan cada ${r.semanasMax} semanas`)
+    } catch (err: unknown) {
+      toast.error('No se pudo guardar', mensajeError(err, 'Probá de nuevo'))
+    } finally { setGuardando(false) }
+  }
+
+  if (semanas == null) return null
+  return (
+    <form className="gt-card gt-config-rutinas" onSubmit={guardar}>
+      <p className="gt-card-title" style={{ marginTop: 0 }}>Duración de las rutinas</p>
+      <p className="gt-text-sm gt-text-muted" style={{ marginTop: 0 }}>
+        Cuánto tiempo puede un socio hacer la misma rutina. Al pasar el límite aparece como <strong>"para renovar"</strong> en Rutinas,
+        en el perfil del socio y en las tareas de Hoy. Se cuenta desde la última vez que el profe cambió los ejercicios.
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <label className="gt-label" htmlFor="cfg-semanas" style={{ margin: 0 }}>Renovar cada</label>
+        <input id="cfg-semanas" className="gt-input" type="number" min={2} max={26} style={{ width: 90 }} value={semanas}
+          onChange={e => setSemanas(Number(e.target.value))} />
+        <span>semanas</span>
+        <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando || semanas === guardadas || semanas < 2 || semanas > 26}>
+          {guardando ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>
+      <span className="gt-hint">Entre 2 y 26 semanas. Lo habitual es entre 4 y 8.</span>
+    </form>
+  )
+}
 
 /** Achica la imagen a 256 px como máximo (el logo se guarda en la base) */
 function achicarImagen(archivo: File): Promise<string> {
@@ -142,6 +189,7 @@ export default function ConfiguracionPage() {
           </div>
         </div>
       </div>
+      <DuracionRutinas />
     </div>
   )
 }

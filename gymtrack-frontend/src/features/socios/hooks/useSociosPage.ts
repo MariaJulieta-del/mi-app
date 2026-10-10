@@ -2,6 +2,7 @@ import { mensajeError } from '../../../shared/utils/errores'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { textoPases } from '../../membresias/types/Tarifa'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { Socio } from '../types/Socio'
 import {
   actualizarSocio, darDeBaja, reactivarSocio, altaSocioCompleta, generarPinesPendientes, buscarSocios,
@@ -12,7 +13,8 @@ import { useToast } from '../../../shared/hooks/useToast'
 
 export const POR_PAGINA = 20
 
-type Vista = NonNullable<FiltrosSocios['vista']>
+/** 'vencidas' = socios activos con la cuota vencida (para avisarles) */
+export type Vista = NonNullable<FiltrosSocios['vista']> | 'vencidas'
 type FiltroMem = '' | 'VENCIDA' | 'SIN_MEMBRESIA'
 export type Orden = NonNullable<FiltrosSocios['orden']>
 
@@ -22,10 +24,11 @@ export type Orden = NonNullable<FiltrosSocios['orden']>
  */
 export function useSociosPage() {
   const toast = useToast()
+  const [params] = useSearchParams()
   const [datos, setDatos] = useState<PaginaSocios | null>(null)
   const [socioEditar, setSocioEditar] = useState<Socio | null>(null)
   const [error, setError] = useState('')
-  const [vista, setVista] = useState<Vista>('activos')
+  const [vista, setVista] = useState<Vista>(() => (params.get('vista') === 'vencidas' ? 'vencidas' : 'activos'))
   const [filtroMem, setFiltroMem] = useState<FiltroMem>('')
   const [busqueda, setBusqueda] = useState('')
   /** La búsqueda se manda al servidor recién cuando se deja de escribir */
@@ -52,7 +55,10 @@ export function useSociosPage() {
   // Una sola petición en vuelo: si cambia un filtro, la anterior se cancela y no pisa el resultado
   useEffect(() => {
     const ctrl = new AbortController()
-    buscarSocios({ q: busquedaEnviada, vista, membresia: filtroMem, orden, desc, pagina, tam: POR_PAGINA }, ctrl.signal)
+    const filtros: FiltrosSocios = vista === 'vencidas'
+      ? { vista: 'activos', membresia: 'VENCIDA' }
+      : { vista, membresia: filtroMem }
+    buscarSocios({ ...filtros, q: busquedaEnviada, orden, desc, pagina, tam: POR_PAGINA }, ctrl.signal)
       .then(d => { setDatos(d); setError('') })
       .catch(err => { if (!ctrl.signal.aborted) setError(mensajeError(err, 'Error al cargar los socios')) })
     return () => ctrl.abort()

@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { obtenerPorId } from '../../socios/services/socioService'
+import { formatFecha } from '../../../shared/utils/fechas'
 import {
   listarNotificaciones, crearNotificacion, archivarNotificacion, obtenerCanales,
   type Canales, type Notificacion,
@@ -26,6 +29,7 @@ export const PLANTILLAS = [
   { nombre: 'Feriado', tipo: 'INFO', titulo: 'Horario especial por feriado', mensaje: 'El [día] abrimos de [hora] a [hora]. ¡Te esperamos!' },
   { nombre: 'Clase cancelada', tipo: 'ALERTA', titulo: 'Clase suspendida', mensaje: 'Hoy se suspende la clase de [disciplina] de las [hora]. Disculpá las molestias.' },
   { nombre: 'Cambio de horario', tipo: 'INFO', titulo: 'Cambio de horario', mensaje: 'Desde el [fecha] el gimnasio abre de [hora] a [hora].' },
+  { nombre: 'Membresía vencida', tipo: 'VENCIMIENTO', titulo: 'Se venció tu membresía', mensaje: '¡Hola! Tu membresía venció y por ahora no podés ingresar al gimnasio. Renovala en recepción o por transferencia y seguí entrenando. ¡Te esperamos!' },
   { nombre: 'Recordatorio de pago', tipo: 'VENCIMIENTO', titulo: 'Tu cuota está por vencer', mensaje: 'Te recordamos renovar tu membresía para seguir entrenando sin cortes. Podés pagar en recepción o por transferencia.' },
   { nombre: 'Mantenimiento', tipo: 'INFO', titulo: 'Máquina en mantenimiento', mensaje: 'La [máquina] está en reparación hasta el [fecha]. Podés usar [alternativa].' },
 ] as const
@@ -55,6 +59,31 @@ export function useNotificaciones() {
   const [busquedaSocio, setBusquedaSocio] = useState('')
   const [disciplinas, setDisciplinas] = useState<DisciplinaApi[]>([])
   const [disciplinaId, setDisciplinaId] = useState<number | ''>('')
+
+  /** Si se llega desde Socios (botón "Avisar"), el aviso ya viene armado para ese socio */
+  const [params, setParams] = useSearchParams()
+  const [preparando, setPreparando] = useState(() => !!params.get('socio'))
+  useEffect(() => {
+    const id = Number(params.get('socio'))
+    if (!id) return
+    const motivo = params.get('motivo')
+    const vence = params.get('vence')
+    obtenerPorId(id)
+      .then(s => {
+        setParaEstado('SOCIO'); setSocioSel(s)
+        if (motivo === 'vencida') {
+          setForm({
+            tipo: 'VENCIMIENTO',
+            titulo: 'Se venció tu membresía',
+            mensaje: `¡Hola ${s.nombre}! Tu membresía ${vence ? `venció el ${formatFecha(vence)}` : 'está vencida'} y por ahora no podés ingresar al gimnasio. `
+              + 'Renovala en recepción o por transferencia y seguí entrenando. ¡Te esperamos!',
+          })
+          if (s.telefono) setPorWhatsapp(true)
+        }
+      })
+      .catch(() => toast.error('No se encontró el socio', 'Elegilo a mano en "Un socio"'))
+      .finally(() => { setPreparando(false); setParams({}, { replace: true }) })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- solo al entrar a la página
 
   const cargar = () => listarNotificaciones().then(setNotifs).catch(() => { setNotifs([]); toast.error('Error', 'No se pudieron cargar los avisos') })
 
@@ -130,7 +159,7 @@ export function useNotificaciones() {
     .filter(n => !q || n.titulo.toLowerCase().includes(q) || n.mensaje.toLowerCase().includes(q) || (n.socioNombre ?? '').toLowerCase().includes(q))
 
   return {
-    cargando: notifs === null, canales, form, setForm, para, setPara, porEmail, setPorEmail, porWhatsapp, setPorWhatsapp,
+    cargando: notifs === null, preparando, canales, form, setForm, para, setPara, porEmail, setPorEmail, porWhatsapp, setPorWhatsapp,
     creando, pedirEnvio, enviar, confirmarEnvio, setConfirmarEnvio, alcance,
     filtroTipo, setFiltroTipo, verArchivadas, setVerArchivadas, busqueda, setBusqueda,
     confirmarArchivarId, setConfirmarArchivarId, handleArchivar,

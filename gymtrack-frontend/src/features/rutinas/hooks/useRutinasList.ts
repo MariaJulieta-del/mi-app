@@ -22,6 +22,8 @@ export function useRutinasList() {
   const [filtroDificultad, setFiltroDificultad] = useState('')
   const [filtroObjetivo, setFiltroObjetivo] = useState('')
   const [busqueda, setBusqueda] = useState('')
+  /** Solo las rutinas de socios que ya pasaron el límite de semanas */
+  const [soloRenovar, setSoloRenovar] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
   const [confirmarEliminar, setConfirmarEliminar] = useState<Rutina | null>(null)
@@ -77,22 +79,24 @@ export function useRutinasList() {
     .filter(r => !filtroTren || (r.trenes ?? []).includes(filtroTren))
     .filter(r => !filtroDificultad || r.dificultad === filtroDificultad)
     .filter(r => !filtroObjetivo || r.objetivo === filtroObjetivo)
+    .filter(r => !soloRenovar || tab !== 'asignadas' || !!r.paraRenovar)
     .filter(r => {
       if (!busqueda.trim()) return true
       const q = busqueda.toLowerCase()
       return r.nombre.toLowerCase().includes(q) || (r.descripcion ?? '').toLowerCase().includes(q) || (r.socioNombre ?? '').toLowerCase().includes(q)
     }),
-    [listaBase, filtroTren, filtroDificultad, filtroObjetivo, busqueda],
+    [listaBase, filtroTren, filtroDificultad, filtroObjetivo, busqueda, soloRenovar, tab],
   )
 
-  const hayFiltros = !!(filtroTren || filtroDificultad || filtroObjetivo || busqueda.trim())
-  const resetFiltros = () => { setFiltroTren(''); setFiltroDificultad(''); setFiltroObjetivo(''); setBusqueda('') }
+  const hayFiltros = !!(filtroTren || filtroDificultad || filtroObjetivo || busqueda.trim() || soloRenovar)
+  const paraRenovar = asignadas.filter(r => r.paraRenovar).length
+  const resetFiltros = () => { setFiltroTren(''); setFiltroDificultad(''); setFiltroObjetivo(''); setBusqueda(''); setSoloRenovar(false) }
   const cambiarTab = (t: Tab) => { setTab(t); resetFiltros() }
 
   return {
     esStaff, tab, cambiarTab, asignadas, plantillas,
     filtroTren, setFiltroTren, filtroDificultad, setFiltroDificultad, filtroObjetivo, setFiltroObjetivo, busqueda, setBusqueda,
-    error, setError, cargando, lista, hayFiltros, resetFiltros,
+    error, setError, cargando, lista, hayFiltros, resetFiltros, soloRenovar, setSoloRenovar, paraRenovar,
     confirmarEliminar, setConfirmarEliminar, confirmarEliminarRutina,
     guardarComoPlantilla, guardandoPlantillaId,
   }

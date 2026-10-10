@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowDown, ArrowUp, MessageCircle, Pencil, RotateCcw, UserX } from 'lucide-react'
+import { ArrowDown, ArrowUp, BellRing, MessageCircle, Pencil, RotateCcw, UserX } from 'lucide-react'
 import type { Socio } from '../types/Socio'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { IconButton, Pill, type Tono } from '../../../shared/components/ui'
@@ -92,6 +92,12 @@ export default function SocioTabla({ socios, onEditar, onEliminar, onReactivar, 
                 <IconButton icono={RotateCcw} etiqueta={`Reactivar a ${s.nombre}`} disabled={ocupado != null} onClick={() => onReactivar(s.id)} />
               ) : (
                 <>
+                  {s.estadoMembresia === 'VENCIDA' && (
+                    <Link className="gt-socio-avisar" title={`Escribirle a ${s.nombre} que se le venció la membresía`}
+                      to={`/notificaciones?socio=${s.id}&motivo=vencida${s.vencimiento ? `&vence=${s.vencimiento}` : ''}`}>
+                      <BellRing size={14} aria-hidden /> Avisar
+                    </Link>
+                  )}
                   <IconButton icono={Pencil} etiqueta={`Editar a ${s.nombre}`} onClick={() => onEditar(s)} />
                   <IconButton icono={UserX} etiqueta={`Dar de baja a ${s.nombre}`} tono="danger" disabled={ocupado != null} onClick={() => onEliminar(s.id)} />
                 </>

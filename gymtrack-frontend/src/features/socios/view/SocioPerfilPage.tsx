@@ -170,6 +170,13 @@ export default function SocioPerfilPage() {
           </div>
         )
       ) : (
+        <>
+        {!esSocio && rutinas.filter(r => r.paraRenovar).map(r => (
+          <div key={r.id} className="gt-alert gt-alert-warning gt-renovar-aviso" role="note">
+            <span>⏰ <strong>{r.nombre}</strong> lleva {r.semanasActual} semanas con los mismos ejercicios (el gimnasio las renueva cada {r.semanasMax}). Cambiale los ejercicios para que siga progresando.</span>
+            <Link to={linkEditarRutina(r, true)} className="gt-btn gt-btn-secondary gt-btn-sm">Renovar</Link>
+          </div>
+        ))}
         <div className="gt-rutina-grid gt-mb-20">
           {rutinas.map(r => (
             <RutinaCard key={r.id} rutina={r} acciones={
@@ -184,6 +191,7 @@ export default function SocioPerfilPage() {
             } />
           ))}
         </div>
+        </>
       )}
 
       {/* ── Disciplinas (clases grupales) ── */}

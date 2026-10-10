@@ -27,3 +27,8 @@ export const actualizarMaquina = async (id: number, data: Omit<Maquina, 'id'>): 
 export const desactivarMaquina = async (id: number): Promise<void> => {
   await axiosInstance.delete(`${API}/${id}`)
 }
+
+/** Borra la máquina para siempre (el servidor lo rechaza si tiene arreglos registrados) */
+export const eliminarMaquina = async (id: number): Promise<void> => {
+  await axiosInstance.delete(`${API}/${id}/definitivo`)
+}

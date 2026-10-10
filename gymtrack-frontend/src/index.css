@@ -2313,3 +2313,72 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-dash-stats > *, .gt-dash-membresias > * { min-width: 0; }
 @media (max-width: 360px) { .gt-topbar-rol { display: none; } .gt-bottom-link { font-size: 10px; } }
 .gt-ver-mas { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 24px; }
+
+/* ── Globos de ayuda en los gráficos ── */
+.gt-globo {
+  position: fixed; z-index: 2000; pointer-events: none; transform: translate(-50%, calc(-100% - 12px));
+  background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow-md); padding: 8px 11px; font-size: 12px; line-height: 1.45; max-width: min(280px, calc(100vw - 24px));
+  display: flex; flex-direction: column; gap: 1px;
+}
+.gt-globo strong { color: var(--text-primary); font-size: 13px; }
+.gt-globo small { color: var(--text-muted); font-size: 11px; }
+.gt-globo .sube { color: var(--green-text); font-weight: 600; }
+.gt-globo .baja { color: var(--red); font-weight: 600; }
+.gt-barra-hover { cursor: default; }
+.gt-barra-hover:focus-visible, .gt-celda-globo:focus-visible, .gt-anillo-fila:focus-visible, .gt-plan-fila:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gt-svg-barra { cursor: default; outline: none; }
+.gt-svg-barra:hover .gt-svg-barra-rect, .gt-svg-barra:focus .gt-svg-barra-rect { opacity: 1; fill: var(--accent); }
+.gt-anillo { display: flex; align-items: center; gap: 24px; min-width: 0; }
+.gt-anillo-porcion { transition: stroke-width .15s; cursor: default; }
+.gt-anillo-porcion:hover { stroke-width: 18px; }
+.gt-anillo-fila { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; padding: 3px 6px; border-radius: 6px; }
+.gt-anillo-fila:hover { background: var(--bg-surface-2); }
+@media (max-width: 420px) { .gt-anillo { flex-direction: column; align-items: stretch; gap: 12px; } .gt-anillo > svg { align-self: center; } }
+
+/* ── Planes más vendidos ── */
+.gt-reporte-mitades { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+@media (max-width: 860px) { .gt-reporte-mitades { grid-template-columns: minmax(0, 1fr); } }
+.gt-planes { display: flex; flex-direction: column; gap: 4px; }
+.gt-plan-fila { display: grid; grid-template-columns: minmax(80px, 34%) minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px; border-radius: 8px; }
+.gt-plan-fila:hover { background: var(--bg-surface-2); }
+.gt-plan-nombre { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gt-plan-top { color: #D97706; margin-right: 4px; }
+.gt-plan-barra { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.gt-plan-barra > div { height: 100%; border-radius: 5px; background: var(--accent); transition: width .3s; }
+.gt-plan-valor { font-size: 13px; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── Estado de membresías y uso ── */
+.gt-estado-mem { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: center; }
+@media (max-width: 860px) { .gt-estado-mem { grid-template-columns: minmax(0, 1fr); } }
+.gt-indicadores.gt-indicadores-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 420px) { .gt-indicadores.gt-indicadores-2 { grid-template-columns: minmax(0, 1fr); } }
+.gt-indicadores small a { color: var(--accent); font-weight: 600; }
+
+/* ── Socios con la cuota vencida ── */
+.gt-socio-avisar {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: var(--yellow-bg); color: var(--yellow-text); text-decoration: none; white-space: nowrap; border: 1px solid transparent;
+}
+.gt-socio-avisar:hover { border-color: var(--yellow-text); }
+.gt-socio-avisar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gt-vencidas-aviso { display: flex; align-items: flex-start; gap: 8px; }
+.gt-vencidas-aviso svg { flex-shrink: 0; margin-top: 2px; }
+
+/* ── Máquinas ── */
+.gt-tab-ayuda { margin: 8px 0 0; font-size: 13px; color: var(--text-muted); max-width: 760px; }
+.gt-btn-danger-outline { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.gt-btn-danger-outline:hover { background: var(--red-light); }
+
+/* ── Rutinas para renovar ── */
+.gt-chip-renovar { background: var(--red-light); color: var(--red-text); }
+.gt-chip-semana { background: var(--bg-surface-2); color: var(--text-muted); font-weight: 600; }
+.gt-renovar-filtro {
+  border: 1.5px solid var(--yellow-text); background: var(--yellow-bg); color: var(--yellow-text); border-radius: 999px;
+  padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.gt-renovar-filtro.activo { background: var(--yellow-text); color: var(--bg-surface); }
+.gt-renovar-aviso { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.gt-config-rutinas { margin-top: 20px; }
+.gt-maq-pie { flex-wrap: wrap; row-gap: 8px; }
+.gt-maq-acciones { display: flex; gap: 6px; margin-left: auto; }

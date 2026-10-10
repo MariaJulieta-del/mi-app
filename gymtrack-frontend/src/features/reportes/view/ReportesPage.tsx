@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router-dom'
 import { CalendarClock, HeartHandshake, UserRoundSearch, Wallet, type LucideIcon } from 'lucide-react'
 import { useReportes } from '../hooks/useReportes'
-import { Barra, BarChart, RingChart } from '../components/Graficos'
+import { Barra, BarChart } from '../components/Graficos'
+import { EstadoMembresiasReporte, PlanesVendidos } from '../components/MembresiasReporte'
 import { RetencionMensual, OcupacionHoraria } from '../components/MetricasNegocio'
 import MotivosBaja from '../components/MotivosBaja'
 import IndicadoresDueno, { CohortesRetencion } from '../components/IndicadoresDueno'
@@ -11,9 +12,9 @@ import { PageHeader, Segmentado } from '../../../shared/components/ui'
 
 type Seccion = 'dinero' | 'retencion' | 'asistencia' | 'publico'
 const SECCIONES: { valor: Seccion; texto: string; icono: LucideIcon; descripcion: string }[] = [
-  { valor: 'dinero', texto: 'Dinero', icono: Wallet, descripcion: 'Lo que entra, lo que se gasta y el estado de las membresías.' },
+  { valor: 'dinero', texto: 'Dinero', icono: Wallet, descripcion: 'Lo que entra, qué planes se venden más y lo que se gasta.' },
   { valor: 'retencion', texto: 'Retención', icono: HeartHandshake, descripcion: 'Quién renueva, quién se va y por qué, y a quién conviene llamar.' },
-  { valor: 'asistencia', texto: 'Asistencia', icono: CalendarClock, descripcion: 'Cuánta gente viene y en qué días y horarios.' },
+  { valor: 'asistencia', texto: 'Asistencia', icono: CalendarClock, descripcion: 'Quién está al día y viene, y en qué días y horarios.' },
   { valor: 'publico', texto: 'Público', icono: UserRoundSearch, descripcion: 'Edad y género de los socios y a qué hora viene cada grupo.' },
 ]
 
@@ -41,7 +42,7 @@ export default function ReportesPage() {
         <>
           <IndicadoresDueno />
 
-          <div className="gt-reporte-dos" style={{ alignItems: 'stretch' }}>
+          <div className="gt-reporte-dos gt-reporte-mitades" style={{ alignItems: 'stretch' }}>
             <div className="gt-card" style={{ minWidth: 0 }}>
               <div className="gt-card-cabecera">
                 <p className="gt-card-title" style={{ margin: 0 }}>Ingresos por mes</p>
@@ -55,12 +56,7 @@ export default function ReportesPage() {
               {d.errorI && <div className="gt-alert gt-alert-error">{d.errorI}</div>}
               {d.loadingI ? <p className="gt-text-muted">Cargando…</p> : <BarChart data={d.ingresos} />}
             </div>
-            {d.dashStats && (
-              <div className="gt-card" style={{ minWidth: 240 }}>
-                <p className="gt-card-title" style={{ marginTop: 0, marginBottom: 16 }}>Estado de membresías</p>
-                <RingChart activas={d.dashStats.membresiasActivas} vencidas={d.dashStats.membresiasVencidas} />
-              </div>
-            )}
+            <PlanesVendidos />
           </div>
 
           <div className="gt-card" style={{ marginBottom: 20 }}>
@@ -85,7 +81,6 @@ export default function ReportesPage() {
             <FuenteDatos>
               <li><b>Ingresos:</b> pagos en estado completado (módulo Pagos), agrupados por el mes en que se cobraron.</li>
               <li><b>Gastos en máquinas:</b> el costo cargado en cada mantenimiento (Máquinas › Mantenimiento).</li>
-              <li><b>Estado de membresías:</b> membresías activas contra vencidas en este momento.</li>
             </FuenteDatos>
           </div>
         </>
@@ -142,6 +137,7 @@ export default function ReportesPage() {
 
       {seccion === 'asistencia' && (
         <>
+          <EstadoMembresiasReporte />
           <OcupacionHoraria />
           <div className="gt-card" style={{ marginBottom: 20 }}>
             <div className="gt-card-cabecera">
@@ -169,7 +165,16 @@ export default function ReportesPage() {
                           <tr key={a.fecha}>
                             <td>{new Date(a.fecha + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
                             <td className="gt-fw-600">{a.total}</td>
-                            <td><Barra valor={a.total} max={d.maxAsist} color="var(--accent)" /></td>
+                            <td><Barra valor={a.total} max={d.maxAsist} color="var(--accent)" globo={<>
+                              <strong>{new Date(a.fecha + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</strong>
+                              <span>{a.total} {a.total === 1 ? 'ingreso' : 'ingresos'}</span>
+                              {d.asistencias.length > 0 && d.totalAsistencias > 0 && (() => {
+                                const prom = d.totalAsistencias / d.asistencias.length
+                                const dif = Math.round(((a.total - prom) / prom) * 100)
+                                return <span className={dif >= 0 ? 'sube' : 'baja'}>{dif >= 0 ? '▲' : '▼'} {Math.abs(dif)}% contra el promedio del período</span>
+                              })()}
+                              {a.total === d.maxAsist && <small>El día con más ingresos del período</small>}
+                            </>} /></td>
                           </tr>
                         ))}
                       </tbody>

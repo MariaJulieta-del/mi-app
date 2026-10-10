@@ -1,17 +1,19 @@
-import { Dumbbell, Pencil, Wrench } from 'lucide-react'
+import { Dumbbell, Pencil, Power, PowerOff, Trash2, Wrench } from 'lucide-react'
 import type { Maquina } from '../types/Maquina'
 import { IconButton, Pill } from '../../../shared/components/ui'
 import { ESTADO_MAQUINA, type EstadoMaquina } from '../utils/estadoMaquina'
 import NroMaquina from './NroMaquina'
 
 /** Tarjeta de una máquina: número, nombre, estado y cuántos ejercicios se hacen en ella */
-export default function MaquinaCard({ maquina: m, estado, cantidadEjercicios, onAbrir, onEditar, onReportar }: {
+export default function MaquinaCard({ maquina: m, estado, cantidadEjercicios, onAbrir, onEditar, onReportar, onToggleActiva, onEliminar }: {
   maquina: Maquina
   estado: EstadoMaquina
   cantidadEjercicios: number
   onAbrir: () => void
   onEditar: () => void
   onReportar: () => void
+  onToggleActiva: () => void
+  onEliminar: () => void
 }) {
   const e = ESTADO_MAQUINA[estado]
   return (
@@ -33,9 +35,12 @@ export default function MaquinaCard({ maquina: m, estado, cantidadEjercicios, on
         <span className={`gt-maq-ejs${cantidadEjercicios === 0 ? ' cero' : ''}`} title="Ejercicios asociados a esta máquina">
           <Dumbbell size={13} aria-hidden /> {cantidadEjercicios}
         </span>
-        <span style={{ flex: 1 }} />
-        {m.activa && <IconButton icono={Wrench} etiqueta={`Reportar falla en ${m.nombre}`} onClick={onReportar} />}
-        <IconButton icono={Pencil} etiqueta={`Editar ${m.nombre}`} onClick={onEditar} />
+        <span className="gt-maq-acciones">
+          {m.activa && <IconButton icono={Wrench} etiqueta={`Reportar falla en ${m.nombre}`} onClick={onReportar} />}
+          {m.activa && <IconButton icono={Pencil} etiqueta={`Editar ${m.nombre}`} onClick={onEditar} />}
+          <IconButton icono={m.activa ? PowerOff : Power} etiqueta={m.activa ? `Deshabilitar ${m.nombre}` : `Habilitar ${m.nombre}`} onClick={onToggleActiva} />
+          <IconButton icono={Trash2} etiqueta={`Eliminar ${m.nombre}`} tono="danger" onClick={onEliminar} />
+        </span>
       </div>
     </article>
   )

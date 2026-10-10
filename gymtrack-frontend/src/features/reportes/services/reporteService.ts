@@ -54,3 +54,12 @@ export interface Demografia {
  visitas: number
 }
 export const getDemografia = async (dias = 60): Promise<Demografia> => (await axiosInstance.get(`${API}/demografia`, { params: { dias } })).data
+
+export interface PlanVendido { tipo: string; nombre: string; cobros: number; monto: number; sociosActivos: number }
+export const getPlanesVendidos = async (meses = 6): Promise<PlanVendido[]> => (await axiosInstance.get(`${API}/planes`, { params: { meses } })).data
+
+export interface EstadoMembresias {
+ sociosActivos: number; alDia: number; porVencer: number; vencidas: number; canceladas: number; sinMembresia: number
+ alDiaQueVinieron: number; alDiaSinVenir: number; vencidasQueSiguenViniendo: number; diasPorVencer: number; diasUso: number
+}
+export const getEstadoMembresias = async (): Promise<EstadoMembresias> => (await axiosInstance.get(`${API}/estado-membresias`)).data

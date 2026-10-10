@@ -1,3 +1,4 @@
+import type { Maquina } from '../../types/Maquina'
 import { useMemo, useState } from 'react'
 import { Cog, Search } from 'lucide-react'
 import { EmptyState, SkeletonTarjetas } from '../../../../shared/components/ui'
@@ -17,12 +18,14 @@ const FILTROS: { valor: FiltroMaquinas; texto: string }[] = [
 ]
 
 /** Las máquinas del gimnasio en tarjetas, con búsqueda y filtros */
-export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onAbrir, onIrCatalogo }: {
+export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onAbrir, onIrCatalogo, onToggleActiva, onEliminar }: {
   maq: ReturnType<typeof useMaquinas>
   pendientes: Map<number, Mantenimiento[]>
   filtro: FiltroMaquinas
   setFiltro: (f: FiltroMaquinas) => void
   onAbrir: (id: number) => void
+  onToggleActiva: (m: Maquina) => void
+  onEliminar: (m: Maquina) => void
   onIrCatalogo: () => void
 }) {
   const [grupo, setGrupo] = useState('')
@@ -84,7 +87,7 @@ export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onA
           ))}
         </select>
         <label className="gt-text-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-          <input type="checkbox" checked={maq.verInactivas} onChange={e => maq.setVerInactivas(e.target.checked)} /> Ver dadas de baja
+          <input type="checkbox" checked={maq.verInactivas} onChange={e => maq.setVerInactivas(e.target.checked)} /> Ver deshabilitadas
         </label>
       </div>
       <div className="gt-toolbar-fila" style={{ marginTop: -4 }}>
@@ -103,7 +106,8 @@ export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onA
         <div className="gt-maq-grid">
           {lista.map(({ m, estado, ejs }) => (
             <MaquinaCard key={m.id} maquina={m} estado={estado} cantidadEjercicios={ejs}
-              onAbrir={() => onAbrir(m.id!)} onEditar={() => maq.abrirEditar(m)} onReportar={() => maq.abrirReportar(m.id!)} />
+              onAbrir={() => onAbrir(m.id!)} onEditar={() => maq.abrirEditar(m)} onReportar={() => maq.abrirReportar(m.id!)}
+              onToggleActiva={() => onToggleActiva(m)} onEliminar={() => onEliminar(m)} />
           ))}
         </div>
       )}

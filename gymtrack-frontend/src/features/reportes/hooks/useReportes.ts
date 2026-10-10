@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getIngresos, getAsistencias, getProximosAVencer, getSinAsistencias, getDashboard } from '../services/reporteService'
+import { getIngresos, getAsistencias, getProximosAVencer, getSinAsistencias } from '../services/reporteService'
 import { listarMantenimientos } from '../../maquinas/services/mantenimientoService'
 import type { Mantenimiento } from '../../maquinas/types/Mantenimiento'
 import { fechaLocalISO } from '../../../shared/utils/fechas'
@@ -29,7 +29,6 @@ export function useReportes() {
   const [diasVencer, setDiasVencer] = useState(15)
   const [sinAsist, setSinAsist] = useState<SinAsistencia[]>([])
   const [diasInactivo, setDiasInactivo] = useState(14)
-  const [dashStats, setDashStats] = useState<DashboardStats | null>(null)
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([])
 
   /** Cambiar el período recarga los ingresos */
@@ -57,7 +56,6 @@ export function useReportes() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { getProximosAVencer(diasVencer).then(setProximos).catch(() => {}) }, [diasVencer])
   useEffect(() => { getSinAsistencias(diasInactivo).then(setSinAsist).catch(() => {}) }, [diasInactivo])
-  useEffect(() => { getDashboard().then(setDashStats).catch(() => {}) }, [])
   useEffect(() => { listarMantenimientos().then(setMantenimientos).catch(() => {}) }, [])
 
   const maxIngreso = Math.max(...ingresos.map(i => i.total), 1)
@@ -89,7 +87,6 @@ export function useReportes() {
     loadingI, loadingA, errorI, errorA,
     proximos, diasVencer, setDiasVencer,
     sinAsist, diasInactivo, setDiasInactivo,
-    dashStats,
     maxIngreso, maxAsist, totalIngresos, totalAsistencias,
     cargarAsistencias,
     // mantenimiento

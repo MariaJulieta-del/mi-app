@@ -79,7 +79,9 @@ r = await req('GET', '/socios/buscar', { token: tSocio })
 check(r.status === 401 || r.status === 403, 'un socio no ve el listado')
 
 console.log('\nPagos por período')
-const hoy = new Date().toISOString().slice(0, 10)
+// Fecha local (no UTC: después de las 21 en Argentina, en UTC ya es mañana)
+const ahora = new Date()
+const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`
 r = await req('GET', `/pagos?desde=${hoy}&hasta=${hoy}`, { token: admin })
 check(r.status === 200 && r.data.every(p => p.fechaPago.slice(0, 10) === hoy) && r.data.some(p => p.socioId === socio), 'solo los pagos del día pedido', String(r.data?.length))
 r = await req('GET', '/pagos?desde=2030-01-01&hasta=2020-01-01', { token: admin })

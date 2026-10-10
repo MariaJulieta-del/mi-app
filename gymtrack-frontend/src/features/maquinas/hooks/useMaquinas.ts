@@ -7,7 +7,7 @@ import type { CatalogMaquina } from '../assets/maquinasCatalog'
 import type { MaquinaEstadisticas } from '../types/Mantenimiento'
 import {
   listarMaquinas, crearMaquina, actualizarMaquina,
-  desactivarMaquina, activarMaquina,
+  desactivarMaquina, eliminarMaquina, activarMaquina,
 } from '../services/maquinaService'
 import { listarTodosEjercicios } from '../../ejercicios/services/ejercicioService'
 import { estadisticasMaquina, crearMantenimiento } from '../services/mantenimientoService'
@@ -192,8 +192,21 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
     try {
       if (m.activa) await desactivarMaquina(m.id!)
       else await activarMaquina(m.id!)
+      setMsg(m.activa ? `"${m.nombre}" deshabilitada: ya no aparece para armar rutinas.` : `"${m.nombre}" habilitada de nuevo.`)
       await cargar()
-    } catch { setError('Error al cambiar estado') }
+    } catch (e: unknown) { setError(mensajeError(e, 'No se pudo cambiar el estado de la máquina')) }
+  }
+
+  /** null si se borró; si no, el motivo (por ejemplo, que tiene arreglos registrados) */
+  const eliminar = async (m: Maquina): Promise<string | null> => {
+    try {
+      await eliminarMaquina(m.id!)
+      setMsg(`"${m.nombre}" eliminada.`)
+      await cargar()
+      return null
+    } catch (e: unknown) {
+      return mensajeError(e, 'No se pudo eliminar la máquina')
+    }
   }
 
   const guardarDeCatalogo = async (cat: CatalogMaquina) => {
@@ -238,7 +251,7 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
     abrirMenuReportar, abrirReportar, cerrarReportar, submitReportar,
     // handlers
     cargar, abrirNuevo, abrirEditar, cancelar, guardar,
-    toggleActiva, toggleExpand, toggleGrupoForm,
+    toggleActiva, eliminar, toggleExpand, toggleGrupoForm,
     ejerciciosCompatibles, guardarDeCatalogo,
   }
 }

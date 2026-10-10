@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getMetricas, type Metricas } from '../services/reporteService'
 import FuenteDatos from './FuenteDatos'
+import { BarraPct } from './Graficos'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -89,7 +90,11 @@ export function RetencionMensual() {
                 <td>
                   {x.porcentaje != null ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div className="gt-barra-pct"><div style={{ width: `${x.porcentaje}%` }} /></div>
+                      <BarraPct pct={x.porcentaje} globo={<>
+                        <strong>{fmtMes(x.mes)}</strong>
+                        <span>Renovaron {x.retenidos} de los {x.base} que pagaron el mes anterior ({x.porcentaje}%)</span>
+                        <span>{x.base - x.retenidos} no renovaron · {x.nuevos} {x.nuevos === 1 ? 'socio nuevo' : 'socios nuevos'}</span>
+                      </>} />
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)', minWidth: 36 }}>{x.porcentaje}%</span>
                     </div>
                   ) : '—'}
