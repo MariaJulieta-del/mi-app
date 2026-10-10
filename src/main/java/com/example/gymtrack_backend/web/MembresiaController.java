@@ -35,11 +35,7 @@ public class MembresiaController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/{id}")
     public ResponseEntity<MembresiaResponseDTO> obtener(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(membresiaService.obtenerPorId(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(membresiaService.obtenerPorId(id));
     }
 
     // GET /api/v1/membresias/socio/{socioId} → la membresía del socio (204 si nunca pagó un plan)
@@ -68,7 +64,7 @@ public class MembresiaController {
         try {
             return ResponseEntity.ok(membresiaService.cambiarEstado(id, nuevoEstado));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", String.valueOf(e.getMessage())));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 }

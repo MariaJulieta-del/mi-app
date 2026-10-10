@@ -12,6 +12,11 @@ import java.util.Optional;
 @Repository
 public interface SocioRepository extends JpaRepository<Socio, Long> {
     List<Socio> findByActivoTrue();
+
+    /** Bloquea la fila del socio hasta el fin de la transacción (cobros simultáneos al mismo socio) */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Socio s where s.id = :id")
+    Optional<Socio> bloquear(@Param("id") Long id);
     boolean existsByDni(String dni);
     Optional<Socio> findByDni(String dni);
     long countByActivoTrue();

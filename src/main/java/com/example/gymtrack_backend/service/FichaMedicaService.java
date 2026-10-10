@@ -23,7 +23,7 @@ public class FichaMedicaService {
     /** Crea o actualiza la ficha médica del socio */
     public FichaMedica guardar(Long socioId, FichaMedicaRequestDTO dto) {
         Socio socio = socioRepo.findById(socioId)
-                .orElseThrow(() -> new RuntimeException("Socio no encontrado: " + socioId));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado: " + socioId));
 
         FichaMedica ficha = fichaRepo.findBySocioId(socioId).orElse(new FichaMedica());
         ficha.setSocio(socio);

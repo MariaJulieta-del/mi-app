@@ -41,7 +41,7 @@ public class MantenimientoController {
             MaquinaEstadisticasDTO stats = mantenimientoService.estadisticasPorMaquina(maquinaId);
             return ResponseEntity.ok(stats);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -52,7 +52,7 @@ public class MantenimientoController {
         try {
             return ResponseEntity.ok(mantenimientoService.crear(dto));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -63,7 +63,7 @@ public class MantenimientoController {
         try {
             return ResponseEntity.ok(mantenimientoService.actualizar(id, dto));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -75,7 +75,7 @@ public class MantenimientoController {
             mantenimientoService.eliminar(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 }

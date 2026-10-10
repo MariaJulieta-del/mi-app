@@ -32,6 +32,10 @@ public interface ReservaClaseRepository extends JpaRepository<ReservaClase, Long
     @Query("select distinct r.fecha from ReservaClase r where r.socio.id = :socioId and r.estado = 'CONFIRMADA' and r.fecha between :desde and :hasta")
     List<LocalDate> fechasConfirmadas(@Param("socioId") Long socioId, @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 
+    /** (socioId, fecha) de los faltazos de todos los socios en un período */
+    @Query("select r.socio.id, r.fecha from ReservaClase r where r.estado = 'AUSENTE' and r.fecha between :desde and :hasta")
+    List<Object[]> ausentesEntre(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
+
     /** Faltazos (reservó y no vino): se cuentan como pase usado */
     @Query("select count(r) from ReservaClase r where r.socio.id = :socioId and r.estado = 'AUSENTE' and r.fecha between :desde and :hasta")
     long contarAusentes(@Param("socioId") Long socioId, @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);

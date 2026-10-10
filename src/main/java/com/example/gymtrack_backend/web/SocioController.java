@@ -24,6 +24,9 @@ public class SocioController {
     @Autowired
     private com.example.gymtrack_backend.service.PinService pinService;
 
+    @Autowired
+    private com.example.gymtrack_backend.service.SocioListadoService socioListado;
+
     // GET - Obtener socios activos
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping
@@ -32,6 +35,20 @@ public class SocioController {
     }
 
     // GET - Obtener TODOS los socios (activos + inactivos)
+    /** Listado paginado para la pantalla de Socios: búsqueda, filtros y orden en el servidor */
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    @GetMapping("/buscar")
+    public com.example.gymtrack_backend.service.SocioListadoService.Pagina buscar(
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(defaultValue = "activos") String vista,
+            @RequestParam(defaultValue = "") String membresia,
+            @RequestParam(defaultValue = "apellido") String orden,
+            @RequestParam(defaultValue = "false") boolean desc,
+            @RequestParam(defaultValue = "1") int pagina,
+            @RequestParam(defaultValue = "20") int tam) {
+        return socioListado.buscar(q, vista, membresia, orden, desc, pagina, tam);
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/todos")
     public List<Socio> obtenerTodosConInactivos() {
@@ -50,14 +67,14 @@ public class SocioController {
     // POST - Alta completa: socio + membresía + pago (o pendiente)
     @PostMapping("/alta")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
-    public ResponseEntity<?> altaCompleta(@RequestBody AltaSocioRequestDTO dto) {
+    public ResponseEntity<?> altaCompleta(@jakarta.validation.Valid @RequestBody AltaSocioRequestDTO dto) {
         try {
             AltaSocioResponseDTO resp = socioService.altaCompleta(dto);
             return ResponseEntity.ok(resp);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -65,11 +82,7 @@ public class SocioController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Socio> crear(@RequestBody Socio socio) {
-        try {
-            return ResponseEntity.ok(socioService.crear(socio));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(socioService.crear(socio));
     }
 
     // PUT- update - Actualizar socio
@@ -77,11 +90,7 @@ public class SocioController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Socio> actualizar(@PathVariable Long id, 
                                              @RequestBody Socio socio) {
-        try {
-            return ResponseEntity.ok(socioService.actualizar(id, socio));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(socioService.actualizar(id, socio));
     }
 
     // PUT - Baja lógica con motivo: { motivo, detalle }
@@ -112,27 +121,11 @@ public class SocioController {
         return socioService.listarBajas();
     }
 
-    // DELETE - Eliminación física (solo socios inactivos)
-    @DeleteMapping("/{id}/permanente")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> eliminarPermanente(@PathVariable Long id) {
-        try {
-            socioService.eliminarPermanente(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
     // PUT - Reactivar socio dado de baja
     @PutMapping("/{id}/reactivar")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Socio> reactivar(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(socioService.reactivar(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(socioService.reactivar(id));
     }
 
     // POST - Genera un PIN nuevo para el socio (lo olvidó o nunca tuvo). Se muestra una sola vez.

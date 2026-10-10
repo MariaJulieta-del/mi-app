@@ -56,7 +56,17 @@ public class DemografiaService {
     public Demografia demografia(int dias) {
         int d = Math.max(7, Math.min(365, dias));
         LocalDate hoy = LocalDate.now();
-        List<Asistencia> visitas = asistenciaRepo.findByFechaBetweenOrderByFechaDescHoraDesc(hoy.minusDays(d), hoy.minusDays(1));
+        // Solo socio y hora de cada ingreso (miles de filas: sin cargar entidades)
+        List<Asistencia> visitas = new ArrayList<>();
+        Map<Long, Socio> refs = new HashMap<>();
+        for (Object[] f : asistenciaRepo.horasDeIngresoEntre(hoy.minusDays(d), hoy.minusDays(1))) {
+            Asistencia a = new Asistencia();
+            a.setSocio(refs.computeIfAbsent((Long) f[0], id -> { Socio s = new Socio(); s.setId(id); return s; }));
+            a.setHora((LocalTime) f[1]);
+            a.setTipo("ENTRADA");
+            a.setPermitido(true);
+            visitas.add(a);
+        }
         return calcular(socioRepo.findAll(), visitas, hoy, d);
     }
 

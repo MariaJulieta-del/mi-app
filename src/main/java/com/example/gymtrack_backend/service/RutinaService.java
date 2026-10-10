@@ -71,7 +71,7 @@ public class RutinaService {
 
         if (socioId != null) {
             Socio socio = socioRepository.findById(socioId)
-                .orElseThrow(() -> new RuntimeException("Socio no encontrado con id: " + socioId));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado con id: " + socioId));
             rutina.setSocio(socio);
         }
         // socioId == null → rutina general sin socio asignado
@@ -219,7 +219,8 @@ public class RutinaService {
     public EjercicioResponseDTO actualizarEjercicio(Long ejercicioId, Long rutinaId, Long socioId, EjercicioUpdateDTO dto) {
         findRutina(rutinaId, socioId);
         RutinaEjercicio ej = rutinaEjercicioRepository.findById(ejercicioId)
-            .orElseThrow(() -> new RuntimeException("Ejercicio no encontrado"));
+            .filter(x -> x.getRutina() != null && x.getRutina().getId().equals(rutinaId))
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Ejercicio no encontrado en esta rutina"));
         if (dto.getSeries() != null)       ej.setSeries(dto.getSeries());
         if (dto.getRepeticiones() != null) ej.setRepeticiones(dto.getRepeticiones());
         if (dto.getPesoKg() != null)       ej.setPesoKg(dto.getPesoKg());
@@ -274,7 +275,8 @@ public class RutinaService {
     public void eliminarEjercicio(Long ejercicioId, Long rutinaId, Long socioId) {
         findRutina(rutinaId, socioId);
         RutinaEjercicio ej = rutinaEjercicioRepository.findById(ejercicioId)
-            .orElseThrow(() -> new RuntimeException("Ejercicio no encontrado"));
+            .filter(x -> x.getRutina() != null && x.getRutina().getId().equals(rutinaId))
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Ejercicio no encontrado en esta rutina"));
         if (ej.isEsCalentamiento()) {
             throw new IllegalStateException(
                 "Los ejercicios de entrada en calor son inamovibles y no pueden eliminarse.");
@@ -344,7 +346,9 @@ public class RutinaService {
             rutinaEjercicioRepository.save(ej);
         }
         rutinaEjercicioRepository.flush();
-        return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId).stream().map(this::mapearEjercicioADTO).toList();
+        java.util.Map<Long, com.example.gymtrack_backend.entities.Maquina> maquinas = maquinaRepository.findAll().stream()
+            .collect(Collectors.toMap(com.example.gymtrack_backend.entities.Maquina::getId, m -> m));
+        return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId).stream().map(e -> mapearEjercicioADTO(e, maquinas)).toList();
     }
 
     // ──────────────────────────────────────────────
@@ -358,7 +362,7 @@ public class RutinaService {
     @Transactional
     public RutinaResponseDTO clonarRutina(Long rutinaOrigenId, Long socioDestinoId, String nombreNuevo) {
         Rutina origen = rutinaRepository.findById(rutinaOrigenId)
-            .orElseThrow(() -> new RuntimeException("Rutina no encontrada con id: " + rutinaOrigenId));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada con id: " + rutinaOrigenId));
 
         Rutina nueva = new Rutina();
         nueva.setNombre((nombreNuevo != null && !nombreNuevo.isBlank())
@@ -371,7 +375,7 @@ public class RutinaService {
 
         if (socioDestinoId != null) {
             Socio socio = socioRepository.findById(socioDestinoId)
-                .orElseThrow(() -> new RuntimeException("Socio no encontrado con id: " + socioDestinoId));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado con id: " + socioDestinoId));
             nueva.setSocio(socio);
         }
 
@@ -415,13 +419,13 @@ public class RutinaService {
      */
     private Rutina findRutina(Long rutinaId, Long socioId) {
         Rutina rutina = rutinaRepository.findById(rutinaId)
-            .orElseThrow(() -> new RuntimeException("Rutina no encontrada"));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada"));
 
         if (socioId != null) {
             // Socio puede acceder a su propia rutina o a rutinas generales (sin socio)
             Socio socioRutina = rutina.getSocio();
             if (socioRutina != null && !socioRutina.getId().equals(socioId)) {
-                throw new RuntimeException("Rutina no pertenece al socio indicado");
+                throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada");
             }
         }
         return rutina;

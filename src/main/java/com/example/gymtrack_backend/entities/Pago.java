@@ -47,6 +47,10 @@ public class Pago {
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    /** Clave del intento de cobro (la manda la pantalla): repetirla no registra otro pago */
+    @Column(name = "clave_idempotencia", length = 64, unique = true)
+    private String claveIdempotencia;
+
     @PrePersist
     protected void onCreate() {
         this.fechaPago = LocalDateTime.now();

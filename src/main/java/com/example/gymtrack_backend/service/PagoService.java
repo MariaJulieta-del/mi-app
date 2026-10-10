@@ -29,8 +29,38 @@ public class PagoService {
      * Renueva (o crea) la membresía del socio con el plan elegido y registra
      * el pago en una única transacción. El precio y los pases salen del tarifario.
      */
+    @Autowired
+    private com.example.gymtrack_backend.repository.SocioRepository socioRepository;
+
+    /** Un mismo cobro repetido dentro de este tiempo se toma como doble clic */
+    static final int SEGUNDOS_DOBLE_COBRO = 20;
+
     @Transactional
     public PagoResponseDTO registrarConMembresia(PagoConMembresiaRequestDTO dto) {
+        return registrarConMembresia(dto, null);
+    }
+
+    /**
+     * Cobro idempotente:
+     *  - Se bloquea al socio mientras dura el cobro, así dos pedidos simultáneos se hacen de a uno.
+     *  - Si llega la misma clave (el mismo intento desde la pantalla), se devuelve el pago ya hecho.
+     *  - Sin clave: el mismo plan y medio para el mismo socio en los últimos segundos es un doble clic.
+     */
+    @Transactional
+    public PagoResponseDTO registrarConMembresia(PagoConMembresiaRequestDTO dto, String clave) {
+        String k = clave == null || clave.isBlank() ? null : clave.trim();
+        if (k != null && k.length() > 64) throw new IllegalArgumentException("Clave de cobro inválida");
+        socioRepository.bloquear(dto.getSocioId())
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado"));
+        if (k != null) {
+            var previo = pagoRepository.findByClaveIdempotencia(k);
+            if (previo.isPresent()) return mapearAResponseDTO(previo.get());
+        } else {
+            var dobleClic = pagoRepository.recientesDelSocio(dto.getSocioId(), java.time.LocalDateTime.now().minusSeconds(SEGUNDOS_DOBLE_COBRO)).stream()
+                    .filter(p -> p.getMetodoPago() == dto.getMetodoPago() && dto.getPlanTipo().equalsIgnoreCase(p.getMembresia().getTipoMembresia()))
+                    .findFirst();
+            if (dobleClic.isPresent()) return mapearAResponseDTO(dobleClic.get());
+        }
         Membresia membresia = membresiaService.renovar(dto.getSocioId(), dto.getPlanTipo());
 
         // Registra el pago asociado
@@ -40,6 +70,7 @@ public class PagoService {
         pago.setMetodoPago(dto.getMetodoPago());
         pago.setEstadoPago(EstadoPago.COMPLETADO);
         pago.setObservaciones(dto.getObservaciones());
+        pago.setClaveIdempotencia(k);
 
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(dto.getSocioId());
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle(
@@ -52,9 +83,13 @@ public class PagoService {
     // LISTAR
     // ──────────────────────────────────────────────
 
-    /** Lista todos los pagos */
-    public List<PagoResponseDTO> listarTodos() {
-        return pagoRepository.findAll()
+    /** Pagos de un período (por defecto, los últimos 12 meses), del más nuevo al más viejo */
+    @Transactional(readOnly = true)
+    public List<PagoResponseDTO> listar(java.time.LocalDate desde, java.time.LocalDate hasta) {
+        java.time.LocalDate h = hasta != null ? hasta : java.time.LocalDate.now();
+        java.time.LocalDate d = desde != null ? desde : h.minusMonths(12);
+        if (d.isAfter(h)) throw new IllegalArgumentException("La fecha desde no puede ser posterior a hasta");
+        return pagoRepository.entreConSocio(d.atStartOfDay(), h.plusDays(1).atStartOfDay())
             .stream().map(this::mapearAResponseDTO).collect(Collectors.toList());
     }
 

@@ -28,7 +28,7 @@ public class MantenimientoService {
     @Transactional
     public MantenimientoResponseDTO crear(MantenimientoRequestDTO dto) {
         Maquina maquina = maquinaRepository.findById(dto.getMaquinaId())
-                .orElseThrow(() -> new RuntimeException("Máquina no encontrada: " + dto.getMaquinaId()));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Máquina no encontrada: " + dto.getMaquinaId()));
 
         // Compatibilidad: un reporte que llega con tipo PREVENTIVO/CORRECTIVO es una categoría,
         // y queda PENDIENTE hasta que se haga el trabajo
@@ -72,11 +72,11 @@ public class MantenimientoService {
     @Transactional
     public MantenimientoResponseDTO actualizar(Long id, MantenimientoRequestDTO dto) {
         Mantenimiento m = mantenimientoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Mantenimiento no encontrado: " + id));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Mantenimiento no encontrado: " + id));
 
         if (dto.getMaquinaId() != null) {
             Maquina maquina = maquinaRepository.findById(dto.getMaquinaId())
-                    .orElseThrow(() -> new RuntimeException("Máquina no encontrada: " + dto.getMaquinaId()));
+                    .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Máquina no encontrada: " + dto.getMaquinaId()));
             m.setMaquina(maquina);
         }
         if (dto.getTipo() != null) {
@@ -100,7 +100,7 @@ public class MantenimientoService {
     @Transactional
     public void eliminar(Long id) {
         if (!mantenimientoRepository.existsById(id)) {
-            throw new RuntimeException("Mantenimiento no encontrado: " + id);
+            throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Mantenimiento no encontrado: " + id);
         }
         mantenimientoRepository.deleteById(id);
     }
@@ -108,7 +108,7 @@ public class MantenimientoService {
     /** Estadísticas históricas de una máquina: reparaciones, costos, inactividad */
     public MaquinaEstadisticasDTO estadisticasPorMaquina(Long maquinaId) {
         Maquina maquina = maquinaRepository.findById(maquinaId)
-                .orElseThrow(() -> new RuntimeException("Máquina no encontrada: " + maquinaId));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Máquina no encontrada: " + maquinaId));
 
         List<Mantenimiento> historial = mantenimientoRepository
                 .findByMaquinaIdOrderByFechaMantenimientoDescFechaCreacionDesc(maquinaId);

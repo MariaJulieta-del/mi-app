@@ -34,6 +34,34 @@ public class AuthController {
     private final LoginRateLimiter rateLimiter;
 
     // ── Login staff (admin y profesor: un solo formulario, el rol lo decide el backend) ──
+    private final com.example.gymtrack_backend.repository.TokenRevocadoRepository revocados;
+    private final com.example.gymtrack_backend.security.JwtUtil jwtUtil;
+
+    /** Cerrar sesión: el token deja de valer en el servidor (aunque alguien lo haya copiado) */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        String h = request.getHeader("Authorization");
+        if (h != null && h.startsWith("Bearer ")) {
+            try {
+                String token = h.substring(7);
+                String jti = jwtUtil.extractId(token);
+                if (jti != null) {
+                    var t = new com.example.gymtrack_backend.entities.TokenRevocado();
+                    t.setJti(jti);
+                    t.setExpira(jwtUtil.extractExpiration(token).toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+                    revocados.save(t);
+                }
+            } catch (RuntimeException ignorado) { /* token vencido o inválido: no hay nada que cerrar */ }
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Limpia de la lista los tokens que ya vencieron solos (una vez por día) */
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 15 4 * * *")
+    public void limpiarRevocados() {
+        revocados.borrarVencidos(java.time.LocalDateTime.now());
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO dto, HttpServletRequest request) {
         String clave = "staff:" + dto.getUsername().toLowerCase() + "@" + request.getRemoteAddr();

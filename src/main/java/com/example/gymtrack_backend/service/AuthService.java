@@ -151,7 +151,7 @@ public class AuthService {
         // Vincular a socio si corresponde
         if (dto.getSocioId() != null) {
             Socio socio = socioRepository.findById(dto.getSocioId())
-                    .orElseThrow(() -> new RuntimeException("Socio no encontrado: " + dto.getSocioId()));
+                    .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado: " + dto.getSocioId()));
             usuario.setSocio(socio);
         }
 

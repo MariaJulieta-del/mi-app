@@ -64,6 +64,7 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .claims(claims)
+                .id(java.util.UUID.randomUUID().toString())
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
@@ -78,6 +79,7 @@ public class JwtUtil {
     public String generateKioscoToken(Long dispositivoId, long expirationMs) {
         return Jwts.builder()
                 .claims(Map.of("rol", "KIOSCO"))
+                .id(java.util.UUID.randomUUID().toString())
                 .subject(PREFIJO_KIOSCO + dispositivoId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
@@ -96,6 +98,11 @@ public class JwtUtil {
 
     public Date extractIssuedAt(String token) {
         return extractClaim(token, Claims::getIssuedAt);
+    }
+
+    /** Identificador del token (null en tokens viejos, emitidos antes de que existiera) */
+    public String extractId(String token) {
+        return extractClaim(token, Claims::getId);
     }
 
     public Date extractExpiration(String token) {

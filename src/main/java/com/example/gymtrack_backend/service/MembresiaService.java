@@ -17,6 +17,8 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -60,13 +62,13 @@ public class MembresiaService {
     @Transactional
     public Membresia renovar(Long socioId, String planTipo) {
         Socio socio = socioRepository.findById(socioId)
-            .orElseThrow(() -> new RuntimeException("Socio no encontrado: " + socioId));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado: " + socioId));
         if (!Boolean.TRUE.equals(socio.getActivo())) {
             throw new RuntimeException("El socio está dado de baja. Reactivalo antes de cobrarle un plan.");
         }
 
         TarifaMembresia tarifa = tarifaRepository.findById(planTipo.toUpperCase())
-            .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + planTipo));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Plan no encontrado: " + planTipo));
         if (Boolean.FALSE.equals(tarifa.getActivo())) {
             throw new RuntimeException("El plan " + tarifa.getNombre() + " está deshabilitado. Elegí otro o habilitalo en Membresías.");
         }
@@ -108,23 +110,72 @@ public class MembresiaService {
     public record PasesInfo(boolean libre, Integer pasesMensuales, int usados, Integer restantes,
                             LocalDate cicloInicio, LocalDate cicloFin) {}
 
-    public PasesInfo calcularPases(Membresia m, LocalDate hoy) {
+    /** Ciclo mensual de la membresía que contiene a `hoy` (arranca el día del mes en que empezó) */
+    static LocalDate[] ciclo(Membresia m, LocalDate hoy) {
         LocalDate inicio = m.getFechaInicio() != null ? m.getFechaInicio() : hoy;
-
         long meses = Math.max(0, ChronoUnit.MONTHS.between(inicio, hoy));
         LocalDate cicloInicio = inicio.plusMonths(meses);
         LocalDate cicloFin = cicloInicio.plusMonths(1).minusDays(1);
         if (m.getFechaVencimiento() != null && cicloFin.isAfter(m.getFechaVencimiento())) {
             cicloFin = m.getFechaVencimiento();
         }
+        return new LocalDate[]{cicloInicio, cicloFin};
+    }
 
-        // Días con ingreso + clases reservadas a las que no vino (el faltazo cuenta como pase usado)
-        int usados = (int) asistenciaRepository.countDiasConIngreso(m.getSocio().getId(), cicloInicio, cicloFin)
-                + (int) reservaRepository.contarAusentes(m.getSocio().getId(), cicloInicio, cicloFin);
+    static PasesInfo armarPases(Membresia m, LocalDate[] c, int usados) {
         Integer total = m.getPasesMensuales();
         boolean libre = total == null || total <= 0;
         Integer restantes = libre ? null : Math.max(0, total - usados);
-        return new PasesInfo(libre, libre ? null : total, usados, restantes, cicloInicio, cicloFin);
+        return new PasesInfo(libre, libre ? null : total, usados, restantes, c[0], c[1]);
+    }
+
+    public PasesInfo calcularPases(Membresia m, LocalDate hoy) {
+        LocalDate[] c = ciclo(m, hoy);
+        // Días con ingreso + clases reservadas a las que no vino (el faltazo cuenta como pase usado)
+        int usados = (int) asistenciaRepository.countDiasConIngreso(m.getSocio().getId(), c[0], c[1])
+                + (int) reservaRepository.contarAusentes(m.getSocio().getId(), c[0], c[1]);
+        return armarPases(m, c, usados);
+    }
+
+    /**
+     * Pases de muchas membresías con 2 consultas en total (en lugar de 2 por membresía):
+     * se traen los días con ingreso y los faltazos del período que cubre todos los ciclos.
+     */
+    Map<Long, PasesInfo> calcularPasesDeTodas(List<Membresia> lista, LocalDate hoy) {
+        Map<Long, PasesInfo> res = new HashMap<>();
+        if (lista.isEmpty()) return res;
+        Map<Long, LocalDate[]> ciclos = new HashMap<>();
+        LocalDate desde = hoy, hasta = hoy;
+        for (Membresia m : lista) {
+            LocalDate[] c = ciclo(m, hoy);
+            ciclos.put(m.getId(), c);
+            if (c[0].isBefore(desde)) desde = c[0];
+            if (c[1].isAfter(hasta)) hasta = c[1];
+        }
+        Map<Long, List<LocalDate>> ingresos = new HashMap<>();
+        for (Object[] f : asistenciaRepository.diasConIngresoEntre(desde, hasta)) {
+            ingresos.computeIfAbsent((Long) f[0], k -> new ArrayList<>()).add((LocalDate) f[1]);
+        }
+        Map<Long, List<LocalDate>> ausentes = new HashMap<>();
+        for (Object[] f : reservaRepository.ausentesEntre(desde, hasta)) {
+            ausentes.computeIfAbsent((Long) f[0], k -> new ArrayList<>()).add((LocalDate) f[1]);
+        }
+        for (Membresia m : lista) {
+            LocalDate[] c = ciclos.get(m.getId());
+            Long sid = m.getSocio().getId();
+            int usados = (int) ingresos.getOrDefault(sid, List.of()).stream().filter(d -> !d.isBefore(c[0]) && !d.isAfter(c[1])).count()
+                    + (int) ausentes.getOrDefault(sid, List.of()).stream().filter(d -> !d.isBefore(c[0]) && !d.isAfter(c[1])).count();
+            res.put(m.getId(), armarPases(m, c, usados));
+        }
+        return res;
+    }
+
+    /** Lista de respuestas con los pases calculados de una vez */
+    private List<MembresiaResponseDTO> mapearLista(List<Membresia> lista) {
+        LocalDate hoy = LocalDate.now();
+        Map<String, TarifaMembresia> planes = planesPorTipo();
+        Map<Long, PasesInfo> pases = calcularPasesDeTodas(lista, hoy);
+        return lista.stream().map(m -> mapearAResponseDTO(m, planes, pases.get(m.getId()))).collect(Collectors.toList());
     }
 
     /** ¿La membresía está activa y no venció? */
@@ -138,15 +189,12 @@ public class MembresiaService {
     // ──────────────────────────────────────────────
 
     public List<MembresiaResponseDTO> listarTodas() {
-        Map<String, TarifaMembresia> planes = planesPorTipo();
-        return membresiaRepository.findAll().stream()
-            .map(m -> mapearAResponseDTO(m, planes))
-            .collect(Collectors.toList());
+        return mapearLista(membresiaRepository.todasConSocio());
     }
 
     public MembresiaResponseDTO obtenerPorId(Long id) {
         Membresia m = membresiaRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Membresía no encontrada: " + id));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Membresía no encontrada: " + id));
         return mapearAResponseDTO(m);
     }
 
@@ -158,13 +206,11 @@ public class MembresiaService {
     /** Membresías ACTIVAS que vencen dentro de los próximos `dias` días */
     public List<MembresiaResponseDTO> listarProximasAVencer(int dias) {
         LocalDate hoy = LocalDate.now();
-        Map<String, TarifaMembresia> planes = planesPorTipo();
-        return membresiaRepository
+        return mapearLista(membresiaRepository
             .findByEstadoMembresiaAndFechaVencimientoBetween(EstadoMembresia.ACTIVA, hoy, hoy.plusDays(dias))
             .stream()
             .sorted(Comparator.comparing(Membresia::getFechaVencimiento))
-            .map(m -> mapearAResponseDTO(m, planes))
-            .collect(Collectors.toList());
+            .toList());
     }
 
     // ──────────────────────────────────────────────
@@ -174,7 +220,7 @@ public class MembresiaService {
     @Transactional
     public MembresiaResponseDTO cambiarEstado(Long id, EstadoMembresia nuevoEstado) {
         Membresia membresia = membresiaRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Membresía no encontrada: " + id));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Membresía no encontrada: " + id));
 
         if (nuevoEstado != EstadoMembresia.CANCELADA) {
             throw new RuntimeException("Para activar una membresía hay que registrar un pago (renovar).");
@@ -203,6 +249,10 @@ public class MembresiaService {
     }
 
     private MembresiaResponseDTO mapearAResponseDTO(Membresia m, Map<String, TarifaMembresia> planes) {
+        return mapearAResponseDTO(m, planes, null);
+    }
+
+    private MembresiaResponseDTO mapearAResponseDTO(Membresia m, Map<String, TarifaMembresia> planes, PasesInfo calculados) {
         LocalDate hoy = LocalDate.now();
         MembresiaResponseDTO dto = new MembresiaResponseDTO();
         dto.setId(m.getId());
@@ -220,7 +270,7 @@ public class MembresiaService {
             dto.setDiasRestantes(ChronoUnit.DAYS.between(hoy, m.getFechaVencimiento()));
         }
 
-        PasesInfo pases = calcularPases(m, hoy);
+        PasesInfo pases = calculados != null ? calculados : calcularPases(m, hoy);
         dto.setPaseLibre(pases.libre());
         dto.setPasesMensuales(pases.pasesMensuales());
         dto.setPasesUsados(pases.usados());

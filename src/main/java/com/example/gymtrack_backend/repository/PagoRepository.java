@@ -12,6 +12,32 @@ import java.util.List;
 @Repository
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
+    java.util.Optional<Pago> findByClaveIdempotencia(String clave);
+
+    /** Pagos de un período con membresía y socio (una sola consulta) */
+    @Query("select p from Pago p join fetch p.membresia m join fetch m.socio where p.fechaPago >= :desde and p.fechaPago < :hasta order by p.fechaPago desc")
+    List<Pago> entreConSocio(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    /** (fecha, monto, socioId) de los pagos completados desde una fecha, sin cargar entidades */
+    @Query("select p.fechaPago, p.monto, m.socio.id from Pago p join p.membresia m where p.estadoPago = 'COMPLETADO' and p.fechaPago >= :desde")
+    List<Object[]> completadosDesde(@Param("desde") LocalDateTime desde);
+
+    /** (socioId, primer pago) de cada socio */
+    @Query("select m.socio.id, min(p.fechaPago) from Pago p join p.membresia m where p.estadoPago = 'COMPLETADO' group by m.socio.id")
+    List<Object[]> primerPagoPorSocio();
+
+    /** Total cobrado (completados) en un período */
+    @Query("select coalesce(sum(p.monto), 0) from Pago p where p.estadoPago = 'COMPLETADO' and p.fechaPago >= :desde and p.fechaPago < :hasta")
+    BigDecimal totalCompletadoEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    /** (año, mes, total) de los pagos completados desde una fecha */
+    @Query("select year(p.fechaPago), month(p.fechaPago), sum(p.monto) from Pago p where p.estadoPago = 'COMPLETADO' and p.fechaPago >= :desde group by year(p.fechaPago), month(p.fechaPago)")
+    List<Object[]> totalesPorMes(@Param("desde") LocalDateTime desde);
+
+    /** Pagos completados de un socio desde un momento (para frenar el doble cobro sin clave) */
+    @Query("select p from Pago p where p.membresia.socio.id = :socioId and p.estadoPago = 'COMPLETADO' and p.fechaPago >= :desde order by p.fechaPago desc")
+    List<Pago> recientesDelSocio(@Param("socioId") Long socioId, @Param("desde") LocalDateTime desde);
+
     /** Historial de pagos de una membresía, ordenado por más reciente */
     List<Pago> findByMembresiaIdOrderByFechaPagoDesc(Long membresiaId);
 

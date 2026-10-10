@@ -37,7 +37,7 @@ public class MaquinaController {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(dto));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -48,7 +48,7 @@ public class MaquinaController {
         try {
             return ResponseEntity.ok(service.actualizar(id, dto));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 

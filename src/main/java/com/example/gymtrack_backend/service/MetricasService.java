@@ -52,13 +52,13 @@ public class MetricasService {
     public List<SocioEnRiesgo> enRiesgo() {
         LocalDate hoy = LocalDate.now();
         List<SocioEnRiesgo> lista = new ArrayList<>();
-        for (Membresia m : membresiaRepo.findByEstadoMembresia(EstadoMembresia.ACTIVA)) {
+        Map<Long, LocalDate> ultimas = new HashMap<>();
+        for (Object[] f : asistenciaRepo.ultimaVisitaPorSocio(true)) ultimas.put((Long) f[0], (LocalDate) f[1]);
+        for (Membresia m : membresiaRepo.conSocioPorEstado(EstadoMembresia.ACTIVA)) {
             Socio s = m.getSocio();
             if (s == null || !Boolean.TRUE.equals(s.getActivo()) || m.getFechaVencimiento().isBefore(hoy)) continue;
 
-            LocalDate ultima = asistenciaRepo.findBySocioIdOrderByFechaDescHoraDesc(s.getId()).stream()
-                    .filter(a -> Boolean.TRUE.equals(a.getPermitido()))
-                    .map(Asistencia::getFecha).findFirst().orElse(null);
+            LocalDate ultima = ultimas.get(s.getId());
             Long sinVenir = ultima == null ? null : ChronoUnit.DAYS.between(ultima, hoy);
             long venceEn = ChronoUnit.DAYS.between(hoy, m.getFechaVencimiento());
 
@@ -90,22 +90,18 @@ public class MetricasService {
         LocalDate hoy = LocalDate.now();
         YearMonth mesActual = YearMonth.from(hoy);
 
-        List<Pago> pagos = pagoRepo.findAll().stream()
-                .filter(p -> p.getEstadoPago() == EstadoPago.COMPLETADO && p.getFechaPago() != null
-                        && p.getMembresia() != null && p.getMembresia().getSocio() != null)
-                .toList();
-
-        // Socios que pagaron en cada mes
+        // Socios que pagaron en cada mes (solo hacen falta los últimos 7 meses)
         Map<YearMonth, Set<Long>> pagaronEn = new HashMap<>();
         Map<YearMonth, BigDecimal> recaudadoEn = new HashMap<>();
-        Map<Long, YearMonth> primerPago = new HashMap<>();
-        for (Pago p : pagos) {
-            YearMonth ym = YearMonth.from(p.getFechaPago());
-            Long sid = p.getMembresia().getSocio().getId();
+        for (Object[] f : pagoRepo.completadosDesde(mesActual.minusMonths(6).atDay(1).atStartOfDay())) {
+            YearMonth ym = YearMonth.from((java.time.LocalDateTime) f[0]);
+            Long sid = (Long) f[2];
             pagaronEn.computeIfAbsent(ym, k -> new HashSet<>()).add(sid);
-            recaudadoEn.merge(ym, p.getMonto(), BigDecimal::add);
-            primerPago.merge(sid, ym, (a, b) -> a.isBefore(b) ? a : b);
+            recaudadoEn.merge(ym, (BigDecimal) f[1], BigDecimal::add);
         }
+        // Mes del primer pago de cada socio (para contar los nuevos)
+        Map<Long, YearMonth> primerPago = new HashMap<>();
+        for (Object[] f : pagoRepo.primerPagoPorSocio()) primerPago.put((Long) f[0], YearMonth.from((java.time.LocalDateTime) f[1]));
 
         // Últimos 6 meses: de los que pagaron el mes anterior, cuántos volvieron a pagar
         List<MesRetencion> meses = new ArrayList<>();
@@ -120,7 +116,7 @@ public class MetricasService {
                     nuevos, recaudadoEn.getOrDefault(ym, BigDecimal.ZERO)));
         }
 
-        int vigentes = (int) membresiaRepo.findByEstadoMembresia(EstadoMembresia.ACTIVA).stream()
+        int vigentes = (int) membresiaRepo.conSocioPorEstado(EstadoMembresia.ACTIVA).stream()
                 .filter(m -> !m.getFechaVencimiento().isBefore(hoy))
                 .filter(m -> m.getSocio() != null && Boolean.TRUE.equals(m.getSocio().getActivo()))
                 .count();
@@ -162,7 +158,7 @@ public class MetricasService {
         LocalDate hoy = LocalDate.now();
         YearMonth mesActual = YearMonth.from(hoy);
 
-        List<Membresia> vigentes = membresiaRepo.findByEstadoMembresia(EstadoMembresia.ACTIVA).stream()
+        List<Membresia> vigentes = membresiaRepo.conSocioPorEstado(EstadoMembresia.ACTIVA).stream()
                 .filter(m -> m.getFechaVencimiento() != null && !m.getFechaVencimiento().isBefore(hoy))
                 .filter(m -> m.getSocio() != null && Boolean.TRUE.equals(m.getSocio().getActivo()))
                 .toList();
@@ -177,13 +173,10 @@ public class MetricasService {
 
         // Primer pago de cada socio
         Map<Long, YearMonth> primerPago = new HashMap<>();
-        for (Pago p : pagoRepo.findAll()) {
-            if (p.getEstadoPago() != EstadoPago.COMPLETADO || p.getFechaPago() == null || p.getMembresia() == null || p.getMembresia().getSocio() == null) continue;
-            primerPago.merge(p.getMembresia().getSocio().getId(), YearMonth.from(p.getFechaPago()), (a, b) -> a.isBefore(b) ? a : b);
-        }
+        for (Object[] f : pagoRepo.primerPagoPorSocio()) primerPago.put((Long) f[0], YearMonth.from((java.time.LocalDateTime) f[1]));
         // Un socio "sigue" en un mes si su membresía cubre algún día de ese mes y no estaba dado de baja antes
         Map<Long, List<Membresia>> membresiasDe = new HashMap<>();
-        for (Membresia m : membresiaRepo.findAll()) {
+        for (Membresia m : membresiaRepo.todasConSocio()) {
             if (m.getSocio() != null) membresiasDe.computeIfAbsent(m.getSocio().getId(), k -> new ArrayList<>()).add(m);
         }
         Map<Long, LocalDate> bajaDe = new HashMap<>();

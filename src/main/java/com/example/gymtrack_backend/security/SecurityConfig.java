@@ -59,10 +59,10 @@ public class SecurityConfig {
             .sessionManagement(sess ->
                     sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    // Endpoints públicos
-                    .requestMatchers("/api/v1/auth/**").permitAll()
-                    // Solo ADMIN puede registrar nuevos usuarios
+                    // Solo ADMIN puede registrar nuevos usuarios (va antes que /auth/**: gana la primera regla)
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").hasRole("ADMIN")
+                    // Login y demás de /auth: públicos (cambiar PIN o contraseña se protege con @PreAuthorize)
+                    .requestMatchers("/api/v1/auth/**").permitAll()
                     // Profesores: solo ADMIN
                     .requestMatchers("/api/v1/profesores", "/api/v1/profesores/**").hasRole("ADMIN")
                     // Pantalla de recepción (ROLE_KIOSCO): solo el QR vigente y los últimos ingresos
@@ -76,6 +76,18 @@ public class SecurityConfig {
                             AuthenticatedAuthorizationManager.authenticated(),
                             AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("KIOSCO"))))
             )
+            // Sin sesión → 401 (antes respondía 403 y no se distinguía de "sin permiso")
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
+                // Con sesión válida pero sin permiso (ej. la pantalla de recepción) → 403; sin sesión → 401
+                boolean conSesion = Boolean.TRUE.equals(req.getAttribute(JwtAuthenticationFilter.CON_SESION));
+                res.setStatus(conSesion ? 403 : 401);
+                res.setContentType("application/json");
+                res.setCharacterEncoding("UTF-8");
+                res.getWriter().write(conSesion ? "{\"error\":\"No tenés permiso para realizar esta acción\"}" : "{\"error\":\"Tenés que iniciar sesión\"}");
+            }))
+            .headers(h -> h
+                    .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+                    .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

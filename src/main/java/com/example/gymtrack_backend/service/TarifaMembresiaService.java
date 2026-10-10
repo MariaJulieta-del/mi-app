@@ -54,7 +54,7 @@ public class TarifaMembresiaService {
     public TarifaMembresiaResponseDTO actualizar(String tipo, BigDecimal nuevoPrecio, boolean cambiaPases,
                                                  Integer pasesMensuales, String nombre, String incluye) {
         TarifaMembresia tarifa = repository.findById(tipo.toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + tipo));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Plan no encontrado: " + tipo));
         if (nombre != null && !nombre.isBlank()) tarifa.setNombre(nombre.trim());
         if (incluye != null) tarifa.setIncluye(incluye.isBlank() ? null : incluye.trim());
         if (nuevoPrecio != null) {
@@ -93,7 +93,7 @@ public class TarifaMembresiaService {
     public BigDecimal getPrecio(String tipo) {
         return repository.findById(tipo.toUpperCase())
                 .map(TarifaMembresia::getPrecio)
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + tipo));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Plan no encontrado: " + tipo));
     }
 
     private TarifaMembresiaResponseDTO toDTO(TarifaMembresia t) {

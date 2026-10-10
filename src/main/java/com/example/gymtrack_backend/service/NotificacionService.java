@@ -208,7 +208,7 @@ public class NotificacionService {
     // ── Archivar notificación ────────────────────────────────────────────────
     public void archivar(Long id) {
         Notificacion n = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notificación no encontrada"));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Notificación no encontrada"));
         n.setActiva(false);
         repo.save(n);
     }

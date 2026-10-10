@@ -31,10 +31,14 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    /** Marca de la petición: vino con un token válido (para responder 403 y no 401 si le falta permiso) */
+    public static final String CON_SESION = "gymtrack.conSesion";
+
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final UsuarioRepository  usuarioRepository;
     private final com.example.gymtrack_backend.kiosco.DispositivoKioscoRepository kioscoRepository;
+    private final com.example.gymtrack_backend.repository.TokenRevocadoRepository revocados;
 
     @Override
     protected void doFilterInternal(
@@ -63,6 +67,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.getWriter().write("{\"error\":\"Token inválido o expirado\"}");
+            return;
+        }
+
+        // Sesión cerrada con "Salir": el token ya no vale
+        try {
+            String jti = jwtUtil.extractId(jwt);
+            if (jti != null && revocados.existsById(jti)) {
+                rechazar(response, "La sesión se cerró. Volvé a ingresar.");
+                return;
+            }
+        } catch (JwtException | IllegalArgumentException ex) {
+            rechazar(response, "Token inválido o expirado");
             return;
         }
 
@@ -125,6 +141,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                request.setAttribute(CON_SESION, Boolean.TRUE);
             } else {
                 // Token válido en firma pero expirado según isTokenValid
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -153,6 +170,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_KIOSCO")));
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(auth);
+        request.setAttribute(CON_SESION, Boolean.TRUE);
         return true;
     }
 

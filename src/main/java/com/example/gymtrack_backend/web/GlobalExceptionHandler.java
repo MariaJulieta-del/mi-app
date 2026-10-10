@@ -26,10 +26,10 @@ public class GlobalExceptionHandler {
                 (a, b) -> a
             ));
 
-        System.err.println("[GlobalExceptionHandler] Validación fallida: " + fieldErrors);
-
+        // El primer error como mensaje principal, para mostrarlo tal cual en pantalla
+        String primero = fieldErrors.values().stream().findFirst().orElse("Revisá los datos");
         return ResponseEntity.badRequest().body(Map.of(
-            "error", "Validación fallida",
+            "error", primero,
             "campos", fieldErrors
         ));
     }
@@ -48,6 +48,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", "Datos inválidos en la solicitud"));
     }
 
+    /** Lo pedido no existe → 404 */
+    @ExceptionHandler(RecursoNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleNoEncontrado(RecursoNoEncontradoException ex) {
+        return ResponseEntity.status(404).body(Map.of("error", ex.getMessage() != null ? ex.getMessage() : "No encontrado"));
+    }
+
+    /** Dato repetido o que rompe una regla de la base (ej. DNI duplicado) → 409 sin detalles técnicos */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleIntegridad(org.springframework.dao.DataIntegrityViolationException ex) {
+        String causa = String.valueOf(ex.getMostSpecificCause().getMessage()).toLowerCase();
+        String msg = causa.contains("dni") ? "Ya existe un socio con ese DNI"
+                : causa.contains("username") ? "Ese nombre de usuario ya está en uso"
+                : causa.contains("demasiado largo") || causa.contains("too long") ? "Algún dato es demasiado largo"
+                : "Esos datos chocan con otro registro (puede que ya exista)";
+        log.warn("Integridad de datos: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(409).body(Map.of("error", msg));
+    }
+
     /** Errores de negocio con mensaje pensado para el usuario → 400 */
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<Map<String, Object>> handleNegocio(RuntimeException ex) {
@@ -64,6 +82,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         if (ex.getClass() == RuntimeException.class && ex.getMessage() != null) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+        if (ex instanceof org.springframework.security.authorization.AuthorizationDeniedException) {
+            return ResponseEntity.status(403).body(Map.of("error", "No tenés permiso para realizar esta acción"));
         }
         if (ex instanceof org.springframework.web.ErrorResponse er) {
             // Errores propios de Spring MVC (404 de ruta, método no permitido, JSON mal formado…)

@@ -69,7 +69,7 @@ public class AsistenciaService {
                     .orElseThrow(() -> new RuntimeException("No existe un socio con DNI: " + dto.getDni()));
         } else if (dto.getSocioId() != null) {
             socio = socioRepo.findById(dto.getSocioId())
-                    .orElseThrow(() -> new RuntimeException("Socio no encontrado: " + dto.getSocioId()));
+                    .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado: " + dto.getSocioId()));
         } else {
             throw new IllegalArgumentException("Debe ingresar el DNI o el ID del socio");
         }

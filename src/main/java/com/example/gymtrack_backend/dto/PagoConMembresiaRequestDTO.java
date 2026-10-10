@@ -21,5 +21,6 @@ public class PagoConMembresiaRequestDTO {
     @NotNull(message = "El método de pago es obligatorio")
     private MetodoPago metodoPago;
 
+    @jakarta.validation.constraints.Size(max = 300, message = "Las observaciones no pueden superar los 300 caracteres")
     private String observaciones;
 }

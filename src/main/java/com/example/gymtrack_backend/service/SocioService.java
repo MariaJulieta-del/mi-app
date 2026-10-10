@@ -77,8 +77,25 @@ public class SocioService {
         if (nacimiento.isBefore(hoy.minusYears(110))) throw new IllegalArgumentException("Revisá la fecha de nacimiento");
     }
 
+    private static final java.util.regex.Pattern DNI = java.util.regex.Pattern.compile("\\d{6,10}");
+    private static final java.util.regex.Pattern TELEFONO = java.util.regex.Pattern.compile("[0-9 +()\\-]{6,25}");
+    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+
+    /** Mismas reglas que el alta, para la edición (que recibe la entidad directamente) */
+    static void validarDatos(String nombre, String apellido, String dni, String telefono, String email) {
+        if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("El nombre es obligatorio");
+        if (apellido == null || apellido.isBlank()) throw new IllegalArgumentException("El apellido es obligatorio");
+        if (nombre.trim().length() > 80 || apellido.trim().length() > 80) throw new IllegalArgumentException("El nombre y el apellido no pueden superar los 80 caracteres");
+        if (dni != null && !DNI.matcher(dni.trim()).matches()) throw new IllegalArgumentException("El DNI tiene que tener entre 6 y 10 números, sin puntos");
+        if (telefono != null && !telefono.isBlank() && !TELEFONO.matcher(telefono.trim()).matches()) throw new IllegalArgumentException("El teléfono solo puede tener números, espacios, +, - y paréntesis");
+        if (email != null && !email.isBlank() && (email.trim().length() > 120 || !EMAIL.matcher(email.trim()).matches())) throw new IllegalArgumentException("El email no es válido");
+    }
+
+    private static String limpio(String v) { return v == null || v.isBlank() ? null : v.trim(); }
+
     // Crear nuevo socio
     public Socio crear(Socio socio) {
+        validarDatos(socio.getNombre(), socio.getApellido(), socio.getDni(), socio.getTelefono(), socio.getEmail());
         if (socioRepository.existsByDni(socio.getDni())) {
             throw new RuntimeException("Ya existe un socio con ese DNI");
         }
@@ -91,11 +108,12 @@ public class SocioService {
     // Actualizar socio
     public Socio actualizar(Long id, Socio socioActualizado) {
         Socio socio = socioRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
-        socio.setNombre(socioActualizado.getNombre());
-        socio.setApellido(socioActualizado.getApellido());
-        socio.setTelefono(socioActualizado.getTelefono());
-        socio.setEmail(socioActualizado.getEmail());
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado"));
+        validarDatos(socioActualizado.getNombre(), socioActualizado.getApellido(), null, socioActualizado.getTelefono(), socioActualizado.getEmail());
+        socio.setNombre(socioActualizado.getNombre().trim());
+        socio.setApellido(socioActualizado.getApellido().trim());
+        socio.setTelefono(limpio(socioActualizado.getTelefono()));
+        socio.setEmail(limpio(socioActualizado.getEmail()));
         validarNacimiento(socioActualizado.getFechaNacimiento());
         socio.setFechaNacimiento(socioActualizado.getFechaNacimiento());
         socio.setGenero(normalizarGenero(socioActualizado.getGenero()));
@@ -112,7 +130,7 @@ public class SocioService {
             throw new IllegalArgumentException("Motivo de baja inválido: " + motivo);
         }
         Socio socio = socioRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado"));
         if (!Boolean.TRUE.equals(socio.getActivo())) {
             throw new IllegalStateException("El socio ya está dado de baja");
         }
@@ -143,20 +161,10 @@ public class SocioService {
             .toList();
     }
 
-    // Eliminación física (solo para socios inactivos)
-    public void eliminarPermanente(Long id) {
-        Socio socio = socioRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
-        if (Boolean.TRUE.equals(socio.getActivo())) {
-            throw new RuntimeException("Solo se puede eliminar permanentemente un socio inactivo");
-        }
-        socioRepository.deleteById(id);
-    }
-
     // Reactivar un socio previamente dado de baja
     public Socio reactivar(Long id) {
         Socio socio = socioRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Socio no encontrado"));
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado"));
         socio.setActivo(true);
         socio.setEstado("ACTIVO");
         return socioRepository.save(socio);
@@ -189,8 +197,8 @@ public class SocioService {
         socio.setNombre(req.getNombre().trim());
         socio.setApellido(req.getApellido().trim());
         socio.setDni(req.getDni().trim());
-        socio.setTelefono(req.getTelefono());
-        socio.setEmail(req.getEmail());
+        socio.setTelefono(limpio(req.getTelefono()));
+        socio.setEmail(limpio(req.getEmail()));
         validarNacimiento(req.getFechaNacimiento());
         socio.setFechaNacimiento(req.getFechaNacimiento());
         socio.setGenero(normalizarGenero(req.getGenero()));

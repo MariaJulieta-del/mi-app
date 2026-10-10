@@ -33,19 +33,15 @@ public class TarifaMembresiaController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TarifaMembresiaResponseDTO> crear(@RequestBody Map<String, Object> body) {
-        try {
-            TarifaMembresia plan = new TarifaMembresia();
-            plan.setTipo(body.get("tipo").toString());
-            plan.setNombre(body.getOrDefault("nombre", body.get("tipo")).toString());
-            plan.setPrecio(new BigDecimal(body.get("precio").toString()));
-            plan.setDuracionDias(Integer.parseInt(body.get("duracionDias").toString()));
-            plan.setPasesMensuales(parsePases(body.get("pasesMensuales")));
-            if (body.containsKey("incluye")) plan.setIncluye(body.get("incluye").toString());
-            if (body.containsKey("descripcion")) plan.setDescripcion(body.get("descripcion").toString());
-            return ResponseEntity.ok(tarifaService.crearPlan(plan));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        TarifaMembresia plan = new TarifaMembresia();
+        plan.setTipo(body.get("tipo").toString());
+        plan.setNombre(body.getOrDefault("nombre", body.get("tipo")).toString());
+        plan.setPrecio(new BigDecimal(body.get("precio").toString()));
+        plan.setDuracionDias(Integer.parseInt(body.get("duracionDias").toString()));
+        plan.setPasesMensuales(parsePases(body.get("pasesMensuales")));
+        if (body.containsKey("incluye")) plan.setIncluye(body.get("incluye").toString());
+        if (body.containsKey("descripcion")) plan.setDescripcion(body.get("descripcion").toString());
+        return ResponseEntity.ok(tarifaService.crearPlan(plan));
     }
 
     @PutMapping("/{tipo}")

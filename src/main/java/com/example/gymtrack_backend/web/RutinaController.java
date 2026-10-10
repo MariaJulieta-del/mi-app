@@ -39,11 +39,7 @@ public class RutinaController {
     public ResponseEntity<List<RutinaResponseDTO>> obtenerRutinas(
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            return ResponseEntity.ok(rutinaService.obtenerRutinas(socioId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(rutinaService.obtenerRutinas(socioId));
     }
 
     /** GET /api/v1/rutinas/todas — todas las rutinas (solo ADMIN) */
@@ -66,11 +62,7 @@ public class RutinaController {
             @PathVariable Long id,
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            return ResponseEntity.ok(rutinaService.obtenerRutina(id, socioId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(rutinaService.obtenerRutina(id, socioId));
     }
 
     /** POST /api/v1/rutinas — crear una nueva rutina (socioId opcional para rutinas generales) */
@@ -83,9 +75,7 @@ public class RutinaController {
         try {
             return ResponseEntity.ok(rutinaService.crearRutina(socioId, requestDTO));
         } catch (RuntimeException e) {
-            System.err.println("[RutinaController] Error al crear rutina: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Error interno"));
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -97,11 +87,7 @@ public class RutinaController {
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
             @Valid @RequestBody RutinaRequestDTO requestDTO) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            return ResponseEntity.ok(rutinaService.actualizarRutina(id, socioId, requestDTO));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(rutinaService.actualizarRutina(id, socioId, requestDTO));
     }
 
     /** DELETE /api/v1/rutinas/{id} — eliminar una rutina */
@@ -111,12 +97,8 @@ public class RutinaController {
             @PathVariable Long id,
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            rutinaService.eliminarRutina(id, socioId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        rutinaService.eliminarRutina(id, socioId);
+        return ResponseEntity.ok().build();
     }
 
     /** POST /api/v1/rutinas/{id}/clonar — clonar una rutina (con sus ejercicios) */
@@ -133,7 +115,7 @@ public class RutinaController {
             return ResponseEntity.ok(rutinaService.clonarRutina(id, socioDestinoId, nombre));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
-                .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Error al clonar"));
+                .body(java.util.Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e)));
         }
     }
 
@@ -164,11 +146,7 @@ public class RutinaController {
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
             @Valid @RequestBody EjercicioRequestDTO dto) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            return ResponseEntity.ok(rutinaService.agregarEjercicio(id, socioId, dto));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(rutinaService.agregarEjercicio(id, socioId, dto));
     }
 
     /** PATCH /api/v1/rutinas/{id}/ejercicios/{ejId} — actualizar series/reps/peso/descanso */
@@ -180,11 +158,7 @@ public class RutinaController {
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
             @RequestBody EjercicioUpdateDTO dto) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            return ResponseEntity.ok(rutinaService.actualizarEjercicio(ejId, id, socioId, dto));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return ResponseEntity.ok(rutinaService.actualizarEjercicio(ejId, id, socioId, dto));
     }
 
     /** PUT /api/v1/rutinas/{id}/ejercicios — guarda todos los ejercicios (sin la entrada en calor) en ese orden */
@@ -218,11 +192,7 @@ public class RutinaController {
             @PathVariable Long ejId,
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId) {
         socioId = acceso.socioEfectivo(socioId);
-        try {
-            rutinaService.eliminarEjercicio(ejId, id, socioId);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        rutinaService.eliminarEjercicio(ejId, id, socioId);
+        return ResponseEntity.ok().build();
     }
 }

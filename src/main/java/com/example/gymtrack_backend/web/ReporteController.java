@@ -58,15 +58,11 @@ public class ReporteController {
         LocalDate inicioMes = hoy.withDayOfMonth(1);
 
         long totalSocios      = socioRepo.countByActivoTrue();
-        long membresiasActivas = membresiaRepo.findByEstadoMembresia(EstadoMembresia.ACTIVA).size();
-        long membresiasVencidas = membresiaRepo.findByEstadoMembresia(EstadoMembresia.VENCIDA).size();
+        long membresiasActivas = membresiaRepo.countByEstadoMembresia(EstadoMembresia.ACTIVA);
+        long membresiasVencidas = membresiaRepo.countByEstadoMembresia(EstadoMembresia.VENCIDA);
 
         // Total recaudado este mes (pagos COMPLETADOS)
-        double recaudadoMes = pagoRepo.findAll().stream()
-                .filter(p -> p.getEstadoPago() == EstadoPago.COMPLETADO)
-                .filter(p -> !p.getFechaPago().toLocalDate().isBefore(inicioMes))
-                .mapToDouble(p -> p.getMonto().doubleValue())
-                .sum();
+        double recaudadoMes = pagoRepo.totalCompletadoEntre(inicioMes.atStartOfDay(), hoy.plusDays(1).atStartOfDay()).doubleValue();
 
         long asistentesHoy = asistenciaRepo.countSociosHoy(hoy);
 
@@ -89,18 +85,11 @@ public class ReporteController {
         // Simplificado: retorna totales de los últimos N meses
         LocalDate desde = LocalDate.now().minusMonths(meses).withDayOfMonth(1);
 
-        var pagos = pagoRepo.findAll().stream()
-                .filter(p -> p.getEstadoPago() == EstadoPago.COMPLETADO)
-                .filter(p -> !p.getFechaPago().toLocalDate().isBefore(desde))
-                .toList();
-
-        // Agrupar por mes y devolver como lista ordenada [ {mes, total} ]
-        var porMes = pagos.stream().collect(
-                java.util.stream.Collectors.groupingBy(
-                        p -> p.getFechaPago().getYear() + "-" + String.format("%02d", p.getFechaPago().getMonthValue()),
-                        java.util.stream.Collectors.summingDouble(p -> p.getMonto().doubleValue())
-                )
-        );
+        // Sumado por mes en la base
+        Map<String, Double> porMes = new TreeMap<>();
+        for (Object[] f : pagoRepo.totalesPorMes(desde.atStartOfDay())) {
+            porMes.put(f[0] + "-" + String.format("%02d", ((Number) f[1]).intValue()), ((Number) f[2]).doubleValue());
+        }
 
         var lista = porMes.entrySet().stream()
                 .sorted(java.util.Map.Entry.comparingByKey())
@@ -232,14 +221,14 @@ public class ReporteController {
             @RequestParam(defaultValue = "14") int dias) {
         LocalDate desde = LocalDate.now().minusDays(dias);
 
+        Map<Long, LocalDate> ultimas = new java.util.HashMap<>();
+        for (Object[] f : asistenciaRepo.ultimaVisitaPorSocio(false)) ultimas.put((Long) f[0], (LocalDate) f[1]);
         var resultado = socioRepo.findActivosSinAsistenciaDesde(desde)
                 .stream()
                 .map(s -> {
-                    // Buscar la última asistencia del socio (si existe alguna anterior)
-                    var historial = asistenciaRepo.findBySocioIdOrderByFechaDescHoraDesc(s.getId());
-                    String ultimaAsistencia = historial.isEmpty()
-                            ? "Nunca"
-                            : historial.get(0).getFecha().toString();
+                    // Última asistencia de cada socio (una sola consulta para todos)
+                    LocalDate ultima = ultimas.get(s.getId());
+                    String ultimaAsistencia = ultima == null ? "Nunca" : ultima.toString();
                     Map<String, Object> item = new java.util.LinkedHashMap<>();
                     item.put("socioId",           s.getId());
                     item.put("nombre",            s.getNombre() + " " + s.getApellido());

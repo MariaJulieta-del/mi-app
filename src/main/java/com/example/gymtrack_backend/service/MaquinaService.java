@@ -20,7 +20,7 @@ public class MaquinaService {
 
     public Maquina obtener(Long id) {
         return repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Máquina no encontrada: " + id));
+                .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Máquina no encontrada: " + id));
     }
 
     @Transactional

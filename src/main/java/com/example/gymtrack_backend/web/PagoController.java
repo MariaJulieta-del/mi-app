@@ -23,20 +23,23 @@ public class PagoController {
     // GET /api/v1/pagos → listar todos
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<PagoResponseDTO>> listar() {
-        return ResponseEntity.ok(pagoService.listarTodos());
+    public ResponseEntity<List<PagoResponseDTO>> listar(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate desde,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate hasta) {
+        return ResponseEntity.ok(pagoService.listar(desde, hasta));
     }
 
     // POST /api/v1/pagos/con-membresia → cobra un plan: crea o renueva la membresía del socio (admin y profesor)
     @PostMapping("/con-membresia")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<?> registrarConMembresia(
-            @Valid @RequestBody PagoConMembresiaRequestDTO dto) {
+            @Valid @RequestBody PagoConMembresiaRequestDTO dto,
+            @RequestHeader(value = "Idempotency-Key", required = false) String clave) {
         try {
-            return ResponseEntity.ok(pagoService.registrarConMembresia(dto));
+            return ResponseEntity.ok(pagoService.registrarConMembresia(dto, clave));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(
-                java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Error al registrar el pago")
+                java.util.Map.of("error", com.example.gymtrack_backend.web.Errores.mensaje(e))
             );
         }
     }
@@ -46,10 +49,6 @@ public class PagoController {
     @GetMapping("/membresia/{membresiaId}")
     public ResponseEntity<List<PagoResponseDTO>> porMembresia(
             @PathVariable Long membresiaId) {
-        try {
-            return ResponseEntity.ok(pagoService.obtenerPorMembresia(membresiaId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(pagoService.obtenerPorMembresia(membresiaId));
     }
 }
