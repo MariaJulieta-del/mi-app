@@ -44,7 +44,7 @@ export function PlanesVendidos() {
       {!planes && !error && <Skeleton alto={120} />}
       {planes && planes.length === 0 && <div className="gt-empty">No hubo cobros en el período.</div>}
       {planes && planes.length > 0 && (
-        <div className="gt-planes">
+        <div className="gt-planes-vendidos">
           {visibles.map((p, i) => {
             const detalle = (
               <>

@@ -1606,7 +1606,7 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
    ============================================================ */
 .gt-socios-lista { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
 .gt-socios-fila {
-  display: grid; grid-template-columns: minmax(200px, 2fr) minmax(160px, 1.4fr) minmax(130px, 1fr) 90px auto;
+  display: grid; grid-template-columns: minmax(200px, 2fr) minmax(160px, 1.4fr) minmax(130px, 1fr) 90px 196px;
   gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--border-light);
 }
 .gt-socios-fila:hover:not(.gt-socios-cab) { background: var(--bg-surface-2); }
@@ -2339,7 +2339,7 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 /* ── Planes más vendidos ── */
 .gt-reporte-mitades { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
 @media (max-width: 860px) { .gt-reporte-mitades { grid-template-columns: minmax(0, 1fr); } }
-.gt-planes { display: flex; flex-direction: column; gap: 4px; }
+.gt-planes-vendidos { display: flex; flex-direction: column; gap: 4px; }
 .gt-plan-fila { display: grid; grid-template-columns: minmax(80px, 34%) minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px; border-radius: 8px; }
 .gt-plan-fila:hover { background: var(--bg-surface-2); }
 .gt-plan-nombre { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2399,3 +2399,41 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-backup-estado.atrasada { background: var(--yellow-bg); color: var(--yellow-text); }
 .gt-backup-estado svg { flex-shrink: 0; margin-top: 2px; }
 .gt-aviso.cuota { border-left-color: #D97706; }
+
+/* ── Notificaciones: sin espacios de más ── */
+.gt-avisos > .gt-card { margin-bottom: 0; }
+.gt-avisos-mas { align-self: center; margin-top: 4px; }
+@media (max-width: 640px) {
+  .gt-card { padding: 16px; }
+  .gt-aviso-nuevo .gt-form-group { margin-bottom: 12px; }
+}
+
+/* ── Historial de pases (perfil del socio) ── */
+.gt-hpases { margin-bottom: 20px; }
+.gt-hpases-actual { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; border-radius: 10px; font-size: 14px; background: var(--green-bg); color: var(--green-text); }
+.gt-hpases-actual.pocos { background: var(--yellow-bg); color: var(--yellow-text); }
+.gt-hpases-actual.agotado { background: var(--red-light); color: var(--red-text); }
+.gt-hpases-barra { height: 6px; border-radius: 3px; background: color-mix(in srgb, currentColor 18%, transparent); overflow: hidden; }
+.gt-hpases-barra > div { height: 100%; border-radius: 4px; background: currentColor; transition: width .3s; }
+.gt-hpases-ciclos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.gt-hpases-ciclo { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--bg-surface-2); color: var(--text-secondary); }
+.gt-hpases-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.gt-hpases-mov { display: grid; grid-template-columns: 28px 110px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 4px; border-top: 1px solid var(--border-light); font-size: 13px; }
+.gt-hpases-mov:first-child { border-top: none; }
+.gt-hpases-icono { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--green-bg); color: var(--green-text); }
+.gt-hpases-mov.faltazo .gt-hpases-icono { background: var(--red-light); color: var(--red); }
+.gt-hpases-mov.denegado .gt-hpases-icono, .gt-hpases-mov.sin-pase .gt-hpases-icono { background: var(--bg-surface-2); color: var(--text-muted); }
+.gt-hpases-fecha { font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+.gt-hpases-fecha small { display: block; font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.gt-hpases-detalle { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
+.gt-hpases-efecto { font-size: 12px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+.gt-hpases-mov:not(.sin-pase) .gt-hpases-efecto { color: var(--text-primary); }
+.gt-hpases-mov.faltazo .gt-hpases-efecto { color: var(--red); }
+@media (max-width: 480px) {
+  .gt-hpases-mov { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: "icono fecha efecto" "icono detalle detalle"; row-gap: 2px; }
+  .gt-hpases-icono { grid-area: icono; align-self: start; }
+  .gt-hpases-fecha { grid-area: fecha; }
+  .gt-hpases-fecha small { display: inline; margin-left: 6px; }
+  .gt-hpases-efecto { grid-area: efecto; }
+  .gt-hpases-detalle { grid-area: detalle; font-size: 12px; }
+}

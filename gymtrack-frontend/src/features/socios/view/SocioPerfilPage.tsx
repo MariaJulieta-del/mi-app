@@ -13,6 +13,7 @@ import ProgresoSocio from '../../seguimiento/components/ProgresoSocio'
 import DisciplinasDelSocio from '../../disciplinas/components/DisciplinasDelSocio'
 import SocioInicio from '../components/SocioInicio'
 import AvisosSocio from '../components/AvisosSocio'
+import HistorialPases from '../components/HistorialPases'
 import RutinaCard from '../../rutinas/components/RutinaCard'
 import { linkEditarRutina } from '../../rutinas/utils/rutinaUtils'
 import { CargandoPagina } from '../../../shared/components/ui'
@@ -126,6 +127,9 @@ export default function SocioPerfilPage() {
           )}
         </>
       )} />
+
+      {/* ── Pases: cuántos le quedan y cuándo los usó ── */}
+      <HistorialPases socioId={id!} esSocio={esSocio} />
 
       {/* ── Mi semana ── */}
       {rutinas.length > 0 && (

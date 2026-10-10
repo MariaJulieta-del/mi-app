@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Archive, Bell, CalendarDays, Mail, MessageCircle, Search, Send, Smartphone, UserRound, Users, X,
 } from 'lucide-react'
@@ -16,8 +17,12 @@ function aQuien(n: Notificacion) {
   return { icono: UserRound, texto: n.socioNombre ?? `Socio #${n.socioId}` }
 }
 
+/** Avisos que se muestran de entrada en el historial (el resto con "Ver más") */
+const POR_TANDA = 10
+
 export default function NotificacionesPage() {
   const n = useNotificaciones()
+  const [mostrar, setMostrar] = useState(POR_TANDA)
   const mailListo = !!n.canales?.email
 
   return (
@@ -149,7 +154,7 @@ export default function NotificacionesPage() {
               texto={!n.verArchivadas && !n.filtroTipo && !n.busqueda ? 'Escribí el primero a la izquierda: le llega a cada socio en su app.' : undefined} />
           ) : (
             <div className="gt-avisos-lista">
-              {n.listaVer.map(a => {
+              {n.listaVer.slice(0, mostrar).map(a => {
                 const q = aQuien(a)
                 return (
                   <article key={a.id} className="gt-aviso">
@@ -174,6 +179,11 @@ export default function NotificacionesPage() {
                   </article>
                 )
               })}
+              {n.listaVer.length > mostrar && (
+                <button type="button" className="gt-btn gt-btn-secondary gt-avisos-mas" onClick={() => setMostrar(m => m + POR_TANDA * 2)}>
+                  Ver más ({n.listaVer.length - mostrar} {n.listaVer.length - mostrar === 1 ? 'aviso' : 'avisos'})
+                </button>
+              )}
             </div>
           )}
         </section>

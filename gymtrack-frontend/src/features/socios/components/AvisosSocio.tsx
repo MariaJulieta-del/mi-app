@@ -48,7 +48,7 @@ export default function AvisosSocio() {
   const visibles = verTodos ? avisos : avisos.slice(0, 3)
 
   return (
-    <div className="gt-card gt-avisos" style={{ marginBottom: 16 }}>
+    <div className="gt-card gt-avisos-socio" style={{ marginBottom: 16 }}>
       <p className="gt-card-title" style={{ margin: '0 0 8px' }}>
         🔔 Avisos del gimnasio {nuevos > 0 && <span className="gt-badge gt-badge-green" style={{ marginLeft: 6 }}>{nuevos} {nuevos === 1 ? 'nuevo' : 'nuevos'}</span>}
       </p>
