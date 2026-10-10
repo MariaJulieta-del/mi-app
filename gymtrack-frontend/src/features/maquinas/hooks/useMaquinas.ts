@@ -1,9 +1,8 @@
 import { mensajeError } from '../../../shared/utils/errores'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import type { Maquina } from '../types/Maquina'
 import { fechaLocalISO } from '../../../shared/utils/fechas'
 import type { Ejercicio } from '../../ejercicios/services/ejercicioService'
-import type { CatalogMaquina } from '../assets/maquinasCatalog'
 import type { MaquinaEstadisticas } from '../types/Mantenimiento'
 import {
   listarMaquinas, crearMaquina, actualizarMaquina,
@@ -42,8 +41,6 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
   const [loadingStats, setLoadingStats] = useState<number | null>(null)
 
   // Catálogo helpers
-  const [guardandoCat, setGuardandoCat] = useState<string | null>(null)
-  const [catError, setCatError] = useState<string | null>(null)
 
   // Reportar mantenimiento rápido
   const [reportarId, setReportarId] = useState<number | null>(null)
@@ -127,10 +124,6 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
   const ejerciciosDe = (maquinaId: number): Ejercicio[] =>
     ejercicios.filter(e => e.activo !== false && (e.maquinaIds ?? []).includes(maquinaId))
 
-  const nombresGuardados = useMemo(
-    () => new Set(maquinas.map(m => m.nombre.toLowerCase())),
-    [maquinas]
-  )
 
   const filtradas = maquinas.filter(m => {
     if (!verInactivas && !m.activa) return false
@@ -209,31 +202,10 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
     }
   }
 
-  const guardarDeCatalogo = async (cat: CatalogMaquina) => {
-    setGuardandoCat(cat.id)
-    setCatError(null)
-    try {
-      await crearMaquina({
-        nroMaquina: '',
-        nombre: cat.nombre,
-        descripcion: cat.descripcion,
-        grupos: [...cat.grupos],
-        instruccionesUso: cat.instruccionesUso,
-        ajustes: cat.ajustes,
-        activa: true,
-      })
-      setMsg(`"${cat.nombre}" guardada en Mis máquinas.`)
-      await cargar()
-    } catch (e: unknown) {
-      setCatError(mensajeError(e, 'Error al guardar'))
-    } finally {
-      setGuardandoCat(null)
-    }
-  }
 
   return {
     // data
-    maquinas, ejercicios, filtradas, nombresGuardados, cargando, ejerciciosDe,
+    maquinas, ejercicios, filtradas, cargando, ejerciciosDe,
     // filtros
     busqueda, setBusqueda, filtroGrupo, setFiltroGrupo,
     verInactivas, setVerInactivas,
@@ -242,8 +214,6 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
     msg, setMsg, error, setError,
     // expand
     expandedId, statsCache, loadingStats,
-    // catalogo
-    guardandoCat, catError, setCatError,
     // reportar
     reportarId, reportarTipo, setReportarTipo, reportarDesc, setReportarDesc,
     reportarCosto, setReportarCosto,
@@ -252,6 +222,6 @@ export function useMaquinas(onMantenimientoCreado?: () => void) {
     // handlers
     cargar, abrirNuevo, abrirEditar, cancelar, guardar,
     toggleActiva, eliminar, toggleExpand, toggleGrupoForm,
-    ejerciciosCompatibles, guardarDeCatalogo,
+    ejerciciosCompatibles,
   }
 }

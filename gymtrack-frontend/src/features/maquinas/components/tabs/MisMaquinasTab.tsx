@@ -18,7 +18,7 @@ const FILTROS: { valor: FiltroMaquinas; texto: string }[] = [
 ]
 
 /** Las máquinas del gimnasio en tarjetas, con búsqueda y filtros */
-export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onAbrir, onIrCatalogo, onToggleActiva, onEliminar }: {
+export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onAbrir, onToggleActiva, onEliminar }: {
   maq: ReturnType<typeof useMaquinas>
   pendientes: Map<number, Mantenimiento[]>
   filtro: FiltroMaquinas
@@ -26,7 +26,6 @@ export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onA
   onAbrir: (id: number) => void
   onToggleActiva: (m: Maquina) => void
   onEliminar: (m: Maquina) => void
-  onIrCatalogo: () => void
 }) {
   const [grupo, setGrupo] = useState('')
 
@@ -61,11 +60,8 @@ export default function MisMaquinasTab({ maq, pendientes, filtro, setFiltro, onA
     return (
       <div className="gt-card">
         <EmptyState icono={Cog} titulo="Todavía no cargaste máquinas"
-          texto="Agregalas desde el catálogo (ya vienen con músculos e instrucciones) o creá una nueva."
-          accion={<div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className="gt-btn gt-btn-primary" onClick={onIrCatalogo}>Ver catálogo</button>
-            <button type="button" className="gt-btn gt-btn-secondary" onClick={maq.abrirNuevo}>Crear una</button>
-          </div>} />
+          texto="Cargá cada máquina con su número, los músculos que trabaja y cómo se usa."
+          accion={<button type="button" className="gt-btn gt-btn-primary" onClick={maq.abrirNuevo}>Cargar la primera</button>} />
       </div>
     )
   }

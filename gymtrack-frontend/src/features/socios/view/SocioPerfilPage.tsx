@@ -203,7 +203,8 @@ export default function SocioPerfilPage() {
 
       {/* ── Progreso: cargas y asistencia ── */}
       <div className="gt-mt-16">
-        <ProgresoSocio socioId={Number(id)} titulo={esSocio ? 'Mi progreso' : 'Progreso del socio'} />
+        <ProgresoSocio socioId={Number(id)} titulo={esSocio ? 'Mi progreso' : 'Progreso del socio'}
+          objetivoDias={Math.max(0, ...rutinas.map(r => r.diasSemana?.length ?? 0)) || null} />
       </div>
 
       <ConfirmModal

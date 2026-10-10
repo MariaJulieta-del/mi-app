@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BookOpen, Cog, Plus, Wrench } from 'lucide-react'
+import { Cog, Plus, Wrench } from 'lucide-react'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { PageHeader, Resumen, Segmentado } from '../../../shared/components/ui'
 import { useToast } from '../../../shared/hooks/useToast'
 import { useMaquinas } from '../hooks/useMaquinas'
 import { useMantenimientos } from '../hooks/useMantenimientos'
-import CatalogoMaquinasTab from '../components/tabs/CatalogoMaquinasTab'
 import MisMaquinasTab, { type FiltroMaquinas } from '../components/tabs/MisMaquinasTab'
 import MantenimientoTab from '../components/tabs/MantenimientoTab'
 import MaquinaFormModal from '../components/MaquinaFormModal'
@@ -15,13 +14,12 @@ import MantenimientoFormModal from '../components/MantenimientoFormModal'
 import { estadoMaquina, pendientesPorMaquina } from '../utils/estadoMaquina'
 import type { Maquina } from '../types/Maquina'
 
-type Tab = 'mis' | 'mantenimiento' | 'catalogo'
+type Tab = 'mis' | 'mantenimiento'
 
-/** Qué es cada solapa (para que no se confundan "Mis máquinas" y el catálogo) */
+/** Qué muestra cada solapa */
 const AYUDA_TAB: Record<Tab, string> = {
   mis: 'Las máquinas que tiene tu gimnasio: con su número, estado y los ejercicios que se hacen en cada una. Son las que aparecen al armar rutinas.',
   mantenimiento: 'Fallas reportadas, revisiones y arreglos hechos, con lo que costó cada uno.',
-  catalogo: 'Modelos de máquinas comunes ya descriptos (grupos musculares, uso y ajustes). No son tuyas: elegí las que tenés y se suman a "Mis máquinas" para no cargarlas a mano.',
 }
 
 /**
@@ -91,21 +89,16 @@ export default function MaquinasPage() {
         <Segmentado etiqueta="Sección" valor={tab} onChange={setTab} opciones={[
           { valor: 'mis', texto: 'Mis máquinas', icono: Cog, cuenta: maq.cargando ? undefined : activas.length },
           { valor: 'mantenimiento', texto: 'Mantenimiento', icono: Wrench, cuenta: mant.mantCargando ? undefined : mant.mantenimientos.filter(m => m.tipo === 'PENDIENTE').length },
-          { valor: 'catalogo', texto: 'Agregar del catálogo', icono: BookOpen },
         ]} />
         <p className="gt-tab-ayuda">{AYUDA_TAB[tab]}</p>
       </div>
 
       {tab === 'mis' && (
         <MisMaquinasTab maq={maq} pendientes={pendientes} filtro={filtro} setFiltro={setFiltro}
-          onAbrir={setDetalleId} onIrCatalogo={() => setTab('catalogo')} onToggleActiva={pedirToggle} onEliminar={pedirEliminar} />
+          onAbrir={setDetalleId} onToggleActiva={pedirToggle} onEliminar={pedirEliminar} />
       )}
       {tab === 'mantenimiento' && (
         <MantenimientoTab mant={mant} maquinas={maq.maquinas} onEliminar={id => mant.setConfirmarEliminarMantId(id)} />
-      )}
-      {tab === 'catalogo' && (
-        <CatalogoMaquinasTab maquinas={maq.maquinas} guardandoCat={maq.guardandoCat}
-          catError={maq.catError} setCatError={maq.setCatError} onGuardar={maq.guardarDeCatalogo} />
       )}
 
       {/* Ventanas */}

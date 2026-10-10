@@ -2437,3 +2437,39 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
   .gt-hpases-efecto { grid-area: efecto; }
   .gt-hpases-detalle { grid-area: detalle; font-size: 12px; }
 }
+
+/* ── Progreso del socio: días por semana y cargas ── */
+.gt-semanas-resumen { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.gt-semanas-resumen strong { color: var(--text-primary); }
+.gt-semanas-grafico { position: relative; height: 130px; display: flex; align-items: flex-end; gap: 6px; border-bottom: 1px solid var(--border); padding-top: 18px; }
+.gt-semana { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; outline: none; cursor: default; }
+.gt-semana-valor { font-size: 11px; font-weight: 700; color: var(--text-secondary); line-height: 1; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.gt-semana-barra { width: 100%; max-width: 34px; border-radius: 5px 5px 0 0; background: color-mix(in srgb, var(--accent) 55%, transparent); transition: height .3s, background .15s; }
+.gt-semana.ok .gt-semana-barra { background: var(--accent); }
+.gt-semana.actual .gt-semana-barra { background: repeating-linear-gradient(135deg, var(--accent) 0 4px, color-mix(in srgb, var(--accent) 45%, transparent) 4px 8px); }
+.gt-semana:hover .gt-semana-barra, .gt-semana:focus-visible .gt-semana-barra { background: var(--accent-hover); }
+.gt-semana:focus-visible .gt-semana-valor { color: var(--accent); }
+.gt-semanas-objetivo { position: absolute; left: 0; right: 0; border-top: 1.5px dashed var(--yellow-text); pointer-events: none; }
+.gt-semanas-objetivo span { position: absolute; left: 0; top: -15px; font-size: 10px; font-weight: 700; color: var(--yellow-text); background: var(--bg-surface); padding: 0 4px; }
+.gt-semanas-ejes { display: flex; gap: 6px; margin-top: 4px; }
+.gt-semanas-ejes span { flex: 1; min-width: 0; text-align: center; font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+.gt-semanas-ejes span:last-child { font-weight: 700; color: var(--text-secondary); }
+
+.gt-progreso-ej { display: flex; flex-direction: column; gap: 4px; }
+.gt-progreso-ej-cab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.gt-progreso-ej-cab strong { font-size: 14px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gt-progreso-ej-peso { font-size: 16px; font-weight: 800; color: var(--text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gt-progreso-ej-dif { font-size: 12px; color: var(--text-secondary); }
+.gt-progreso-ej-dif .sube, .gt-progreso-ej-dif .baja { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
+.gt-progreso-ej-dif .sube { color: var(--green-text); }
+.gt-progreso-ej-dif .baja { color: var(--red); }
+.gt-carga { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 70px auto; column-gap: 8px; margin-top: 6px; }
+.gt-carga-escala { grid-row: 1; display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; color: var(--text-muted); text-align: right; padding: 4px 0; font-variant-numeric: tabular-nums; }
+.gt-carga-grafico { grid-row: 1; grid-column: 2; position: relative; border-left: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+.gt-carga-grafico svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.gt-carga-linea { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.gt-carga-area { fill: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gt-carga-punto { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--bg-surface); border: 2px solid var(--accent); outline: none; cursor: default; }
+.gt-carga-punto.ultimo { background: var(--accent); }
+.gt-carga-punto:hover, .gt-carga-punto:focus-visible { transform: scale(1.4); background: var(--accent); }
+.gt-carga-fechas { grid-column: 2; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 3px; }
