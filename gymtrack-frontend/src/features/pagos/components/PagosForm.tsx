@@ -64,7 +64,7 @@ export default function PagosForm() {
 
         {/* ── 1. Socio ── */}
         <div className="gt-step-section">
-          <label className="gt-label">1. ¿A quién le cobrás?</label>
+          <span className="gt-label">1. ¿A quién le cobrás?</span>
           {f.socioSel ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 8 }}>
               <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{f.socioSel.nombre} {f.socioSel.apellido}</span>
@@ -97,7 +97,7 @@ export default function PagosForm() {
 
         {f.socioSel && (
           <div className="gt-step-section">
-            <label className="gt-label">Estado actual</label>
+            <span className="gt-label">Estado actual</span>
             {f.cargandoMembresia ? <p className="gt-text-muted">Cargando membresía…</p> : <MembresiaResumen m={f.membresiaActual} />}
           </div>
         )}
@@ -105,7 +105,7 @@ export default function PagosForm() {
         {/* ── 2. Plan ── */}
         {f.socioSel && (
           <div className="gt-step-section">
-            <label className="gt-label">2. Elegí el plan</label>
+            <span className="gt-label">2. Elegí el plan</span>
             <div className="gt-option-grid">
               {f.planes.map(p => (
                 <button key={p.tipo} type="button" onClick={() => f.setPlanSel(p)}
@@ -123,7 +123,7 @@ export default function PagosForm() {
         {/* ── 3. Método ── */}
         {f.planSel && (
           <div className="gt-step-section">
-            <label className="gt-label">3. ¿Cómo paga?</label>
+            <span className="gt-label">3. ¿Cómo paga?</span>
             <div className="gt-option-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
               {METODOS.map(m => (
                 <button key={m.value} type="button" onClick={() => f.setMetodo(m.value)}
@@ -152,8 +152,8 @@ export default function PagosForm() {
               </div>
             )}
             <div className="gt-form-group" style={{ marginTop: 12, maxWidth: 480 }}>
-              <label className="gt-label">Observaciones (opcional)</label>
-              <input className="gt-input" value={f.observaciones} onChange={e => f.setObservaciones(e.target.value)}
+              <label className="gt-label" htmlFor="pagosform-campo-1">Observaciones (opcional)</label>
+              <input id="pagosform-campo-1" className="gt-input" value={f.observaciones} onChange={e => f.setObservaciones(e.target.value)}
                 placeholder="Ej: comprobante #123" />
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function PagosForm() {
         {/* ── 4. Resumen ── */}
         {f.listo && f.preview && (
           <div className="gt-step-section" style={{ padding: 16, background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 10 }}>
-            <label className="gt-label">4. Revisá y confirmá</label>
+            <span className="gt-label">4. Revisá y confirmá</span>
             <p style={{ margin: '0 0 6px', color: 'var(--text-secondary)' }}>
               {f.preview.esRenovacion ? 'Renovás' : 'Activás'} la membresía de <strong>{f.socioSel!.nombre} {f.socioSel!.apellido}</strong> con
               el <strong>{f.planSel!.nombre}</strong> ({textoPases(f.planSel!.pasesMensuales)}).

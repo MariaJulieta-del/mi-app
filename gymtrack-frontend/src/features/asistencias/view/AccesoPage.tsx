@@ -20,8 +20,8 @@ export default function AccesoPage() {
           <p className="gt-card-title">Registrar ingreso</p>
           <form onSubmit={a.handleCheckin}>
             <div className="gt-form-group" style={{ marginBottom: 16 }}>
-              <label className="gt-label">DNI o ID del socio</label>
-              <input ref={inputRef} className="gt-input" value={a.busqueda} onChange={e => a.setBusqueda(e.target.value)}
+              <label className="gt-label" htmlFor="accesopage-campo-1">DNI o ID del socio</label>
+              <input id="accesopage-campo-1" ref={inputRef} className="gt-input" value={a.busqueda} onChange={e => a.setBusqueda(e.target.value)}
                 placeholder="Ej: 38.112.445 o 7" autoFocus style={{ fontSize: 18, padding: '10px 12px', letterSpacing: 1 }} />
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" disabled={a.loading}

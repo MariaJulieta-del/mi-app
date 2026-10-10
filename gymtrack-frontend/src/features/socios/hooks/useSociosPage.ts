@@ -1,61 +1,72 @@
 import { mensajeError } from '../../../shared/utils/errores'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { textoPases } from '../../membresias/types/Tarifa'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Socio } from '../types/Socio'
 import {
-  obtenerConInactivos, actualizarSocio, darDeBaja, listarBajas, type BajaSocio,
-  reactivarSocio, eliminarPermanente, altaSocioCompleta, generarPinesPendientes, type PinGenerado,
+  actualizarSocio, darDeBaja, reactivarSocio, altaSocioCompleta, generarPinesPendientes, buscarSocios,
+  type PinGenerado, type PaginaSocios, type FiltrosSocios,
 } from '../services/socioService'
 import type { AltaSocioRequestDTO } from '../services/socioService'
-import { listarMembresias } from '../../membresias/services/membresiaService'
 import { useToast } from '../../../shared/hooks/useToast'
 
-const POR_PAGINA = 20
+export const POR_PAGINA = 20
 
+type Vista = NonNullable<FiltrosSocios['vista']>
+type FiltroMem = '' | 'VENCIDA' | 'SIN_MEMBRESIA'
+export type Orden = NonNullable<FiltrosSocios['orden']>
+
+/**
+ * Pantalla de Socios: la búsqueda, los filtros, el orden y la paginación los resuelve el servidor
+ * (antes se traían todos los socios y todas las membresías en cada carga).
+ */
 export function useSociosPage() {
   const toast = useToast()
-  const [socios, setSocios] = useState<Socio[]>([])
-  const [membresiaMap, setMembresiaMap] = useState<Map<number, string>>(new Map())
+  const [datos, setDatos] = useState<PaginaSocios | null>(null)
   const [socioEditar, setSocioEditar] = useState<Socio | null>(null)
   const [error, setError] = useState('')
-  /** Qué socios se listan */
-  const [vista, setVista] = useState<'activos' | 'inactivos' | 'todos'>('activos')
-  /** Filtro por estado de la membresía (solo socios activos) */
-  const [filtroMem, setFiltroMem] = useState<'' | 'VENCIDA' | 'SIN_MEMBRESIA'>('')
-  const [cargando, setCargando] = useState(true)
+  const [vista, setVista] = useState<Vista>('activos')
+  const [filtroMem, setFiltroMem] = useState<FiltroMem>('')
   const [busqueda, setBusqueda] = useState('')
-  const [confirmarEliminarId, setConfirmarEliminarId] = useState<number | null>(null)
+  /** La búsqueda se manda al servidor recién cuando se deja de escribir */
+  const [busquedaEnviada, setBusquedaEnviada] = useState('')
+  const [orden, setOrden] = useState<Orden>('apellido')
+  const [desc, setDesc] = useState(false)
+  const [pagina, setPagina] = useState(1)
+  const [recarga, setRecarga] = useState(0)
   /** Socio al que se le está por dar de baja (se pide el motivo) */
   const [socioBaja, setSocioBaja] = useState<Socio | null>(null)
-  /** Última baja de cada socio (para mostrar el motivo en la lista de inactivos) */
-  const [bajaPorSocio, setBajaPorSocio] = useState<Map<number, BajaSocio>>(new Map())
-  const [pagina, setPagina] = useState(1)
   /** PIN del socio recién dado de alta, para mostrarlo una sola vez */
   const [pinAlta, setPinAlta] = useState<{ nombre: string; dni: string; pin: string } | null>(null)
   const [pinesPendientes, setPinesPendientes] = useState<PinGenerado[] | null>(null)
   const [generandoPines, setGenerandoPines] = useState(false)
+  /** Operación en curso (evita dobles clics en guardar, dar de baja o reactivar) */
+  const [ocupado, setOcupado] = useState<number | 'editar' | null>(null)
+  const ocupadoRef = useRef(false)
 
-  const cargarSocios = () =>
-    Promise.all([obtenerConInactivos(), listarMembresias()])
-      .then(([sociosData, membresiasData]) => {
-        setSocios(sociosData)
-        // Cada socio tiene una sola membresía
-        setMembresiaMap(new Map(membresiasData.map(m => [m.socioId, m.estadoMembresia])))
-      })
-      .catch(() => setError('Error al cargar los socios'))
-      .finally(() => setCargando(false))
-      .then(() => listarBajas())
-      .then(bajas => {
-        if (!bajas) return
-        const m = new Map<number, BajaSocio>()
-        // Vienen de la más nueva a la más vieja: queda la última de cada socio
-        for (const b of bajas) if (b.socioId != null && !m.has(b.socioId)) m.set(b.socioId, b)
-        setBajaPorSocio(m)
-      })
-      .catch(() => { /* sin historial de bajas: la lista se ve igual */ })
+  useEffect(() => {
+    const t = setTimeout(() => { setBusquedaEnviada(busqueda.trim()); setPagina(1) }, 300)
+    return () => clearTimeout(t)
+  }, [busqueda])
 
-  useEffect(() => { cargarSocios() }, [])
+  // Una sola petición en vuelo: si cambia un filtro, la anterior se cancela y no pisa el resultado
+  useEffect(() => {
+    const ctrl = new AbortController()
+    buscarSocios({ q: busquedaEnviada, vista, membresia: filtroMem, orden, desc, pagina, tam: POR_PAGINA }, ctrl.signal)
+      .then(d => { setDatos(d); setError('') })
+      .catch(err => { if (!ctrl.signal.aborted) setError(mensajeError(err, 'Error al cargar los socios')) })
+    return () => ctrl.abort()
+  }, [busquedaEnviada, vista, filtroMem, orden, desc, pagina, recarga])
+
+  const recargar = useCallback(() => setRecarga(r => r + 1), [])
+
+  /** Ejecuta una operación una sola vez aunque se haga doble clic */
+  const unaVez = async (clave: number | 'editar', fn: () => Promise<void>) => {
+    if (ocupadoRef.current) return
+    ocupadoRef.current = true
+    setOcupado(clave)
+    try { await fn() } finally { ocupadoRef.current = false; setOcupado(null) }
+  }
 
   /** true si se registró (para cerrar la ventana de alta) */
   const handleAltaCompleta = async (data: AltaSocioRequestDTO): Promise<boolean> => {
@@ -64,91 +75,44 @@ export function useSociosPage() {
       toast.success('Socio registrado y cobrado',
         `${resp.nombre} ${resp.apellido} — activo hasta el ${formatFecha(resp.fechaVencimiento)} · ${textoPases(resp.pasesMensuales)}`)
       if (resp.pin) setPinAlta({ nombre: `${resp.nombre} ${resp.apellido}`, dni: resp.dni, pin: resp.pin })
-      setError(''); cargarSocios()
+      setError(''); recargar()
       return true
     } catch (err: unknown) {
-      const msg = mensajeError(err, 'Error al registrar el socio')
-      toast.error('Error al registrar', msg)
+      toast.error('Error al registrar', mensajeError(err, 'Error al registrar el socio'))
       return false
     }
   }
 
-  const handleEditar = async (socio: Socio) => {
+  const handleEditar = (socio: Socio) => unaVez('editar', async () => {
     if (!socioEditar?.id) return
     try {
       await actualizarSocio(socioEditar.id, socio)
       toast.success('Socio actualizado', `${socio.nombre} ${socio.apellido}`)
-      setSocioEditar(null); setError(''); cargarSocios()
-    } catch {
-      const msg = 'El DNI ya existe o hay un problema con los datos'
-      setError(msg); toast.error('Error al guardar', msg)
+      setSocioEditar(null); setError(''); recargar()
+    } catch (err: unknown) {
+      // El motivo real que manda el servidor (dato inválido, socio inexistente, etc.)
+      toast.error('No se pudo guardar', mensajeError(err, 'Revisá los datos e intentá de nuevo'))
     }
-  }
+  })
 
-  const handleEliminar = (id: number) => setSocioBaja(socios.find(s => s.id === id) ?? null)
+  const handleEliminar = (id: number) => setSocioBaja(datos?.items.find(s => s.id === id) ?? null)
 
-  const confirmarBaja = async (motivo: string, detalle: string) => {
+  const confirmarBaja = (motivo: string, detalle: string) => unaVez(socioBaja?.id ?? -1, async () => {
     if (!socioBaja?.id) return
     try {
       await darDeBaja(socioBaja.id, motivo, detalle.trim() || undefined)
       toast.success('Socio dado de baja', `${socioBaja.nombre} ${socioBaja.apellido}`)
       setSocioBaja(null)
-      cargarSocios()
+      recargar()
     } catch (err: unknown) {
       toast.error('Error', mensajeError(err, 'No se pudo dar de baja al socio'))
     }
-  }
+  })
 
-  const handleReactivar = async (id: number) => {
-    try { await reactivarSocio(id); toast.success('Socio reactivado correctamente'); cargarSocios() }
-    catch { toast.error('Error', 'No se pudo reactivar el socio') }
-  }
-
-  const confirmarEliminar = async () => {
-    if (confirmarEliminarId === null) return
-    const id = confirmarEliminarId
-    setConfirmarEliminarId(null)
-    try {
-      await eliminarPermanente(id)
-      toast.success('Socio eliminado', 'El socio y todos sus datos fueron eliminados permanentemente')
-      cargarSocios()
-    } catch (err: unknown) {
-      toast.error('Error al eliminar', mensajeError(err, 'No se pudo eliminar el socio'))
-    }
-  }
-
-  const sociosFiltrados = useMemo(() => socios.filter(s => {
-    const esInactivo = s.activo === false || s.estado === 'INACTIVO'
-    if (vista === 'activos' && esInactivo) return false
-    if (vista === 'inactivos' && !esInactivo) return false
-    if (filtroMem) {
-      const est = membresiaMap.get(s.id!) ?? 'SIN_MEMBRESIA'
-      if (filtroMem === 'SIN_MEMBRESIA' ? (est !== 'SIN_MEMBRESIA' && est !== 'CANCELADA') : est !== filtroMem) return false
-    }
-    if (!busqueda) return true
-    const q = busqueda.toLowerCase()
-    return s.nombre.toLowerCase().includes(q) || s.apellido.toLowerCase().includes(q) ||
-      s.dni.includes(q) || (s.email ?? '').toLowerCase().includes(q)
-  }), [socios, vista, filtroMem, membresiaMap, busqueda])
-
-  /** Cuántos activos hay por estado de membresía */
-  const porMembresia = useMemo(() => {
-    const c = { ACTIVA: 0, VENCIDA: 0, SIN_MEMBRESIA: 0 }
-    for (const s of socios) {
-      if (s.activo === false || s.estado === 'INACTIVO') continue
-      const est = membresiaMap.get(s.id!) ?? 'SIN_MEMBRESIA'
-      if (est === 'ACTIVA') c.ACTIVA++
-      else if (est === 'VENCIDA') c.VENCIDA++
-      else c.SIN_MEMBRESIA++
-    }
-    return c
-  }, [socios, membresiaMap])
-
-  const activos = useMemo(() => socios.filter(s => s.activo !== false && s.estado !== 'INACTIVO').length, [socios])
-  const inactivos = socios.length - activos
-  const totalPaginas = Math.max(1, Math.ceil(sociosFiltrados.length / POR_PAGINA))
-  const paginaActual = Math.min(pagina, totalPaginas)
-  const sociosPagina = sociosFiltrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA)
+  const handleReactivar = (id: number) => unaVez(id, async () => {
+    try { await reactivarSocio(id); toast.success('Socio reactivado'); recargar() }
+    catch (err: unknown) { toast.error('Error', mensajeError(err, 'No se pudo reactivar el socio')) }
+  })
 
   const handleGenerarPinesPendientes = async () => {
     setGenerandoPines(true)
@@ -157,15 +121,18 @@ export function useSociosPage() {
     finally { setGenerandoPines(false) }
   }
 
+  const ordenar = (o: Orden) => {
+    if (o === orden) setDesc(d => !d)
+    else { setOrden(o); setDesc(o === 'alta') }
+    setPagina(1)
+  }
+
   return {
     pinAlta, setPinAlta, pinesPendientes, setPinesPendientes, generandoPines, handleGenerarPinesPendientes,
-    socios, membresiaMap, socioEditar, setSocioEditar, error, setError,
-    vista, setVista, filtroMem, setFiltroMem, porMembresia, cargando, busqueda, setBusqueda,
-    confirmarEliminarId, setConfirmarEliminarId,
-    pagina, setPagina, POR_PAGINA,
-    sociosFiltrados, activos, inactivos, totalPaginas, paginaActual, sociosPagina,
+    datos, cargando: datos === null && !error, socioEditar, setSocioEditar, error, setError,
+    vista, setVista, filtroMem, setFiltroMem, busqueda, setBusqueda, orden, desc, ordenar,
+    pagina, setPagina, ocupado,
     handleAltaCompleta, handleEditar, handleEliminar, handleReactivar,
-    socioBaja, setSocioBaja, confirmarBaja, bajaPorSocio,
-    confirmarEliminar,
+    socioBaja, setSocioBaja, confirmarBaja,
   }
 }

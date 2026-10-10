@@ -80,9 +80,6 @@ export const reactivarSocio = async (id: number): Promise<Socio> => {
  const res = await axiosInstance.put(`${API}/${id}/reactivar`)
  return res.data
 }
-export const eliminarPermanente = async (id: number): Promise<void> => {
- await axiosInstance.delete(`${API}/${id}/permanente`)
-}
 
 /** Genera un PIN nuevo para el socio (se muestra una sola vez). Cierra sus sesiones anteriores. */
 export const generarPin = async (socioId: number): Promise<string> =>
@@ -96,3 +93,24 @@ export const generarPinesPendientes = async (): Promise<PinGenerado[]> =>
 /** El socio cambia su PIN; devuelve una sesión nueva (las anteriores dejan de valer) */
 export const cambiarMiPin = async (pinActual: string, pinNuevo: string) =>
   (await axiosInstance.post('/api/v1/auth/cambiar-pin', { pinActual, pinNuevo })).data
+
+/** Una fila del listado de socios (con lo justo de su membresía y su baja) */
+export interface SocioFila extends Socio {
+  id: number
+  estadoMembresia: 'ACTIVA' | 'VENCIDA' | 'CANCELADA' | 'PENDIENTE_PAGO' | null
+  vencimiento: string | null
+  motivoBaja: string | null
+  fechaBaja: string | null
+}
+export interface PaginaSocios {
+  items: SocioFila[]; total: number; pagina: number; paginas: number; tam: number
+  conteos: { activos: number; inactivos: number; alDia: number; vencidas: number; sinMembresia: number }
+}
+export interface FiltrosSocios {
+  q?: string; vista?: 'activos' | 'inactivos' | 'todos'; membresia?: '' | 'ACTIVA' | 'VENCIDA' | 'SIN_MEMBRESIA'
+  orden?: 'apellido' | 'nombre' | 'vencimiento' | 'alta'; desc?: boolean; pagina?: number; tam?: number
+}
+
+/** Listado paginado: búsqueda, filtros y orden los hace el servidor */
+export const buscarSocios = async (f: FiltrosSocios, signal?: AbortSignal): Promise<PaginaSocios> =>
+  (await axiosInstance.get(`${API}/buscar`, { params: f, signal })).data

@@ -101,8 +101,8 @@ export function CambiarPinModal({ onGuardar, onCerrar }: {
 
   const campo = (label: string, valor: string, set: (v: string) => void, auto = false) => (
     <div className="gt-form-group" style={{ marginBottom: 12 }}>
-      <label className="gt-label">{label}</label>
-      <CampoClave className="gt-input gt-pin-input" inputMode="numeric" autoComplete="off" maxLength={4}
+      <label className="gt-label" htmlFor="pinmodales-campo-1">{label}</label>
+      <CampoClave id="pinmodales-campo-1" className="gt-input gt-pin-input" inputMode="numeric" autoComplete="off" maxLength={4}
         value={valor} onChange={e => set(soloNumeros(e.target.value))} autoFocus={auto} />
     </div>
   )

@@ -28,7 +28,7 @@ export default function DashboardPage() {
         <Link to="/reportes" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>Ver reportes detallados →</Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div className="gt-dash-stats">
         <div className="gt-stat-card">
           <div className="gt-stat-number">{d.stats.totalSociosActivos}</div>
           <div className="gt-stat-label">Socios registrados</div>
@@ -54,7 +54,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="gt-dash-membresias">
         {[
           { label: 'Activas',         val: d.stats.membresiasActivas,   color: 'var(--green-text)',  bg: 'var(--green-bg)' },
           { label: `Vencen en ${d.diasFiltro} días`, val: d.proximas.length, color: 'var(--yellow-text)', bg: 'var(--yellow-bg)' },

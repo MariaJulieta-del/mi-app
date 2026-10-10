@@ -1,4 +1,5 @@
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
+import LimiteErrores from './shared/components/LimiteErrores'
 import { useState, lazy, Suspense } from 'react'
 import {
   Bell, CalendarCheck, CalendarDays, ChartColumn, TrendingUp, CircleUser, ClipboardList, Cog, Dumbbell, House, IdCard,
@@ -189,6 +190,7 @@ function Marca() {
 
 function AppLayout() {
   const { user } = useAuth()
+  const ubicacion = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [dark, setDark] = useTema()
 
@@ -196,47 +198,29 @@ function AppLayout() {
     <>
       <header className="gt-topbar">
         <Marca />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="gt-topbar-acciones">
           {user?.rol !== 'SOCIO' && (
-          <button
-            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
-            style={{
-              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
-              color: 'inherit', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
-              fontSize: 12, display: 'flex', alignItems: 'center', gap: 6,
-            }}
-            title="Buscar socio (Ctrl+K)"
-          >
-            <Search size={13} aria-hidden />
-            Buscar
-            <kbd className="gt-topbar-kbd" style={{ fontSize: 10, opacity: 0.75, background: 'rgba(0,0,0,0.2)', padding: '1px 4px', borderRadius: 3 }}>Ctrl+K</kbd>
-          </button>
+            <button type="button" className="gt-topbar-btn"
+              onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
+              title="Buscar socio (Ctrl+K)" aria-label="Buscar socio">
+              <Search size={14} aria-hidden />
+              <span className="gt-topbar-texto">Buscar</span>
+              <kbd className="gt-topbar-kbd">Ctrl+K</kbd>
+            </button>
           )}
-          {user?.rol !== 'SOCIO' && <button
-            className="gt-dark-toggle"
-            onClick={() => setDark(!dark)}
-            title={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-          >
-            {dark ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
-            <span>{dark ? 'Modo claro' : 'Modo oscuro'}</span>
-          </button>}
-          {user?.rol !== 'SOCIO' && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="gt-topbar-usuario" style={{ color: 'inherit', fontSize: 13, opacity: 0.9 }}>
-              {user?.username}
+          {user?.rol !== 'SOCIO' && (
+            <button type="button" className="gt-dark-toggle" onClick={() => setDark(!dark)}
+              title={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}>
+              {dark ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
+              <span>{dark ? 'Modo claro' : 'Modo oscuro'}</span>
+            </button>
+          )}
+          {user?.rol !== 'SOCIO' && (
+            <span className="gt-topbar-cuenta">
+              <span className="gt-topbar-usuario">{user?.username}</span>
+              <span className={`gt-topbar-rol ${user?.rol === 'ADMIN' ? 'admin' : 'profesor'}`}>{user?.rol}</span>
             </span>
-            <span style={{
-              background: user?.rol === 'ADMIN' ? 'var(--yellow-text)' : user?.rol === 'PROFESOR' ? '#3B82F6' : '#10B981',
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '2px 7px',
-              borderRadius: 20,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}>
-              {user?.rol}
-            </span>
-          </span>}
+          )}
         </div>
       </header>
 
@@ -247,6 +231,7 @@ function AppLayout() {
         {user?.rol === 'SOCIO' && <SocioNav />}
         <main className={`gt-content${user?.rol === 'SOCIO' ? ' gt-content-socio' : ' gt-content-staff'}`}>
           <SocioAppProvider>
+          <LimiteErrores reinicio={ubicacion.pathname}>
           <Suspense fallback={<CargandoPagina />}>
           <Routes>
             {/* ── Rutas SOCIO ── */}
@@ -302,6 +287,7 @@ function AppLayout() {
             )}
           </Routes>
           </Suspense>
+          </LimiteErrores>
           </SocioAppProvider>
         </main>
       </div>
@@ -316,7 +302,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         {/* Pantalla fija de recepción: usa su propio token, no la sesión de un usuario */}
-        <Route path="/kiosco" element={<Suspense fallback={null}><KioscoPage /></Suspense>} />
+        <Route path="/kiosco" element={<LimiteErrores completa><Suspense fallback={null}><KioscoPage /></Suspense></LimiteErrores>} />
         <Route
           path="/*"
           element={

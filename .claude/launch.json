@@ -32,6 +32,23 @@
         "--strictPort"
       ],
       "port": 5174
+    },
+    {
+      "name": "gymtrack-frontend-produccion",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "gymtrack-frontend",
+        "run",
+        "preview",
+        "--",
+        "--mode",
+        "prueba",
+        "--port",
+        "4174",
+        "--strictPort"
+      ],
+      "port": 4174
     }
   ]
 }

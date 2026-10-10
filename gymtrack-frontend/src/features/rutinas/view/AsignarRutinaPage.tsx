@@ -165,8 +165,8 @@ export default function AsignarRutinaPage() {
 
               {a.plantillaSel && (
                 <div style={{ marginTop: 18, padding: 16, borderRadius: 10, background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
-                  <label className="gt-label">Nombre de la rutina para {a.socio.nombre}</label>
-                  <input className="gt-input" style={{ maxWidth: 420 }} value={a.nombre} onChange={e => a.setNombre(e.target.value)} />
+                  <label className="gt-label" htmlFor="asignarrutinap-campo-1">Nombre de la rutina para {a.socio.nombre}</label>
+                  <input id="asignarrutinap-campo-1" className="gt-input" style={{ maxWidth: 420 }} value={a.nombre} onChange={e => a.setNombre(e.target.value)} />
                   <p className="gt-hint">Se crea una copia de "{a.plantillaSel.nombre}" para este socio. La plantilla original no cambia.</p>
                   <button className="gt-btn gt-btn-primary" style={{ marginTop: 12 }} onClick={a.asignar} disabled={a.asignando || !a.nombre.trim()}>
                     {a.asignando ? 'Asignando…' : `Asignar a ${a.socio.nombre}`}

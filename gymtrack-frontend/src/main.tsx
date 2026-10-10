@@ -5,8 +5,10 @@ import { AuthProvider } from './shared/context/AuthContext'
 import { MarcaProvider } from './shared/context/MarcaContext'
 import './index.css'
 import App from './App.tsx'
+import LimiteErrores from './shared/components/LimiteErrores'
 createRoot(document.getElementById('root')!).render(
  <StrictMode>
+ <LimiteErrores completa>
  <BrowserRouter>
  <MarcaProvider>
  <AuthProvider>
@@ -14,5 +16,6 @@ createRoot(document.getElementById('root')!).render(
  </AuthProvider>
  </MarcaProvider>
  </BrowserRouter>
+ </LimiteErrores>
  </StrictMode>,
 )

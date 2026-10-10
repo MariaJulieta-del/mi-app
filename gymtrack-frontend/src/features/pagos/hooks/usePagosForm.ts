@@ -1,12 +1,13 @@
 import { useAuth } from '../../../shared/context/AuthContext'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { Socio } from '../../socios/types/Socio'
 import type { Tarifa } from '../../membresias/types/Tarifa'
 import type { Membresia } from '../../membresias/types/Membresia'
 import type { MetodoPago } from '../types/Pago'
 import { registrarConMembresia } from '../services/pagoService'
-import { obtenerTodos, obtenerPorId } from '../../socios/services/socioService'
+import { obtenerPorId } from '../../socios/services/socioService'
+import { useBuscarSocios } from '../../../shared/hooks/useBuscarSocios'
 import { listarTarifas } from '../../membresias/services/tarifaService'
 import { obtenerPorSocio } from '../../membresias/services/membresiaService'
 import { useToast } from '../../../shared/hooks/useToast'
@@ -17,6 +18,9 @@ export const METODOS: { value: MetodoPago; label: string }[] = [
   { value: 'TARJETA',       label: '💳 Tarjeta' },
   { value: 'TRANSFERENCIA', label: '🔄 Transferencia' },
 ]
+
+/** Identificador único de un intento de cobro */
+const nuevaClave = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
 function sumarDias(iso: string, dias: number) {
   const d = new Date(iso + 'T00:00:00')
@@ -48,14 +52,12 @@ export function usePagosForm() {
   /** Cobro recién hecho: se muestra la pantalla de listo */
   const [hecho, setHecho] = useState<{ nombre: string; socioId: number; plan: string; monto: number; metodo: string; hasta: string | null; vuelto: number | null } | null>(null)
 
-  const [socios, setSocios] = useState<Socio[]>([])
   const [planes, setPlanes] = useState<Tarifa[]>([])
   const [busqueda, setBusqueda] = useState('')
   // Si no eligió plan, se sugiere el mismo que tiene ahora (renovación)
   const planSel = planElegido ?? (membresiaActual ? planes.find(p => p.tipo === membresiaActual.tipoMembresia) ?? null : null)
 
   useEffect(() => {
-    obtenerTodos().then(setSocios).catch(() => {})
     listarTarifas().then(t => setPlanes(t.filter(p => p.activo !== false))).catch(() => {})
     if (socioIdParam) {
       obtenerPorId(Number(socioIdParam)).then(seleccionarSocio).catch(() => {})
@@ -63,13 +65,8 @@ export function usePagosForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const sociosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase()
-    if (!q) return []
-    return socios.filter(s =>
-      s.nombre.toLowerCase().includes(q) || s.apellido.toLowerCase().includes(q) || s.dni.includes(q),
-    ).slice(0, 6)
-  }, [busqueda, socios])
+  // Búsqueda en el servidor (no se baja la lista entera de socios)
+  const sociosFiltrados = useBuscarSocios(busqueda, { tam: 6 }).resultados
 
   function seleccionarSocio(s: Socio) {
     setSocioSel(s); setBusqueda(''); setPlanSel(null); setError(null)
@@ -85,7 +82,15 @@ export function usePagosForm() {
   const cambiarSocio = () => { setSocioSel(null); setMembresiaActual(null); setPlanSel(null) }
 
   /** Dejar el formulario listo para el próximo cobro */
+  /** Clave de este intento de cobro: se renueva solo al empezar uno nuevo */
+  const claveCobro = useRef(nuevaClave())
+  /** Freno inmediato del doble clic (el estado tarda un render en deshabilitar el botón) */
+  const enviando = useRef(false)
+  // Si cambia el socio, el plan o el medio, es otro cobro: otra clave
+  useEffect(() => { claveCobro.current = nuevaClave() }, [socioSel?.id, planSel?.tipo, metodo])
+
   const nuevoCobro = () => {
+    claveCobro.current = nuevaClave()
     cambiarSocio(); setMetodo(null); setObservaciones(''); setPagaCon(''); setError(null); setHecho(null)
   }
 
@@ -107,6 +112,8 @@ export function usePagosForm() {
   const handleConfirmar = async () => {
     if (!listo) return
     if (vuelto != null && vuelto < 0) { setError('Lo que entrega es menos que el precio del plan'); return }
+    if (enviando.current) return
+    enviando.current = true
     setGuardando(true)
     try {
       await registrarConMembresia({
@@ -114,7 +121,7 @@ export function usePagosForm() {
         planTipo: planSel!.tipo,
         metodoPago: metodo!,
         observaciones: observaciones || undefined,
-      })
+      }, claveCobro.current)
       toast.success(preview?.esRenovacion ? 'Membresía renovada' : 'Plan cobrado',
         `${socioSel!.nombre} ${socioSel!.apellido} — ${planSel!.nombre}`)
       setHecho({
@@ -125,7 +132,7 @@ export function usePagosForm() {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       setError(msg ?? 'Error al registrar el pago')
       toast.error('Error al registrar', msg ?? 'Verificá los datos e intentá nuevamente')
-    } finally { setGuardando(false) }
+    } finally { setGuardando(false); enviando.current = false }
   }
 
   return {

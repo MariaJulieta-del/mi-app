@@ -1,7 +1,7 @@
 import { mensajeError } from '../utils/errores'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { obtenerTodos } from '../../features/socios/services/socioService'
+import { useBuscarSocios } from '../hooks/useBuscarSocios'
 import { registrarCheckin } from '../../features/asistencias/services/asistenciaService'
 import type { Socio } from '../../features/socios/types/Socio'
 
@@ -32,18 +32,12 @@ const ACCESO_CFG = {
 export default function CommandPalette() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [socios, setSocios] = useState<Socio[]>([])
   const [selected, setSelected] = useState(0)
   const [verificando, setVerificando] = useState<number | null>(null)
   const [accesoModal, setAccesoModal] = useState<AccesoResultado | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
-  // Load socios once when palette opens
-  useEffect(() => {
-    if (!open) return
-    obtenerTodos().then(setSocios).catch(() => {})
-  }, [open])
 
   // Ctrl+K / Cmd+K global listener
   useEffect(() => {
@@ -80,17 +74,8 @@ export default function CommandPalette() {
     return () => clearTimeout(t)
   }, [accesoModal])
 
-  const results = query.length >= 1
-    ? socios.filter(s => {
-        const q = query.toLowerCase()
-        return (
-          s.nombre.toLowerCase().includes(q) ||
-          s.apellido.toLowerCase().includes(q) ||
-          s.dni.includes(q) ||
-          (s.email ?? '').toLowerCase().includes(q)
-        )
-      }).slice(0, 8)
-    : []
+  // Búsqueda en el servidor (activos y dados de baja)
+  const results = useBuscarSocios(open ? query : '', { tam: 8, vista: 'todos' }).resultados
 
   const goTo = (socio: Socio) => {
     setOpen(false)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ChevronLeft, ChevronRight, Lock, Plus, Receipt, Trash2, Wallet } from 'lucide-react'
 import { obtenerResumen, cerrarCaja, cierresPendientes } from '../services/cierreCajaService'
 import { listarEgresos, registrarEgreso, eliminarEgreso } from '../services/egresoService'
@@ -49,10 +49,17 @@ export default function CajaDelDia({ fechaInicial, onVerPagos }: { fechaInicial?
   const [confirmar, setConfirmar] = useState(false)
   const [cerrando, setCerrando] = useState(false)
 
+  /** Último día pedido: si llega tarde la respuesta de otro día, se descarta (no se mezclan cajas) */
+  const diaPedido = useRef(fecha)
+
   const cargar = useCallback((dia: string) => {
+    diaPedido.current = dia
     Promise.all([obtenerResumen(dia), listarEgresos(dia, dia)])
-      .then(([r, g]) => { setResumen(r); setGastos(g); setError(null) })
-      .catch(() => setError('No se pudo cargar la caja de ese día'))
+      .then(([r, g]) => {
+        if (diaPedido.current !== dia || r.fecha !== dia) return
+        setResumen(r); setGastos(g); setError(null)
+      })
+      .catch(() => { if (diaPedido.current === dia) setError('No se pudo cargar la caja de ese día') })
     cierresPendientes().then(setPendientes).catch(() => {})
   }, [])
 

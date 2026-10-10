@@ -1,132 +1,106 @@
+import { Plus, X } from 'lucide-react'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useProfesores } from '../hooks/useProfesores'
-import { CargandoPagina } from '../../../shared/components/ui'
+import { CargandoPagina, PageHeader, Pill } from '../../../shared/components/ui'
 import CampoClave from '../../../shared/components/CampoClave'
+
+/** Campo con su etiqueta asociada (lector de pantalla y clic en la etiqueta) */
+function Campo({ id, etiqueta, children }: { id: string; etiqueta: string; children: React.ReactNode }) {
+  return (
+    <div className="gt-form-group">
+      <label className="gt-label" htmlFor={id}>{etiqueta}</label>
+      {children}
+    </div>
+  )
+}
 
 export default function ProfesoresPage() {
   const p = useProfesores()
 
   if (p.cargando) return <CargandoPagina resumen={false} filas={3} />
-  if (p.error) return <div className="gt-page"><p style={{ color: 'var(--red)' }}>{p.error}</p></div>
+  if (p.error) return <div className="gt-alert gt-alert-error" role="alert">{p.error}</div>
 
   return (
-    <div className="gt-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Profesores</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
-            {p.profesores.length} profesor{p.profesores.length !== 1 ? 'es' : ''} registrado{p.profesores.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <button className="gt-btn gt-btn-primary" onClick={() => p.setShowForm(v => !v)}>
-          {p.showForm ? 'Cancelar' : '+ Nuevo profesor'}
-        </button>
-      </div>
+    <>
+      <PageHeader titulo="Profesores"
+        subtitulo={`${p.profesores.length} profesor${p.profesores.length !== 1 ? 'es' : ''} registrado${p.profesores.length !== 1 ? 's' : ''}`}
+        acciones={<button type="button" className="gt-btn gt-btn-primary" onClick={() => p.setShowForm(v => !v)}>
+          {p.showForm ? <><X size={16} aria-hidden /> Cancelar</> : <><Plus size={16} aria-hidden /> Nuevo profesor</>}
+        </button>} />
 
       {p.showForm && (
-        <div className="gt-card" style={{ marginBottom: 20, padding: 20 }}>
-          <h3 style={{ margin: '0 0 14px', fontSize: 15 }}>Registrar nuevo profesor</h3>
+        <section className="gt-card gt-prof-form">
+          <h2 className="gt-card-title">Registrar nuevo profesor</h2>
           <form onSubmit={p.handleCrear}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <div>
-                <label className="gt-label">Nombre</label>
-                <input className="gt-input" value={p.nombre} onChange={e => p.setNombre(e.target.value)} placeholder="Juan" autoFocus />
-              </div>
-              <div>
-                <label className="gt-label">Apellido</label>
-                <input className="gt-input" value={p.apellido} onChange={e => p.setApellido(e.target.value)} placeholder="Pérez" />
-              </div>
-              <div>
-                <label className="gt-label">Teléfono</label>
-                <input className="gt-input" value={p.telefono} onChange={e => p.setTelefono(e.target.value)} placeholder="11 1234-5678" />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-              <div>
-                <label className="gt-label">Usuario *</label>
-                <input className="gt-input" value={p.username} onChange={e => p.setUsername(e.target.value)} placeholder="ej: jperez" required />
-              </div>
-              <div>
-                <label className="gt-label">Contraseña *</label>
-                <CampoClave className="gt-input" value={p.password} onChange={e => p.setPassword(e.target.value)} placeholder="Mín. 8, con letras y números" required />
-              </div>
-              <div>
-                <label className="gt-label">Email</label>
-                <input className="gt-input" type="email" value={p.email} onChange={e => p.setEmail(e.target.value)} placeholder="jperez@gym.com" />
-              </div>
-              <div>
-                <label className="gt-label">Especialidad</label>
-                <input className="gt-input" value={p.especialidad} onChange={e => p.setEspecialidad(e.target.value)} placeholder="ej: Musculación" />
-              </div>
+            <div className="gt-form-grid">
+              <Campo id="prof-nombre" etiqueta="Nombre"><input id="prof-nombre" className="gt-input" value={p.nombre} onChange={e => p.setNombre(e.target.value)} placeholder="Juan" autoFocus /></Campo>
+              <Campo id="prof-apellido" etiqueta="Apellido"><input id="prof-apellido" className="gt-input" value={p.apellido} onChange={e => p.setApellido(e.target.value)} placeholder="Pérez" /></Campo>
+              <Campo id="prof-tel" etiqueta="Teléfono"><input id="prof-tel" className="gt-input" value={p.telefono} onChange={e => p.setTelefono(e.target.value)} placeholder="11 1234-5678" /></Campo>
+              <Campo id="prof-usuario" etiqueta="Usuario *"><input id="prof-usuario" className="gt-input" value={p.username} onChange={e => p.setUsername(e.target.value)} placeholder="ej: jperez" required /></Campo>
+              <Campo id="prof-clave" etiqueta="Contraseña *"><CampoClave id="prof-clave" className="gt-input" value={p.password} onChange={e => p.setPassword(e.target.value)} placeholder="Mín. 8, con letras y números" required /></Campo>
+              <Campo id="prof-email" etiqueta="Email"><input id="prof-email" className="gt-input" type="email" value={p.email} onChange={e => p.setEmail(e.target.value)} placeholder="jperez@gym.com" /></Campo>
+              <Campo id="prof-esp" etiqueta="Especialidad"><input id="prof-esp" className="gt-input" value={p.especialidad} onChange={e => p.setEspecialidad(e.target.value)} placeholder="ej: Musculación" /></Campo>
             </div>
             <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardando}>
-              {p.guardando ? 'Guardando...' : 'Crear profesor'}
+              {p.guardando ? 'Guardando…' : 'Crear profesor'}
             </button>
           </form>
-        </div>
+        </section>
       )}
 
       {p.profesores.length === 0 ? (
         <div className="gt-empty"><p>No hay profesores registrados aún.</p></div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {p.profesores.map(prof => (
-            <div key={prof.id} className="gt-list-card">
-              {p.editId === prof.id ? (
-                <form onSubmit={p.handleEditar}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-                    <div><label className="gt-label">Nombre</label><input className="gt-input" value={p.editNombre} onChange={e => p.setEditNombre(e.target.value)} /></div>
-                    <div><label className="gt-label">Apellido</label><input className="gt-input" value={p.editApellido} onChange={e => p.setEditApellido(e.target.value)} /></div>
-                    <div><label className="gt-label">Teléfono</label><input className="gt-input" value={p.editTelefono} onChange={e => p.setEditTelefono(e.target.value)} /></div>
+        <div className="gt-prof-lista">
+          {p.profesores.map(prof => {
+            const nombre = prof.nombre || prof.apellido ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : prof.username
+            return (
+              <div key={prof.id} className="gt-list-card">
+                {p.editId === prof.id ? (
+                  <form onSubmit={p.handleEditar}>
+                    <div className="gt-form-grid">
+                      <Campo id={`ed-nombre-${prof.id}`} etiqueta="Nombre"><input id={`ed-nombre-${prof.id}`} className="gt-input" value={p.editNombre} onChange={e => p.setEditNombre(e.target.value)} /></Campo>
+                      <Campo id={`ed-apellido-${prof.id}`} etiqueta="Apellido"><input id={`ed-apellido-${prof.id}`} className="gt-input" value={p.editApellido} onChange={e => p.setEditApellido(e.target.value)} /></Campo>
+                      <Campo id={`ed-tel-${prof.id}`} etiqueta="Teléfono"><input id={`ed-tel-${prof.id}`} className="gt-input" value={p.editTelefono} onChange={e => p.setEditTelefono(e.target.value)} /></Campo>
+                      <Campo id={`ed-usuario-${prof.id}`} etiqueta="Usuario"><input id={`ed-usuario-${prof.id}`} className="gt-input" value={p.editUsername} onChange={e => p.setEditUsername(e.target.value)} /></Campo>
+                      <Campo id={`ed-email-${prof.id}`} etiqueta="Email"><input id={`ed-email-${prof.id}`} className="gt-input" type="email" value={p.editEmail} onChange={e => p.setEditEmail(e.target.value)} /></Campo>
+                      <Campo id={`ed-esp-${prof.id}`} etiqueta="Especialidad"><input id={`ed-esp-${prof.id}`} className="gt-input" value={p.editEspecialidad} onChange={e => p.setEditEspecialidad(e.target.value)} /></Campo>
+                      <Campo id={`ed-clave-${prof.id}`} etiqueta="Nueva contraseña"><CampoClave id={`ed-clave-${prof.id}`} className="gt-input" value={p.editPassword} onChange={e => p.setEditPassword(e.target.value)} placeholder="Vacío = no cambia" /></Campo>
+                    </div>
+                    <div className="gt-prof-acciones">
+                      <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardandoEdit}>{p.guardandoEdit ? 'Guardando…' : 'Guardar'}</button>
+                      <button className="gt-btn gt-btn-secondary" type="button" onClick={() => p.setEditId(null)}>Cancelar</button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="gt-prof-fila">
+                    <span className={`gt-prof-avatar${prof.activo ? '' : ' inactivo'}`} aria-hidden>{(prof.nombre ?? prof.username)[0].toUpperCase()}</span>
+                    <div className="gt-prof-datos">
+                      <p className="gt-prof-nombre">
+                        {nombre} <Pill tono={prof.activo ? 'ok' : 'neutral'}>{prof.activo ? 'Activo' : 'Inactivo'}</Pill>
+                      </p>
+                      <p className="gt-prof-meta">
+                        @{prof.username}
+                        {prof.especialidad && <> · <strong>{prof.especialidad}</strong></>}
+                        {prof.email && <> · {prof.email}</>}
+                        {prof.telefono && <> · {prof.telefono}</>}
+                      </p>
+                    </div>
+                    <div className="gt-prof-acciones">
+                      <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => p.abrirEditar(prof)}>Editar</button>
+                      <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => p.handleToggle(prof.id)}>
+                        {prof.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button type="button" className="gt-btn gt-btn-danger gt-btn-sm"
+                        disabled={p.eliminandoId === prof.id} onClick={() => p.setConfirmarEliminarId(prof.id)}>
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-                    <div><label className="gt-label">Usuario</label><input className="gt-input" value={p.editUsername} onChange={e => p.setEditUsername(e.target.value)} /></div>
-                    <div><label className="gt-label">Email</label><input className="gt-input" type="email" value={p.editEmail} onChange={e => p.setEditEmail(e.target.value)} /></div>
-                    <div><label className="gt-label">Especialidad</label><input className="gt-input" value={p.editEspecialidad} onChange={e => p.setEditEspecialidad(e.target.value)} /></div>
-                    <div><label className="gt-label">Nueva contraseña</label><CampoClave className="gt-input" value={p.editPassword} onChange={e => p.setEditPassword(e.target.value)} placeholder="Vacío = no cambia" /></div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardandoEdit}>{p.guardandoEdit ? 'Guardando...' : 'Guardar'}</button>
-                    <button className="gt-btn gt-btn-secondary" type="button" onClick={() => p.setEditId(null)}>Cancelar</button>
-                  </div>
-                </form>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                    background: prof.activo ? '#3B82F6' : 'var(--border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16 }}>
-                    {(prof.nombre ?? prof.username)[0].toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-                      {prof.nombre || prof.apellido ? `${prof.nombre ?? ''} ${prof.apellido ?? ''}`.trim() : prof.username}
-                      <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
-                        background: prof.activo ? 'var(--green-bg)' : 'var(--bg-body)',
-                        color: prof.activo ? 'var(--green-text)' : 'var(--text-muted)' }}>
-                        {prof.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </p>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-                      @{prof.username}
-                      {prof.especialidad && <> · <strong>{prof.especialidad}</strong></>}
-                      {prof.email && <> · {prof.email}</>}
-                      {prof.telefono && <> · 📞 {prof.telefono}</>}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="gt-btn gt-btn-secondary" style={{ fontSize: 12 }} onClick={() => p.abrirEditar(prof)}>Editar</button>
-                    <button className="gt-btn gt-btn-secondary" style={{ fontSize: 12 }} onClick={() => p.handleToggle(prof.id)}>
-                      {prof.activo ? 'Desactivar' : 'Activar'}
-                    </button>
-                    <button className="gt-btn" style={{ fontSize: 12, background: 'var(--red-light)', color: 'var(--red)', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}
-                      disabled={p.eliminandoId === prof.id} onClick={() => p.setConfirmarEliminarId(prof.id)}>
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -138,6 +112,6 @@ export default function ProfesoresPage() {
         onConfirm={p.handleEliminar}
         onCancel={() => p.setConfirmarEliminarId(null)}
       />
-    </div>
+    </>
   )
 }

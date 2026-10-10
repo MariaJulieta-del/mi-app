@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import {
   listarNotificaciones, crearNotificacion, archivarNotificacion, obtenerCanales,
   type Canales, type Notificacion,
 } from '../services/notificacionService'
-import { obtenerTodos } from '../../socios/services/socioService'
+import { useBuscarSocios } from '../../../shared/hooks/useBuscarSocios'
 import { listarDisciplinas, type DisciplinaApi } from '../../disciplinas/services/disciplinaService'
 import type { Socio } from '../../socios/types/Socio'
 import { useToast } from '../../../shared/hooks/useToast'
@@ -51,7 +51,6 @@ export function useNotificaciones() {
   /** Aviso del que se muestran los links de WhatsApp */
   const [whatsappDe, setWhatsappDe] = useState<Notificacion | null>(null)
 
-  const [socios, setSocios] = useState<Socio[]>([])
   const [socioSel, setSocioSel] = useState<Socio | null>(null)
   const [busquedaSocio, setBusquedaSocio] = useState('')
   const [disciplinas, setDisciplinas] = useState<DisciplinaApi[]>([])
@@ -67,15 +66,10 @@ export function useNotificaciones() {
   const setPara = (p: Para) => {
     setParaEstado(p)
     setSocioSel(null); setBusquedaSocio(''); setDisciplinaId('')
-    if (p === 'SOCIO' && socios.length === 0) obtenerTodos().then(setSocios).catch(() => {})
     if (p === 'DISCIPLINA' && disciplinas.length === 0) listarDisciplinas(true).then(setDisciplinas).catch(() => {})
   }
 
-  const sociosFiltrados = useMemo(() => {
-    const q = busquedaSocio.trim().toLowerCase()
-    if (!q) return []
-    return socios.filter(s => `${s.nombre} ${s.apellido}`.toLowerCase().includes(q) || s.dni.includes(q)).slice(0, 6)
-  }, [busquedaSocio, socios])
+  const sociosFiltrados = useBuscarSocios(busquedaSocio, { tam: 6 }).resultados
 
   const usarPlantilla = (p: (typeof PLANTILLAS)[number]) => setForm({ titulo: p.titulo, mensaje: p.mensaje, tipo: p.tipo })
 

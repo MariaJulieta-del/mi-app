@@ -4,7 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { Rutina } from '../types/Rutina'
 import type { Socio } from '../../socios/types/Socio'
 import { obtenerRutinasGenerales, clonarRutina, obtenerRutinas } from '../services/rutinaService'
-import { obtenerTodos, obtenerPorId } from '../../socios/services/socioService'
+import { obtenerPorId } from '../../socios/services/socioService'
+import { useBuscarSocios } from '../../../shared/hooks/useBuscarSocios'
 import { obtenerFicha } from '../../socios/services/fichaService'
 import { useToast } from '../../../shared/hooks/useToast'
 
@@ -24,7 +25,6 @@ export function useAsignarRutina() {
 
   // Paso 1 — socio
   const [socio, setSocio] = useState<Socio | null>(null)
-  const [socios, setSocios] = useState<Socio[]>([])
   const [busquedaSocio, setBusquedaSocio] = useState('')
   const [observaciones, setObservaciones] = useState<string | null>(null)
   const [rutinasDelSocio, setRutinasDelSocio] = useState<Rutina[]>([])
@@ -47,7 +47,6 @@ export function useAsignarRutina() {
   const [asignada, setAsignada] = useState<Rutina | null>(null)
 
   useEffect(() => {
-    obtenerTodos().then(ss => setSocios(ss.filter(s => s.activo !== false))).catch(() => {})
     obtenerRutinasGenerales()
       .then(ps => {
         setPlantillas(ps)
@@ -81,13 +80,7 @@ export function useAsignarRutina() {
     obtenerRutinas(s.id).then(setRutinasDelSocio).catch(() => {})
   }
 
-  const sociosFiltrados = useMemo(() => {
-    const q = busquedaSocio.trim().toLowerCase()
-    if (!q) return []
-    return socios.filter(s =>
-      `${s.nombre} ${s.apellido}`.toLowerCase().includes(q) || s.dni.includes(q),
-    ).slice(0, 6)
-  }, [busquedaSocio, socios])
+  const sociosFiltrados = useBuscarSocios(busquedaSocio, { tam: 6 }).resultados
 
   const plantillasFiltradas = useMemo(() => plantillas
     .filter(p => !filtroTren || (p.trenes ?? []).includes(filtroTren))

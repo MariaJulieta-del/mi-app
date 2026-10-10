@@ -18,21 +18,21 @@ export default function MembresiasForm() {
         <form onSubmit={f.handleSubmit}>
           <div className="gt-form-grid">
             <div className="gt-form-group">
-              <label className="gt-label">Nombre del plan *</label>
-              <input className="gt-input" type="text" value={f.nombre} onChange={e => f.setNombre(e.target.value)} placeholder="Ej: Plan Quincenal" required />
+              <label className="gt-label" htmlFor="membresiasform-campo-1">Nombre del plan *</label>
+              <input id="membresiasform-campo-1" className="gt-input" type="text" value={f.nombre} onChange={e => f.setNombre(e.target.value)} placeholder="Ej: Plan Quincenal" required />
               {f.tipoGenerado && <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-xmuted)' }}>Código interno: <strong>{f.tipoGenerado}</strong></p>}
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">Duración (días) *</label>
-              <input className="gt-input" type="number" value={f.duracionDias} onChange={e => f.setDuracionDias(Number(e.target.value))} min={1} placeholder="Ej: 15" required />
+              <label className="gt-label" htmlFor="membresiasform-campo-2">Duración (días) *</label>
+              <input id="membresiasform-campo-2" className="gt-input" type="number" value={f.duracionDias} onChange={e => f.setDuracionDias(Number(e.target.value))} min={1} placeholder="Ej: 15" required />
               <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-xmuted)' }}>El sistema calcula la fecha de vencimiento automáticamente.</p>
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">Precio ($) *</label>
-              <input className="gt-input" type="number" value={f.precio} onChange={e => f.setPrecio(Number(e.target.value))} min={0} step={0.01} placeholder="Ej: 8000" required />
+              <label className="gt-label" htmlFor="membresiasform-campo-3">Precio ($) *</label>
+              <input id="membresiasform-campo-3" className="gt-input" type="number" value={f.precio} onChange={e => f.setPrecio(Number(e.target.value))} min={0} step={0.01} placeholder="Ej: 8000" required />
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">Pases por mes</label>
+              <span className="gt-label">Pases por mes</span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                 {[8, 12, 16, 20].map(n => (
                   <button key={n} type="button" className={`gt-option${f.pasesMensuales === n ? ' selected' : ''}`}
@@ -46,8 +46,8 @@ export default function MembresiasForm() {
               <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-xmuted)' }}>Cuántos días por mes puede ingresar el socio. Se reinician cada mes.</p>
             </div>
             <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="gt-label">¿Qué incluye? (opcional)</label>
-              <textarea className="gt-textarea" value={f.incluye} onChange={e => f.setIncluye(e.target.value)} placeholder="Ej: Acceso al gimnasio por 15 días. Clases grupales incluidas." rows={2} />
+              <label className="gt-label" htmlFor="membresiasform-campo-4">¿Qué incluye? (opcional)</label>
+              <textarea id="membresiasform-campo-4" className="gt-textarea" value={f.incluye} onChange={e => f.setIncluye(e.target.value)} placeholder="Ej: Acceso al gimnasio por 15 días. Clases grupales incluidas." rows={2} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

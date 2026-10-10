@@ -141,8 +141,7 @@ export default function RutinaForm() {
                     {f.mostrarBuscador && f.busquedaSocio.length >= 1 && (
                       <div className="gt-builder-sugerencias">
                         {(() => {
-                          const q = f.busquedaSocio.toLowerCase()
-                          const res = f.socios.filter(s => s.nombre.toLowerCase().includes(q) || s.apellido.toLowerCase().includes(q) || s.dni.includes(q)).slice(0, 6)
+                          const res = f.socios
                           if (res.length === 0) return <p className="gt-text-muted gt-text-sm" style={{ margin: 0, padding: '9px 14px' }}>Sin resultados</p>
                           return res.map(s => (
                             <button type="button" key={s.id} onClick={() => f.seleccionarSocio(s)} className="gt-socio-opcion">

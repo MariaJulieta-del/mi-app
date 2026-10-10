@@ -171,8 +171,8 @@ export default function RutinasDetail() {
               value={d.busqEj} onChange={e => { d.setBusqEj(e.target.value); d.setEjSel(null) }} />
             <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {d.catalogoFiltrado.slice(0, 20).map(e => (
-                <div key={e.id} onClick={() => { d.setEjSel(e); d.setBusqEj(e.nombre) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, cursor: 'pointer', border: '1px solid', borderColor: d.ejSel?.id === e.id ? 'var(--blue-text)' : 'var(--border)', background: d.ejSel?.id === e.id ? 'var(--blue-bg)' : 'var(--bg-surface)' }}
+                <button type="button" key={e.id} aria-pressed={d.ejSel?.id === e.id} onClick={() => { d.setEjSel(e); d.setBusqEj(e.nombre) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, cursor: 'pointer', font: 'inherit', textAlign: 'left', color: 'inherit', width: '100%', border: '1px solid', borderColor: d.ejSel?.id === e.id ? 'var(--blue-text)' : 'var(--border)', background: d.ejSel?.id === e.id ? 'var(--blue-bg)' : 'var(--bg-surface)' }}
                   onMouseEnter={ev => { if (d.ejSel?.id !== e.id) ev.currentTarget.style.background = 'var(--bg-surface-2)' }}
                   onMouseLeave={ev => { if (d.ejSel?.id !== e.id) ev.currentTarget.style.background = 'var(--bg-surface)' }}>
                   {e.imagenUrl
@@ -183,7 +183,7 @@ export default function RutinasDetail() {
                   {(e.grupos ?? []).slice(0, 2).map(g => (
                     <span key={g} style={{ fontSize: 10, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 4, padding: '1px 5px' }}>{g}</span>
                   ))}
-                </div>
+                </button>
               ))}
               {d.busqEj && d.catalogoFiltrado.length === 0 && (
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0', textAlign: 'center' }}>Sin resultados. Escribí el nombre para agregar manualmente.</p>

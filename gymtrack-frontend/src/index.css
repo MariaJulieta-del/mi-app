@@ -1086,7 +1086,7 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
   }
   .gt-bottom-link {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
     padding: 8px 2px 10px; font: inherit; font-size: 11px; font-weight: 600;
     color: var(--text-muted); text-decoration: none; background: none; border: none; cursor: pointer;
   }
@@ -1101,7 +1101,8 @@ body {
    Hoy (profesor) y progreso
    ══════════════════════════════════════════════════════════════════════ */
 .gt-hoy-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.gt-hoy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.gt-hoy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px; align-items: start; }
+.gt-hoy-grid > * { min-width: 0; }
 .gt-hoy-socio { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-surface); }
 .gt-hoy-fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
 .gt-hoy-fila:last-child { border-bottom: none; }
@@ -2223,3 +2224,92 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
   .gt-qr-ultimos { justify-self: center; width: min(420px, 100%); }
   .gt-qr-marco canvas { width: clamp(220px, min(72vw, 52vh), 520px); }
 }
+
+/* Socios: encabezados que ordenan y avisos con botón de cerrar */
+.gt-socios-orden { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+.gt-socios-orden:hover, .gt-socios-orden.activa { color: var(--text-primary); }
+.gt-alert-cerrable { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.gt-lista-cargando { display: flex; flex-direction: column; gap: 10px; }
+
+/* Aviso cuando una pantalla falla al dibujarse */
+.gt-error-pantalla { max-width: 520px; margin: 32px auto; padding: 28px 24px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.gt-error-pantalla.completa { margin-top: 15vh; }
+.gt-error-pantalla strong { font-size: 18px; color: var(--text-primary); }
+.gt-error-pantalla p { margin: 0 0 6px; color: var(--text-secondary); }
+
+/* ── Barra superior: entra completa hasta en 320 px ── */
+.gt-topbar-acciones { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gt-topbar-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .12); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.gt-topbar-kbd { font-size: 10px; opacity: .75; background: rgba(0, 0, 0, .2); padding: 1px 4px; border-radius: 3px; }
+.gt-topbar-cuenta { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.gt-topbar-usuario { font-size: 13px; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.gt-topbar-rol { color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; background: #3B82F6; }
+.gt-topbar-rol.admin { background: var(--yellow-text); }
+.gt-topbar :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 480px) {
+  .gt-topbar { padding: 0 12px; }
+  .gt-topbar-acciones { gap: 6px; }
+  .gt-topbar-texto, .gt-topbar-kbd, .gt-topbar-usuario { display: none; }
+  .gt-topbar-btn { padding: 6px 8px; }
+}
+
+/* ── Profesores ── */
+.gt-prof-form { margin-bottom: 20px; }
+.gt-prof-lista { display: flex; flex-direction: column; gap: 10px; }
+.gt-prof-fila { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.gt-prof-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: #3B82F6; color: #fff; font-weight: 700; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; }
+.gt-prof-avatar.inactivo { background: var(--border); }
+.gt-prof-datos { flex: 1; min-width: 180px; }
+.gt-prof-nombre { margin: 0; font-weight: 700; font-size: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gt-prof-meta { margin: 2px 0 0; font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+.gt-prof-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 600px) { .gt-prof-acciones { width: 100%; } .gt-prof-acciones .gt-btn { flex: 1; justify-content: center; } }
+
+/* ── Accesibilidad: foco visible con teclado en todo lo que se puede activar ── */
+:where(a, button, summary, [role="button"], [tabindex="0"], select, input[type="checkbox"], input[type="radio"]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.gt-fila-clic { cursor: pointer; }
+.gt-fila-clic:hover { background: var(--bg-surface-2); }
+.gt-subir-imagen { width: 100%; border: 2px dashed var(--border); border-radius: 8px; padding: 18px 0; text-align: center; cursor: pointer; color: var(--text-muted); font: inherit; font-size: 13px; background: var(--bg-surface-3); }
+.gt-subir-imagen:hover { border-color: var(--accent-border); color: var(--text-primary); }
+
+/* ── Alta de socio (antes estilos en línea) ── */
+.gt-requerido { color: var(--red); }
+.gt-peso-normal { font-weight: 500; }
+.gt-texto-error { color: var(--red); }
+.gt-alta-seccion { margin: 20px 0 12px; padding-top: 16px; border-top: 1px solid var(--border); }
+.gt-alta-opciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.gt-alta-plan { display: flex; flex-direction: column; gap: 2px; min-width: 140px; padding: 10px 16px; border-radius: 8px; border: 2px solid var(--border); background: var(--bg-surface-2); text-align: left; cursor: pointer; font: inherit; transition: border-color .15s, background .15s; }
+.gt-alta-plan strong { font-size: 13px; color: var(--text-primary); }
+.gt-alta-plan span { font-size: 12px; color: var(--text-muted); }
+.gt-alta-plan small { font-size: 11px; color: var(--blue-text); }
+.gt-alta-plan.activo { border-color: var(--accent); background: var(--accent-light); }
+.gt-alta-plan.activo strong { color: var(--accent); }
+.gt-alta-forma { padding: 10px 18px; border-radius: 8px; border: 2px solid var(--border); background: var(--bg-surface-2); color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: border-color .15s, background .15s; }
+.gt-alta-forma.activo { font-weight: 700; }
+.gt-alta-resumen { margin-top: 16px; padding: 12px 16px; border-radius: 8px; background: var(--green-bg); border: 1.5px solid var(--accent-border); font-size: 13px; color: var(--text-secondary); }
+
+/* ── Perfil del socio (antes estilos en línea) ── */
+.gt-flex-1 { flex: 1; }
+.gt-mb-20 { margin-bottom: 20px; }
+.gt-mt-16 { margin-top: 16px; }
+.gt-sin-subrayado { text-decoration: none; }
+.gt-alert-x { float: right; background: none; border: none; cursor: pointer; color: inherit; font: inherit; }
+.gt-perfil-volver { margin-bottom: 16px; }
+.gt-perfil-cab { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.gt-perfil-titulo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.gt-perfil-nombre { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); overflow-wrap: anywhere; }
+.gt-perfil-datos { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--text-secondary); }
+.gt-perfil-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.gt-perfil-ficha { margin-top: 12px; margin-bottom: 0; }
+.gt-perfil-seccion { margin-top: 8px; }
+.gt-perfil-h2 { font-size: 17px; font-weight: 600; margin: 0; color: var(--text-primary); }
+
+/* ── Dashboard en pantallas angostas ── */
+.gt-dash-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px; margin-bottom: 20px; }
+.gt-dash-membresias { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; margin-bottom: 20px; }
+.gt-dash-stats > *, .gt-dash-membresias > * { min-width: 0; }
+@media (max-width: 360px) { .gt-topbar-rol { display: none; } .gt-bottom-link { font-size: 10px; } }
+.gt-ver-mas { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 24px; }

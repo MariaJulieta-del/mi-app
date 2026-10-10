@@ -11,7 +11,7 @@ import { fechaLocalISO, formatFecha } from '../../../shared/utils/fechas'
 type Periodo = 'hoy' | 'semana' | 'mes' | 'todo' | 'rango'
 const PERIODOS: { valor: Periodo; texto: string }[] = [
   { valor: 'hoy', texto: 'Hoy' }, { valor: 'semana', texto: '7 días' }, { valor: 'mes', texto: 'Este mes' },
-  { valor: 'todo', texto: 'Todo' }, { valor: 'rango', texto: 'Fechas' },
+  { valor: 'todo', texto: '12 meses' }, { valor: 'rango', texto: 'Fechas' },
 ]
 const TONO_ESTADO: Record<string, 'ok' | 'danger' | 'neutral' | 'warn'> = { ACTIVA: 'ok', VENCIDA: 'danger', CANCELADA: 'neutral' }
 
@@ -21,13 +21,15 @@ function rangoDe(p: Periodo, desde: string, hasta: string): [string, string] {
   if (p === 'hoy') return [iso(hoy), iso(hoy)]
   if (p === 'semana') { const d = new Date(hoy); d.setDate(d.getDate() - 6); return [iso(d), iso(hoy)] }
   if (p === 'mes') return [iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)), iso(hoy)]
-  if (p === 'rango') return [desde || '0000-01-01', hasta || '9999-12-31']
-  return ['0000-01-01', '9999-12-31']
+  if (p === 'rango') return [desde, hasta]
+  // "12 meses": lo que el servidor devuelve sin fechas
+  return ['', '']
 }
 
 /** Todos los cobros con búsqueda, filtros rápidos, totales por medio de pago y exportación */
 export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: string | null }) {
-  const [pagos, setPagos] = useState<Pago[] | null>(null)
+  /** Pagos cargados y para qué período (mientras llega el nuevo período se muestra 'cargando') */
+  const [cargados, setCargados] = useState<{ clave: string; pagos: Pago[] } | null>(null)
   const [error, setError] = useState(false)
   const [periodo, setPeriodo] = useState<Periodo>(fechaInicial ? 'rango' : 'hoy')
   const [desde, setDesde] = useState(fechaInicial ?? '')
@@ -35,17 +37,21 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
   const [metodo, setMetodo] = useState<string | null>(null)
   const [buscar, setBuscar] = useState('')
 
-  useEffect(() => {
-    listarPagos()
-      .then(data => setPagos([...data].sort((a, b) => (b.fechaPago ?? '').localeCompare(a.fechaPago ?? ''))))
-      .catch(() => setError(true))
-  }, [])
-
   const [d0, d1] = rangoDe(periodo, desde, hasta)
-  const enPeriodo = useMemo(
-    () => (pagos ?? []).filter(p => { const f = p.fechaPago?.slice(0, 10) ?? ''; return f >= d0 && f <= d1 }),
-    [pagos, d0, d1],
-  )
+  const rangoIncompleto = periodo === 'rango' && (!desde || !hasta || desde > hasta)
+
+  // Solo el período elegido; si cambia, la consulta anterior se cancela y no pisa el resultado
+  useEffect(() => {
+    if (rangoIncompleto) return
+    const ctrl = new AbortController()
+    listarPagos(d0 || undefined, d1 || undefined, ctrl.signal)
+      .then(data => { setCargados({ clave: `${d0}|${d1}`, pagos: data }); setError(false) })
+      .catch(() => { if (!ctrl.signal.aborted) setError(true) })
+    return () => ctrl.abort()
+  }, [d0, d1, rangoIncompleto])
+
+  const pagos = cargados && cargados.clave === `${d0}|${d1}` ? cargados.pagos : null
+  const enPeriodo = useMemo(() => (rangoIncompleto ? [] : pagos ?? []), [pagos, rangoIncompleto])
   const q = buscar.trim().toLowerCase()
   const visibles = enPeriodo.filter(p =>
     (!metodo || p.metodoPago === metodo) &&
@@ -55,7 +61,7 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
   const total = completados.reduce((s, p) => s + Number(p.monto), 0)
   const porMetodo = (m: string) => completados.filter(p => p.metodoPago === m).reduce((s, p) => s + Number(p.monto), 0)
 
-  const exportar = () => descargarCSV(`pagos-${d0 === '0000-01-01' ? 'todos' : d0}`,
+  const exportar = () => descargarCSV(`pagos-${d0 || 'ultimos-12-meses'}`,
     ['Fecha', 'Hora', 'Socio', 'Plan', 'Monto', 'Medio', 'Estado', 'Observaciones'],
     visibles.map(p => [p.fechaPago?.slice(0, 10), p.fechaPago?.slice(11, 16), p.socioNombre, p.tipoMembresia, Number(p.monto), p.metodoPago, p.estadoPago, p.observaciones]))
 
@@ -86,7 +92,9 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
       </div>
 
       {error && <div className="gt-alert gt-alert-error">No se pudieron cargar los pagos.</div>}
-      {!pagos ? (!error && <SkeletonTarjetas cantidad={3} alto={56} />) : visibles.length === 0 ? (
+      {rangoIncompleto ? (
+        <p className="gt-text-muted gt-text-sm">Elegí desde y hasta para ver los cobros de esas fechas.</p>
+      ) : !pagos ? (!error && <SkeletonTarjetas cantidad={3} alto={56} />) : visibles.length === 0 ? (
         <div className="gt-card"><EmptyState icono={Wallet} titulo={enPeriodo.length === 0 ? 'No hay cobros en este período' : 'Nada coincide con el filtro'}
           accion={<Link to="/pagos/nuevo" className="gt-btn gt-btn-primary">Registrar pago</Link>} /></div>
       ) : (

@@ -52,23 +52,23 @@ export default function AuditoriaPage() {
 
       <div className="gt-card" style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div className="gt-form-group" style={{ margin: 0 }}>
-          <label className="gt-label">Desde</label>
-          <input type="date" className="gt-input" value={desde} max={hasta} onChange={e => setDesde(e.target.value)} />
+          <label className="gt-label" htmlFor="auditoriapage-campo-1">Desde</label>
+          <input id="auditoriapage-campo-1" type="date" className="gt-input" value={desde} max={hasta} onChange={e => setDesde(e.target.value)} />
         </div>
         <div className="gt-form-group" style={{ margin: 0 }}>
-          <label className="gt-label">Hasta</label>
-          <input type="date" className="gt-input" value={hasta} min={desde} onChange={e => setHasta(e.target.value)} />
+          <label className="gt-label" htmlFor="auditoriapage-campo-2">Hasta</label>
+          <input id="auditoriapage-campo-2" type="date" className="gt-input" value={hasta} min={desde} onChange={e => setHasta(e.target.value)} />
         </div>
         <div className="gt-form-group" style={{ margin: 0 }}>
-          <label className="gt-label">Usuario</label>
-          <select className="gt-select" value={usuario} onChange={e => setUsuario(e.target.value)}>
+          <label className="gt-label" htmlFor="auditoriapage-campo-3">Usuario</label>
+          <select id="auditoriapage-campo-3" className="gt-select" value={usuario} onChange={e => setUsuario(e.target.value)}>
             <option value="">Todos</option>
             {usuarios.map(u => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
         <div className="gt-form-group" style={{ margin: 0, flex: 1, minWidth: 180 }}>
-          <label className="gt-label">Buscar</label>
-          <input className="gt-input" placeholder="Acción, socio o detalle…" value={texto} onChange={e => setTexto(e.target.value)} />
+          <label className="gt-label" htmlFor="auditoriapage-campo-4">Buscar</label>
+          <input id="auditoriapage-campo-4" className="gt-input" placeholder="Acción, socio o detalle…" value={texto} onChange={e => setTexto(e.target.value)} />
         </div>
       </div>
 

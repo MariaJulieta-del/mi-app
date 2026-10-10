@@ -64,8 +64,8 @@ function PantallasRecepcion() {
       ) : (
         <form onSubmit={vincular} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="gt-form-group" style={{ margin: 0, flex: 1, minWidth: 200 }}>
-            <label className="gt-label">Nombre de la pantalla</label>
-            <input className="gt-input" value={nombre} maxLength={60} onChange={e => setNombre(e.target.value)} />
+            <label className="gt-label" htmlFor="qringresopage-campo-1">Nombre de la pantalla</label>
+            <input id="qringresopage-campo-1" className="gt-input" value={nombre} maxLength={60} onChange={e => setNombre(e.target.value)} />
           </div>
           <button type="submit" className="gt-btn gt-btn-primary">+ Vincular pantalla</button>
         </form>

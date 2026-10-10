@@ -11,6 +11,8 @@ interface Props {
   onGuardado: () => void
 }
 
+const POR_TANDA = 60
+
 export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, setLightbox, onGuardado }: Props) {
   const [catBodyPart, setCatBodyPart] = useState('')
   const [catQ, setCatQ] = useState('')
@@ -25,6 +27,9 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
     timerCat.current = setTimeout(() => setCatQActivo(q), 300)
   }
 
+  /** Se muestran de a POR_TANDA (1.324 tarjetas juntas eran ~12.000 elementos en la página) */
+  const [limite, setLimite] = useState({ clave: '', n: POR_TANDA })
+
   const catFiltrados = EXERCISES_CATALOG.filter(ex => {
     const matchGrupo = !catBodyPart || ex.bodyPart === catBodyPart
     const matchQ = !catQActivo ||
@@ -32,6 +37,10 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
       ex.target.toLowerCase().includes(catQActivo.toLowerCase())
     return matchGrupo && matchQ
   })
+
+  const claveFiltro = `${catBodyPart}|${catQActivo}`
+  const cuantos = limite.clave === claveFiltro ? limite.n : POR_TANDA
+  const visibles = catFiltrados.slice(0, cuantos)
 
   const abrirGifCatalogo = (ex: CatalogExercise) => {
     if (ex.gifUrl) { setLightbox({ url: ex.gifUrl, nombre: ex.name }); return }
@@ -114,7 +123,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
           gap: 14,
           marginBottom: 20,
         }}>
-          {catFiltrados.map(ex => {
+          {visibles.map(ex => {
             const yaGuardado = ejercicios.some(e => e.nombre.toLowerCase() === ex.name.toLowerCase())
             const cargando = guardandoCat === ex.id
             const isExp = expandedCatId === ex.id
@@ -136,7 +145,8 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                   title="Ver GIF animado"
                 >
                   {ex.gifUrl ? (
-                    <img src={ex.gifUrl} alt={ex.name}
+                    // En la grilla va la miniatura (liviana); el GIF animado se ve al tocarla
+                    <img src={ex.imageUrl || ex.gifUrl} alt={ex.name} decoding="async"
                       style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                       loading="lazy"
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -214,6 +224,14 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
         <div className="gt-card" style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
           <p style={{ fontSize: 24, marginBottom: 6 }}>🔍</p>
           <p style={{ margin: 0 }}>Sin resultados para "{catQActivo || catBodyPart}"</p>
+        </div>
+      )}
+      {catFiltrados.length > cuantos && (
+        <div className="gt-ver-mas">
+          <span className="gt-text-sm gt-text-muted">Mostrando {cuantos} de {catFiltrados.length}</span>
+          <button type="button" className="gt-btn gt-btn-secondary" onClick={() => setLimite({ clave: claveFiltro, n: cuantos + POR_TANDA })}>
+            Ver {Math.min(POR_TANDA, catFiltrados.length - cuantos)} más
+          </button>
         </div>
       )}
     </div>

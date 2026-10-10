@@ -23,7 +23,7 @@ function CamposPublico({ nacimiento, genero, onNacimiento, onGenero, error }: {
     <>
       <div className="gt-form-group">
         <label className="gt-label" htmlFor="socio-nacimiento">
-          Fecha de nacimiento {edad != null && <span className="gt-text-muted" style={{ fontWeight: 500 }}>· {edad} años</span>}
+          Fecha de nacimiento {edad != null && <span className="gt-text-muted gt-peso-normal">· {edad} años</span>}
         </label>
         <input id="socio-nacimiento" className={`gt-input${error ? ' gt-input-error' : ''}`} type="date"
           value={nacimiento} max={fechaLocalISO()} min="1915-01-01" onChange={e => onNacimiento(e.target.value)} />
@@ -49,42 +49,42 @@ const SocioForm = (props: Props) => {
       <Modal titulo="Editar socio" onCerrar={s.onCancelar} ancho={640}
         pie={<>
           <button type="button" className="gt-btn gt-btn-secondary" onClick={s.onCancelar}>Cancelar</button>
-          <button type="submit" form="form-socio-editar" className="gt-btn gt-btn-primary">Guardar cambios</button>
+          <button type="submit" form="form-socio-editar" className="gt-btn gt-btn-primary" disabled={props.guardando}>{props.guardando ? 'Guardando…' : 'Guardar cambios'}</button>
         </>}>
         <form id="form-socio-editar" onSubmit={s.handleSubmit} noValidate>
           <div className="gt-form-grid">
             <div className="gt-form-group">
-              <label className="gt-label">Nombre <span style={{ color: 'var(--red)' }}>*</span></label>
-              <input className={s.inputClass('nombre')} value={s.form.nombre}
+              <label className="gt-label" htmlFor="socioform-campo-1">Nombre <span className="gt-requerido" aria-hidden>*</span></label>
+              <input id="socioform-campo-1" className={s.inputClass('nombre')} value={s.form.nombre}
                 onChange={e => { s.setForm({ ...s.form, nombre: e.target.value }); s.touch('nombre') }}
                 placeholder="Nombre" />
               {s.errores.nombre && <span className="gt-field-error">{s.errores.nombre}</span>}
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">Apellido <span style={{ color: 'var(--red)' }}>*</span></label>
-              <input className={s.inputClass('apellido')} value={s.form.apellido}
+              <label className="gt-label" htmlFor="socioform-campo-2">Apellido <span className="gt-requerido" aria-hidden>*</span></label>
+              <input id="socioform-campo-2" className={s.inputClass('apellido')} value={s.form.apellido}
                 onChange={e => { s.setForm({ ...s.form, apellido: e.target.value }); s.touch('apellido') }}
                 placeholder="Apellido" />
               {s.errores.apellido && <span className="gt-field-error">{s.errores.apellido}</span>}
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">DNI <span style={{ color: 'var(--red)' }}>*</span></label>
+              <label className="gt-label" htmlFor="socioform-campo-3">DNI <span className="gt-requerido" aria-hidden>*</span></label>
               {/* El backend no actualiza el DNI (es el usuario de login del socio) → solo lectura al editar */}
-              <input className={s.inputClass('dni')} value={s.form.dni} disabled
+              <input id="socioform-campo-3" className={s.inputClass('dni')} value={s.form.dni} disabled
                 title="El DNI no se puede modificar"
                 placeholder="Ej: 38112445" />
               {s.errores.dni && <span className="gt-field-error">{s.errores.dni}</span>}
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">Teléfono</label>
-              <input className={s.inputClass('telefono')} value={s.form.telefono ?? ''}
+              <label className="gt-label" htmlFor="socioform-campo-4">Teléfono</label>
+              <input id="socioform-campo-4" className={s.inputClass('telefono')} value={s.form.telefono ?? ''}
                 onChange={e => { s.setForm({ ...s.form, telefono: e.target.value }); s.touch('telefono') }}
                 placeholder="Ej: 11 1234-5678" />
               {s.errores.telefono && <span className="gt-field-error">{s.errores.telefono}</span>}
             </div>
             <div className="gt-form-group">
-              <label className="gt-label">Email</label>
-              <input className={s.inputClass('email')} type="email" value={s.form.email ?? ''}
+              <label className="gt-label" htmlFor="socioform-campo-5">Email</label>
+              <input id="socioform-campo-5" className={s.inputClass('email')} type="email" value={s.form.email ?? ''}
                 onChange={e => { s.setForm({ ...s.form, email: e.target.value }); s.touch('email') }}
                 placeholder="socio@email.com" />
               {s.errores.email && <span className="gt-field-error">{s.errores.email}</span>}
@@ -110,41 +110,41 @@ const SocioForm = (props: Props) => {
       </>}>
       <form id="form-socio-alta" onSubmit={s.handleSubmit} noValidate>
 
-        <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <p className="gt-subtitulo">
           Datos personales
         </p>
         <div className="gt-form-grid">
           <div className="gt-form-group">
-            <label className="gt-label">Nombre <span style={{ color: 'var(--red)' }}>*</span></label>
-            <input className={s.inputClass('nombre')} value={s.altaForm.nombre}
+            <label className="gt-label" htmlFor="socioform-campo-6">Nombre <span className="gt-requerido" aria-hidden>*</span></label>
+            <input id="socioform-campo-6" className={s.inputClass('nombre')} value={s.altaForm.nombre}
               onChange={e => { s.setAltaForm(f => ({ ...f, nombre: e.target.value })); s.touch('nombre') }}
               placeholder="Nombre" />
             {s.errores.nombre && <span className="gt-field-error">{s.errores.nombre}</span>}
           </div>
           <div className="gt-form-group">
-            <label className="gt-label">Apellido <span style={{ color: 'var(--red)' }}>*</span></label>
-            <input className={s.inputClass('apellido')} value={s.altaForm.apellido}
+            <label className="gt-label" htmlFor="socioform-campo-7">Apellido <span className="gt-requerido" aria-hidden>*</span></label>
+            <input id="socioform-campo-7" className={s.inputClass('apellido')} value={s.altaForm.apellido}
               onChange={e => { s.setAltaForm(f => ({ ...f, apellido: e.target.value })); s.touch('apellido') }}
               placeholder="Apellido" />
             {s.errores.apellido && <span className="gt-field-error">{s.errores.apellido}</span>}
           </div>
           <div className="gt-form-group">
-            <label className="gt-label">DNI <span style={{ color: 'var(--red)' }}>*</span></label>
-            <input className={s.inputClass('dni')} value={s.altaForm.dni}
+            <label className="gt-label" htmlFor="socioform-campo-8">DNI <span className="gt-requerido" aria-hidden>*</span></label>
+            <input id="socioform-campo-8" className={s.inputClass('dni')} value={s.altaForm.dni}
               onChange={e => { s.setAltaForm(f => ({ ...f, dni: e.target.value })); s.touch('dni') }}
               placeholder="Ej: 38112445" />
             {s.errores.dni && <span className="gt-field-error">{s.errores.dni}</span>}
           </div>
           <div className="gt-form-group">
-            <label className="gt-label">Teléfono</label>
-            <input className={s.inputClass('telefono')} value={s.altaForm.telefono}
+            <label className="gt-label" htmlFor="socioform-campo-9">Teléfono</label>
+            <input id="socioform-campo-9" className={s.inputClass('telefono')} value={s.altaForm.telefono}
               onChange={e => { s.setAltaForm(f => ({ ...f, telefono: e.target.value })); s.touch('telefono') }}
               placeholder="Ej: 11 1234-5678" />
             {s.errores.telefono && <span className="gt-field-error">{s.errores.telefono}</span>}
           </div>
           <div className="gt-form-group">
-            <label className="gt-label">Email</label>
-            <input className={s.inputClass('email')} type="email" value={s.altaForm.email}
+            <label className="gt-label" htmlFor="socioform-campo-10">Email</label>
+            <input id="socioform-campo-10" className={s.inputClass('email')} type="email" value={s.altaForm.email}
               onChange={e => { s.setAltaForm(f => ({ ...f, email: e.target.value })); s.touch('email') }}
               placeholder="socio@email.com" />
             {s.errores.email && <span className="gt-field-error">{s.errores.email}</span>}
@@ -155,29 +155,24 @@ const SocioForm = (props: Props) => {
         </div>
 
         {/* Plan */}
-        <div style={{ margin: '20px 0 12px', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <div className="gt-alta-seccion">
+          <p className="gt-subtitulo">
             Plan de membresía
           </p>
           {s.loadingTarifas ? (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Cargando planes…</p>
+            <p className="gt-text-sm gt-text-muted">Cargando planes…</p>
           ) : s.tarifas.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--red)' }}>No hay planes configurados. Cargá tarifas primero.</p>
+            <p className="gt-text-sm gt-texto-error">No hay planes activos. Creá uno en Membresías.</p>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <div className="gt-alta-opciones">
               {s.tarifas.map(t => {
                 const sel = s.altaForm.tipoMembresia === t.tipo
                 return (
-                  <button key={t.tipo} type="button"
-                    onClick={() => { s.setAltaForm(f => ({ ...f, tipoMembresia: t.tipo })); s.touch('tipoMembresia') }}
-                    style={{ padding: '10px 16px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
-                      border: `2px solid ${sel ? 'var(--accent)' : 'var(--border)'}`,
-                      background: sel ? 'var(--accent-light)' : 'var(--bg-surface-2)', textAlign: 'left', minWidth: 140 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: sel ? 'var(--accent)' : 'var(--text-primary)' }}>{t.nombre}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                      ${t.precio.toLocaleString('es-AR')} · {t.duracionDias} días
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--blue-text)', marginTop: 2 }}>🎟️ {textoPases(t.pasesMensuales)}</div>
+                  <button key={t.tipo} type="button" aria-pressed={sel} className={`gt-alta-plan${sel ? ' activo' : ''}`}
+                    onClick={() => { s.setAltaForm(f => ({ ...f, tipoMembresia: t.tipo })); s.touch('tipoMembresia') }}>
+                    <strong>{t.nombre}</strong>
+                    <span>${t.precio.toLocaleString('es-AR')} · {t.duracionDias} días</span>
+                    <small>🎟️ {textoPases(t.pasesMensuales)}</small>
                   </button>
                 )
               })}
@@ -187,21 +182,17 @@ const SocioForm = (props: Props) => {
         </div>
 
         {/* Forma de pago */}
-        <div style={{ margin: '20px 0 12px', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <div className="gt-alta-seccion">
+          <p className="gt-subtitulo">
             Forma de pago
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <div className="gt-alta-opciones">
             {FORMAS.map(fp => {
               const sel = s.altaForm.formaDePago === fp.value
               return (
-                <button key={fp.value} type="button"
-                  onClick={() => { s.setAltaForm(f => ({ ...f, formaDePago: fp.value })); s.touch('formaDePago') }}
-                  style={{ padding: '10px 18px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
-                    fontWeight: sel ? 700 : 500, fontSize: 13,
-                    border: `2px solid ${sel ? fp.color : 'var(--border)'}`,
-                    background: sel ? fp.bg : 'var(--bg-surface-2)',
-                    color: sel ? fp.color : 'var(--text-secondary)' }}>
+                <button key={fp.value} type="button" aria-pressed={sel} className={`gt-alta-forma${sel ? ' activo' : ''}`}
+                  style={sel ? { borderColor: fp.color, background: fp.bg, color: fp.color } : undefined}
+                  onClick={() => { s.setAltaForm(f => ({ ...f, formaDePago: fp.value })); s.touch('formaDePago') }}>
                   {fp.label}
                 </button>
               )
@@ -210,8 +201,7 @@ const SocioForm = (props: Props) => {
           {s.errores.formaDePago && <span className="gt-field-error">{s.errores.formaDePago}</span>}
 
           {s.altaForm.tipoMembresia && s.altaForm.formaDePago && (
-            <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, background: 'var(--green-bg)',
-              border: '1.5px solid var(--accent-border)', fontSize: 13, color: 'var(--text-secondary)' }}>
+            <div className="gt-alta-resumen" role="status">
                 <>
                   <strong>✓ Alta con pago:</strong> se registra el socio y se cobra{' '}
                   <strong>${s.tarifaSeleccionada?.precio.toLocaleString('es-AR')}</strong> por{' '}

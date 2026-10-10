@@ -28,8 +28,8 @@ export default function FichaMedicaPage() {
       <div className="gt-card">
         <form onSubmit={f.handleSubmit}>
           <div className="gt-form-group">
-            <label className="gt-label">Observaciones / Antecedentes</label>
-            <textarea className="gt-textarea" rows={8} value={f.observaciones}
+            <label className="gt-label" htmlFor="fichamedicapag-campo-1">Observaciones / Antecedentes</label>
+            <textarea id="fichamedicapag-campo-1" className="gt-textarea" rows={8} value={f.observaciones}
               onChange={e => f.setObservaciones(e.target.value)}
               placeholder="Ej: Lesión en rodilla derecha (2023), evitar sentadillas con peso. Objetivo: ganar masa muscular. Entrena lunes, miércoles y viernes..." />
           </div>

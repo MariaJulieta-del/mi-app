@@ -38,7 +38,9 @@ export default function ComentariosSocios() {
         const sen = SENSACIONES.find(x => x.valor === s.sensacion)
         const alerta = s.sensacion === 'MUY_FACIL' || s.sensacion === 'MUY_DURO'
         return (
-          <div key={s.id} className={`gt-comentario${s.leida ? ' leida' : ''}`} onClick={() => !s.leida && leer(s)}>
+          <div key={s.id} className={`gt-comentario${s.leida ? ' leida' : ''}`} onClick={() => !s.leida && leer(s)}
+            {...(!s.leida ? { role: 'button', tabIndex: 0, 'aria-label': `Marcar como leído el comentario de ${s.socioNombre}`,
+              onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); leer(s) } } } : {})}>
             <span className="gt-sesion-emoji" aria-hidden>{sen?.emoji ?? '💬'}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>

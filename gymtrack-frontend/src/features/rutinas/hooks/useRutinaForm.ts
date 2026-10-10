@@ -8,7 +8,8 @@ import {
 import { DIAS_ORDER, ordenarDias, TREN_CONFIG, OBJETIVO_CONFIG } from '../utils/rutinaUtils'
 import { listarTodosEjercicios, type Ejercicio as EjercicioCat } from '../../ejercicios/services/ejercicioService'
 import { listarMaquinas, type Maquina } from '../../maquinas/services/maquinaService'
-import { obtenerTodos, obtenerPorId } from '../../socios/services/socioService'
+import { obtenerPorId } from '../../socios/services/socioService'
+import { useBuscarSocios } from '../../../shared/hooks/useBuscarSocios'
 import { obtenerFicha } from '../../socios/services/fichaService'
 import type { Socio } from '../../socios/types/Socio'
 import type { Rutina } from '../types/Rutina'
@@ -69,10 +70,11 @@ export function useRutinaForm() {
 
   // ── Socio (admin) ──
   const [sinSocio, setSinSocio] = useState(esGeneral || !esAdmin)
-  const [socios, setSocios] = useState<Socio[]>([])
   const [busquedaSocio, setBusquedaSocio] = useState('')
   const [socioSel, setSocioSel] = useState<Socio | null>(null)
   const [mostrarBuscador, setMostrarBuscador] = useState(false)
+  // Búsqueda en el servidor mientras se escribe
+  const socios = useBuscarSocios(mostrarBuscador ? busquedaSocio : '', { tam: 6 }).resultados
   const [obsMovio, setObsMovio] = useState<string | null>(null)
 
   // ── Catálogo ──
@@ -103,12 +105,6 @@ export function useRutinaForm() {
     listarTodosEjercicios().then(setCatalogo).catch(() => {})
     listarMaquinas(true).then(setMaquinas).catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (mostrarBuscador && socios.length === 0) {
-      obtenerTodos().then(setSocios).catch(() => {})
-    }
-  }, [mostrarBuscador, socios.length])
 
   useEffect(() => {
     if (mostrarPicker && generales.length === 0) {

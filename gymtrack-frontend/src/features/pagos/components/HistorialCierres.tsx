@@ -42,7 +42,8 @@ export default function HistorialCierres({ onAbrir }: { onAbrir: (fecha: string)
             {cierres.map(c => {
               const dif = textoDiferencia(c.diferencia)
               return (
-                <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => onAbrir(c.fecha)}>
+                <tr key={c.id} className="gt-fila-clic" tabIndex={0} aria-label={`Abrir la caja del ${formatFecha(c.fecha)}`}
+                  onClick={() => onAbrir(c.fecha)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrir(c.fecha) } }}>
                   <td className="gt-fw-600" style={{ whiteSpace: 'nowrap' }}>{formatFecha(c.fecha)}</td>
                   <td style={{ textAlign: 'right' }}>{pesos(c.totalIngresos)}</td>
                   <td style={{ textAlign: 'right' }}>{Number(c.totalEgresos) > 0 ? pesos(c.totalEgresos) : '—'}</td>

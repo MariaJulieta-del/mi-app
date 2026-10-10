@@ -71,14 +71,14 @@ export default function MisEjerciciosTab({
               {/* Col izquierda */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div className="gt-form-group" style={{ margin: 0 }}>
-                  <label className="gt-label">Nombre *</label>
+                  <label className="gt-label" htmlFor="ej-nombre">Nombre *</label>
                   <input id="ej-nombre" className="gt-input" value={form.nombre}
                     onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                     placeholder="Ej: Press de banca, Curl de bíceps…" maxLength={80} required />
                 </div>
 
                 <div className="gt-form-group" style={{ margin: 0 }}>
-                  <label className="gt-label">Grupos musculares</label>
+                  <span className="gt-label">Grupos musculares</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
                     {GRUPOS_CATEGORIAS.map(cat => (
                       <div key={cat.label}>
@@ -109,8 +109,8 @@ export default function MisEjerciciosTab({
                 </div>
 
                 <div className="gt-form-group" style={{ margin: 0 }}>
-                  <label className="gt-label">Instrucciones / descripción</label>
-                  <textarea className="gt-textarea" value={form.descripcion ?? ''}
+                  <label className="gt-label" htmlFor="misejerciciost-campo-1">Instrucciones / descripción</label>
+                  <textarea id="misejerciciost-campo-1" className="gt-textarea" value={form.descripcion ?? ''}
                     onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
                     rows={3} maxLength={400} placeholder="Cómo ejecutar correctamente el ejercicio…" />
                 </div>
@@ -119,7 +119,7 @@ export default function MisEjerciciosTab({
               {/* Col derecha */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div className="gt-form-group" style={{ margin: 0 }}>
-                  <label className="gt-label">Imagen / GIF</label>
+                  <span className="gt-label">Imagen / GIF</span>
                   {form.imagenUrl ? (
                     <div style={{ position: 'relative' }}>
                       <img src={form.imagenUrl} alt="preview"
@@ -131,23 +131,22 @@ export default function MisEjerciciosTab({
                       </button>
                     </div>
                   ) : (
-                    <div onClick={() => imgRef.current?.click()}
-                      style={{ border: '2px dashed var(--border)', borderRadius: 8, padding: '18px 0', textAlign: 'center', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, background: 'var(--bg-surface-3)' }}>
+                    <button type="button" className="gt-subir-imagen" onClick={() => imgRef.current?.click()} disabled={subiendoImg}>
                       {subiendoImg ? '⏳ Procesando…' : '📷 Subir imagen o GIF'}
-                    </div>
+                    </button>
                   )}
                   <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagen} />
                 </div>
 
                 <div className="gt-form-group" style={{ margin: 0 }}>
-                  <label className="gt-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className="gt-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>🔧 Máquinas asociadas</span>
                     {(form.maquinaIds ?? []).length > 0 && (
                       <span style={{ fontSize: 11, background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 8px', fontWeight: 700 }}>
                         {(form.maquinaIds ?? []).length} seleccionada{(form.maquinaIds ?? []).length !== 1 ? 's' : ''}
                       </span>
                     )}
-                  </label>
+                  </span>
                   {maquinasForm.length === 0 ? (
                     <div style={{ marginTop: 6, background: 'var(--bg-surface-3)', border: '1.5px dashed var(--border)', borderRadius: 8, padding: '14px', textAlign: 'center' }}>
                       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>

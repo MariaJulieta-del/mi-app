@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Modal from '../../../shared/components/Modal'
 import { mensajeError } from '../../../shared/utils/errores'
 import { formatFecha } from '../../../shared/utils/fechas'
-import { obtenerTodos } from '../../socios/services/socioService'
+import { useBuscarSocios } from '../../../shared/hooks/useBuscarSocios'
 import type { Socio } from '../../socios/types/Socio'
 import { inscribirSocio, desinscribirSocio, liberarCupos, obtenerDisciplina, type DisciplinaApi } from '../services/disciplinaService'
 import { colorDisciplina, resumenHorarios } from '../utils/disciplinaUtils'
@@ -22,7 +22,6 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
   onEditar: () => void
   onCerrar: () => void
 }) {
-  const [socios, setSocios] = useState<Socio[]>([])
   const [busqueda, setBusqueda] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -30,21 +29,18 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
   const [quitar, setQuitar] = useState<number | null>(null)
   const [pestana, setPestana] = useState<Pestana>('alumnos')
 
-  useEffect(() => { obtenerTodos().then(setSocios).catch(() => {}) }, [])
 
   const inscriptos = useMemo(() => disciplina.inscriptos ?? [], [disciplina.inscriptos])
   const idsInscriptos = useMemo(() => new Set(inscriptos.map(i => i.socioId)), [inscriptos])
   const sinVigencia = inscriptos.filter(i => !i.activo || !i.membresiaVigente).length
   const completa = disciplina.cupoMaximo != null && disciplina.totalInscritos >= disciplina.cupoMaximo
 
-  const resultados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase()
-    if (q.length < 2) return []
-    return socios
-      .filter(s => s.activo !== false && s.id && !idsInscriptos.has(s.id))
-      .filter(s => `${s.nombre} ${s.apellido}`.toLowerCase().includes(q) || s.dni.includes(q))
-      .slice(0, 6)
-  }, [busqueda, socios, idsInscriptos])
+  // Búsqueda en el servidor; se sacan los que ya están inscriptos
+  const encontrados = useBuscarSocios(busqueda, { tam: 12, minimo: 2 }).resultados
+  const resultados = useMemo(
+    () => encontrados.filter(s => !idsInscriptos.has(s.id)).slice(0, 6),
+    [encontrados, idsInscriptos],
+  )
 
   const ejecutar = async (clave: number | 'liberar', fn: () => Promise<void>) => {
     setTrabajando(clave); setError(null); setAviso(null)

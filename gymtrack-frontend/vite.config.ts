@@ -12,6 +12,17 @@ import path from 'path'
 //
 // En desarrollo el frontend llama a /api/... y Vite lo reenvía al backend (proxy), así el celular
 // no necesita conocer la IP del backend ni hay problemas de CORS.
+// Mismas cabeceras de seguridad que en Vercel (vercel.json), para probarlas con `npm run preview`.
+// Si cambia el dominio del backend en producción, actualizar connect-src en los dos lugares.
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; font-src 'self' data:; connect-src 'self' https://*.onrender.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+const CABECERAS_SEGURIDAD = {
+  'Content-Security-Policy': CSP,
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(self), microphone=(), geolocation=(), payment=()',
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const backend = env.VITE_PROXY_TARGET || 'http://localhost:8080'
@@ -36,6 +47,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     preview: {
+      headers: CABECERAS_SEGURIDAD,
       proxy: { '/api': { target: backend, changeOrigin: true, xfwd: true } },
     },
     build: {
@@ -47,7 +59,7 @@ export default defineConfig(({ mode }) => {
           // Separa las librerías del código de la app (mejor caché en el celular)
           manualChunks: (id: string) => {
             if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'react'
-            if (id.includes('node_modules/qr-scanner') || id.includes('node_modules/qrcode')) return 'qr'
+            // Las librerías de QR quedan dentro de las pantallas que las usan (no se bajan al abrir la app)
             return undefined
           },
         },
