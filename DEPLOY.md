@@ -117,4 +117,6 @@ Vercel sirve todo con HTTPS, así que el escáner de QR del celular funciona sin
 | `DDL_AUTO` | `validate` | Hibernate solo verifica el esquema (lo crea Flyway) |
 | `JWT_EXPIRATION_MS` | 24 h | Sesión del staff |
 | `MAIL_ENABLED` / `MAIL_USERNAME` / `MAIL_PASSWORD` | `false` | Mails de avisos por SMTP (Gmail u otro). Paso a paso en `gymtrack-backend/CONFIGURAR-MAIL.md` |
+| `BACKUP_SUPABASE_URL` / `BACKUP_SUPABASE_KEY` / `BACKUP_BUCKET` | (vacío) | Dónde se guardan las copias de seguridad automáticas. **Necesario en Render** (si no, se guardan en el disco del servidor, que se borra). Paso a paso en `gymtrack-backend/CONFIGURAR-BACKUP.md` |
+| `BACKUP_CADA_HORAS` / `BACKUP_RETENER` / `BACKUP_AVISO_MAIL` | `24` / `14` / (vacío) | Frecuencia, cuántas copias se guardan y a quién avisar si falla |
 | `PORT` | `8080` | Lo define Render |

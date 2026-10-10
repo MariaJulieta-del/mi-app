@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, RotateCcw, Trash2 } from 'lucide-react'
 import axiosInstance from '../../../shared/services/axiosInstance'
 import { PageHeader } from '../../../shared/components/ui'
+import RecordatoriosCuota from '../components/RecordatoriosCuota'
+import CopiasSeguridad from '../components/CopiasSeguridad'
 import { useMarca, type Marca } from '../../../shared/context/MarcaContext'
 import { colorDeTexto } from '../../../shared/utils/colores'
 import { useToast } from '../../../shared/hooks/useToast'
@@ -190,6 +192,8 @@ export default function ConfiguracionPage() {
         </div>
       </div>
       <DuracionRutinas />
+      <RecordatoriosCuota />
+      <CopiasSeguridad />
     </div>
   )
 }

@@ -54,7 +54,7 @@ export default function AvisosSocio() {
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visibles.map(a => (
-          <div key={a.id} className={`gt-aviso${a.fechaCreacion > vistoHasta ? ' nuevo' : ''}`}>
+          <div key={a.id} className={`gt-aviso${a.fechaCreacion > vistoHasta ? ' nuevo' : ''}${a.tipo === 'CUOTA' ? ' cuota' : ''}`}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
               <strong style={{ color: 'var(--text-primary)' }}>{a.titulo}</strong>
               <span className="gt-text-sm gt-text-muted" style={{ whiteSpace: 'nowrap' }}>{cuando(a.fechaCreacion)}</span>
