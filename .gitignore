@@ -33,3 +33,6 @@ dist-ssr
 
 # Mails capturados por el servidor trucho de pruebas
 pruebas-e2e/mails-recibidos.json
+
+# Copias de seguridad de la base (tienen datos personales)
+backups/
