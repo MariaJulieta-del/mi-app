@@ -47,6 +47,13 @@ public class MembresiaController {
                 .orElse(ResponseEntity.noContent().build());
     }
 
+    // GET /api/v1/membresias/socio/{socioId}/pases → pases que le quedan, cuándo los usó y meses anteriores
+    @PreAuthorize("@acceso.puedeVerSocio(#socioId)")
+    @GetMapping("/socio/{socioId}/pases")
+    public MembresiaService.HistorialPases historialPases(@PathVariable Long socioId, @RequestParam(defaultValue = "90") int dias) {
+        return membresiaService.historialPases(socioId, dias);
+    }
+
     // GET /api/v1/membresias/proximas-a-vencer?dias=7 → membresías ACTIVAS que vencen pronto
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     @GetMapping("/proximas-a-vencer")

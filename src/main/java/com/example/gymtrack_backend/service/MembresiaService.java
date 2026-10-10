@@ -141,6 +141,74 @@ public class MembresiaService {
      * Pases de muchas membresías con 2 consultas en total (en lugar de 2 por membresía):
      * se traen los días con ingreso y los faltazos del período que cubre todos los ciclos.
      */
+    // ──────────────────────────────────────────────
+    // HISTORIAL DE PASES (perfil del socio)
+    // ──────────────────────────────────────────────
+
+    /** Un ingreso, un faltazo o un ingreso denegado, y si gastó un pase */
+    public record MovimientoPase(LocalDate fecha, String hora, String tipo, String detalle, boolean gastaPase) {}
+
+    /** Pases de un ciclo mensual anterior */
+    public record CicloPases(LocalDate inicio, LocalDate fin, int usados, Integer total) {}
+
+    public record HistorialPases(boolean tieneMembresia, String plan, PasesInfo actual, int reservasPorVenir,
+                                 LocalDate vence, List<CicloPases> ciclosAnteriores, List<MovimientoPase> movimientos) {}
+
+    /**
+     * Cuántos pases le quedan, cuándo los usó y cómo le fue en los meses anteriores.
+     * Un pase = un día con ingreso (dos ingresos el mismo día gastan uno) o una clase reservada a la que faltó.
+     */
+    @Transactional(readOnly = true)
+    public HistorialPases historialPases(Long socioId, int dias) {
+        LocalDate hoy = LocalDate.now();
+        LocalDate desde = hoy.minusDays(Math.max(7, Math.min(365, dias)));
+        Membresia m = membresiaRepository.findBySocioId(socioId).orElse(null);
+
+        List<MovimientoPase> movs = new ArrayList<>();
+        java.util.Set<LocalDate> diasConPase = new java.util.HashSet<>();
+        // De la más vieja a la más nueva, para saber cuál fue el primer ingreso de cada día
+        List<com.example.gymtrack_backend.entities.Asistencia> asist = new ArrayList<>(asistenciaRepository.findBySocioIdOrderByFechaDescHoraDesc(socioId));
+        java.util.Collections.reverse(asist);
+        java.time.format.DateTimeFormatter hhmm = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+        for (var a : asist) {
+            if (a.getFecha() == null || a.getFecha().isBefore(desde) || !"ENTRADA".equals(a.getTipo())) continue;
+            String hora = a.getHora() == null ? null : a.getHora().format(hhmm);
+            if (Boolean.TRUE.equals(a.getPermitido())) {
+                boolean primero = diasConPase.add(a.getFecha());
+                movs.add(new MovimientoPase(a.getFecha(), hora, "INGRESO", primero ? "Ingreso" : "Volvió a entrar el mismo día", primero));
+            } else {
+                movs.add(new MovimientoPase(a.getFecha(), hora, "DENEGADO", a.getObservacion() != null ? a.getObservacion() : "Ingreso denegado", false));
+            }
+        }
+        int porVenir = 0;
+        for (var r : reservaRepository.delSocioDesde(socioId, desde)) {
+            String clase = r.getDisciplina() != null ? r.getDisciplina().getNombre() : "clase";
+            if ("AUSENTE".equals(r.getEstado())) {
+                movs.add(new MovimientoPase(r.getFecha(), r.getHoraInicio(), "FALTAZO", "Reservó " + clase + " y no vino", true));
+            } else if ("CONFIRMADA".equals(r.getEstado()) && !r.getFecha().isBefore(hoy)) {
+                porVenir++;
+            }
+        }
+        movs.sort(java.util.Comparator.comparing(MovimientoPase::fecha)
+                .thenComparing(x -> x.hora() == null ? "" : x.hora()).reversed());
+
+        if (m == null) return new HistorialPases(false, null, null, porVenir, null, List.of(), movs);
+
+        PasesInfo actual = calcularPases(m, hoy);
+        // Los 3 ciclos anteriores (si la membresía ya los tenía)
+        List<CicloPases> anteriores = new ArrayList<>();
+        LocalDate fin = actual.cicloInicio().minusDays(1);
+        for (int i = 0; i < 3 && m.getFechaInicio() != null && !fin.isBefore(m.getFechaInicio()); i++) {
+            LocalDate[] c = ciclo(m, fin);
+            int usados = (int) asistenciaRepository.countDiasConIngreso(socioId, c[0], c[1])
+                    + (int) reservaRepository.contarAusentes(socioId, c[0], c[1]);
+            anteriores.add(new CicloPases(c[0], c[1], usados, actual.pasesMensuales()));
+            fin = c[0].minusDays(1);
+        }
+        String plan = tarifaRepository.findById(m.getTipoMembresia()).map(TarifaMembresia::getNombre).orElse(m.getTipoMembresia());
+        return new HistorialPases(true, plan, actual, porVenir, m.getFechaVencimiento(), anteriores, movs);
+    }
+
     Map<Long, PasesInfo> calcularPasesDeTodas(List<Membresia> lista, LocalDate hoy) {
         Map<Long, PasesInfo> res = new HashMap<>();
         if (lista.isEmpty()) return res;
