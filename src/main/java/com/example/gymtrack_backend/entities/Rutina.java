@@ -37,6 +37,10 @@ public class Rutina {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    /** Última vez que se cambiaron los ejercicios (desde ahí se cuenta cuánto hace que el socio la hace) */
+    @Column(name = "fecha_renovacion")
+    private LocalDateTime fechaRenovacion;
+
     /**
      * Se ejecuta antes de insertar en BD.
      * Asigna automáticamente la fecha y hora actual.

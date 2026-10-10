@@ -40,6 +40,7 @@ public class SeguimientoService {
     private final MembresiaRepository         membresiaRepo;
     private final ProgresoEjercicioRepository progresoRepo;
     private final SocioRepository             socioRepo;
+    private final ReglasRutina                reglas;
 
     // ── Hoy ──────────────────────────────────────────────────────────────────
 
@@ -73,11 +74,12 @@ public class SeguimientoService {
                 .toList();
 
         int denegados = (int) deHoy.stream().filter(a -> !Boolean.TRUE.equals(a.getPermitido())).count();
-        return new Hoy(porSocio.size(), denegados, entrenando, aRenovar(hoy), SEMANAS_RENOVAR_RUTINA);
+        int max = reglas.semanasMax();
+        return new Hoy(porSocio.size(), denegados, entrenando, aRenovar(hoy, max), max);
     }
 
     /** Socios que vienen seguido y no tienen rutina, o la tienen hace mucho */
-    private List<SocioARenovar> aRenovar(LocalDate hoy) {
+    private List<SocioARenovar> aRenovar(LocalDate hoy, int semanasMax) {
         Map<Long, LocalDate> ultimaVisita = new LinkedHashMap<>();
         Map<Long, Socio> socios = new HashMap<>();
         for (Asistencia a : asistenciaRepo.findByFechaBetweenOrderByFechaDescHoraDesc(hoy.minusDays(DIAS_ACTIVIDAD), hoy)) {
@@ -91,7 +93,7 @@ public class SeguimientoService {
             RutinaResumen r = rutinaActual(s.getId(), hoy);
             if (r == null) {
                 lista.add(new SocioARenovar(s.getId(), nombreDe(s), "SIN_RUTINA", null, e.getValue()));
-            } else if (r.semanas() >= SEMANAS_RENOVAR_RUTINA) {
+            } else if (r.semanas() >= semanasMax) {
                 lista.add(new SocioARenovar(s.getId(), nombreDe(s), "RUTINA_VIEJA", r.semanas(), e.getValue()));
             }
         }
@@ -103,10 +105,9 @@ public class SeguimientoService {
 
     private RutinaResumen rutinaActual(Long socioId, LocalDate hoy) {
         return rutinaRepo.findBySocioId(socioId).stream()
-                .filter(r -> r.getFechaCreacion() != null)
-                .max(Comparator.comparing(Rutina::getFechaCreacion))
-                .map(r -> new RutinaResumen(r.getId(), r.getNombre(),
-                        ChronoUnit.WEEKS.between(r.getFechaCreacion().toLocalDate(), hoy)))
+                .filter(r -> ReglasRutina.inicio(r) != null)
+                .max(Comparator.comparing(ReglasRutina::inicio))
+                .map(r -> new RutinaResumen(r.getId(), r.getNombre(), ReglasRutina.semanas(r, hoy)))
                 .orElse(null);
     }
 

@@ -14,6 +14,23 @@ import java.util.List;
 public class MaquinaService {
 
     private final MaquinaRepository repo;
+    private final com.example.gymtrack_backend.repository.MantenimientoRepository mantenimientoRepo;
+
+    /**
+     * Borra la máquina. Si tiene arreglos registrados no se borra (se perdería el historial y lo gastado):
+     * en ese caso hay que deshabilitarla. Se saca de los ejercicios que la usaban.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public void eliminar(Long id) {
+        Maquina m = obtener(id);
+        long arreglos = mantenimientoRepo.countByMaquinaId(id);
+        if (arreglos > 0) {
+            throw new IllegalStateException(m.getNombre() + " tiene " + arreglos + (arreglos == 1 ? " arreglo registrado" : " arreglos registrados")
+                    + ": deshabilitala para conservar el historial y lo gastado.");
+        }
+        repo.quitarDeEjercicios(id);
+        repo.delete(m);
+    }
 
     public List<Maquina> listarActivas() { return repo.findByActivaTrue(); }
     public List<Maquina> listarTodas()   { return repo.findAll(); }

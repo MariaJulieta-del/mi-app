@@ -61,6 +61,30 @@ public class ConfiguracionController {
         return new Marca(c.getNombre(), c.getLogo(), c.getColorAcento());
     }
 
+    public record Rutinas(int semanasMax) {}
+
+    /** Duración máxima de una rutina antes de renovarla (la ve el staff; la cambia el admin) */
+    @GetMapping("/rutinas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public Rutinas rutinas() {
+        Integer s = actual().getSemanasRutina();
+        return new Rutinas(s == null ? com.example.gymtrack_backend.service.ReglasRutina.SEMANAS_POR_DEFECTO : s);
+    }
+
+    @PutMapping("/rutinas")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Rutinas guardarRutinas(@RequestBody Map<String, Integer> body) {
+        Integer s = body.get("semanasMax");
+        if (s == null || s < com.example.gymtrack_backend.service.ReglasRutina.SEMANAS_MIN || s > com.example.gymtrack_backend.service.ReglasRutina.SEMANAS_MAX) {
+            throw new IllegalArgumentException("Elegí entre " + com.example.gymtrack_backend.service.ReglasRutina.SEMANAS_MIN + " y " + com.example.gymtrack_backend.service.ReglasRutina.SEMANAS_MAX + " semanas");
+        }
+        ConfiguracionGimnasio c = actual();
+        c.setSemanasRutina(s);
+        c.setActualizado(LocalDateTime.now());
+        repo.save(c);
+        return new Rutinas(s);
+    }
+
     private ConfiguracionGimnasio actual() {
         return repo.findById(ConfiguracionGimnasio.ID).orElseGet(ConfiguracionGimnasio::new);
     }

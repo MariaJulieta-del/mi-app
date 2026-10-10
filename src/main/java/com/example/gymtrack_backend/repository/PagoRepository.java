@@ -26,6 +26,10 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("select m.socio.id, min(p.fechaPago) from Pago p join p.membresia m where p.estadoPago = 'COMPLETADO' group by m.socio.id")
     List<Object[]> primerPagoPorSocio();
 
+    /** (plan, cantidad, total) de los cobros completados desde una fecha */
+    @Query("select coalesce(p.tipoPlan, m.tipoMembresia), count(p), sum(p.monto) from Pago p join p.membresia m where p.estadoPago = 'COMPLETADO' and p.fechaPago >= :desde group by coalesce(p.tipoPlan, m.tipoMembresia)")
+    List<Object[]> cobrosPorPlan(@Param("desde") LocalDateTime desde);
+
     /** Total cobrado (completados) en un período */
     @Query("select coalesce(sum(p.monto), 0) from Pago p where p.estadoPago = 'COMPLETADO' and p.fechaPago >= :desde and p.fechaPago < :hasta")
     BigDecimal totalCompletadoEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);

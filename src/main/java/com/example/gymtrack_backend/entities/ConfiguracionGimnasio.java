@@ -28,4 +28,8 @@ public class ConfiguracionGimnasio {
     private String colorAcento;
 
     private LocalDateTime actualizado;
+
+    /** Semanas que un socio puede hacer la misma rutina antes de renovarla */
+    @Column(name = "semanas_rutina", nullable = false)
+    private Integer semanasRutina = 6;
 }

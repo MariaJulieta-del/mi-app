@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface MantenimientoRepository extends JpaRepository<Mantenimiento, Long> {
 
+    long countByMaquinaId(Long maquinaId);
+
     /** Todos los mantenimientos de una máquina, ordenados del más reciente al más antiguo */
     List<Mantenimiento> findByMaquinaIdOrderByFechaMantenimientoDescFechaCreacionDesc(Long maquinaId);
 

@@ -59,6 +59,14 @@ public class MaquinaController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Borrar definitivamente (solo si no tiene arreglos registrados) */
+    @DeleteMapping("/{id}/definitivo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        service.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/activar")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
     public ResponseEntity<Maquina> activar(@PathVariable Long id) {

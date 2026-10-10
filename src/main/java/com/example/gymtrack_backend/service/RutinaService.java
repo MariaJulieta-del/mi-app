@@ -46,6 +46,9 @@ public class RutinaService {
     @Autowired
     private com.example.gymtrack_backend.repository.MaquinaRepository maquinaRepository;
 
+    @Autowired
+    private ReglasRutina reglas;
+
     // ──────────────────────────────────────────────
     // RUTINAS - CRUD
     // ──────────────────────────────────────────────
@@ -209,6 +212,9 @@ public class RutinaService {
         }
         ej.setDia(dto.getDia() != null ? dto.getDia() : 1);
 
+        // Sumar un ejercicio también cuenta como renovar la rutina
+        rutina.setFechaRenovacion(java.time.LocalDateTime.now());
+        rutinaRepository.save(rutina);
         return mapearEjercicioADTO(rutinaEjercicioRepository.save(ej));
     }
 
@@ -346,6 +352,9 @@ public class RutinaService {
             rutinaEjercicioRepository.save(ej);
         }
         rutinaEjercicioRepository.flush();
+        // Se cambiaron los ejercicios: desde hoy se cuenta de nuevo cuánto hace que la hace
+        rutina.setFechaRenovacion(java.time.LocalDateTime.now());
+        rutinaRepository.save(rutina);
         java.util.Map<Long, com.example.gymtrack_backend.entities.Maquina> maquinas = maquinaRepository.findAll().stream()
             .collect(Collectors.toMap(com.example.gymtrack_backend.entities.Maquina::getId, m -> m));
         return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutinaId).stream().map(e -> mapearEjercicioADTO(e, maquinas)).toList();
@@ -446,6 +455,13 @@ public class RutinaService {
         dto.setDificultad(rutina.getDificultad());
         dto.setObjetivo(rutina.getObjetivo());
         dto.setNotasProfe(rutina.getNotasProfe());
+        // Antigüedad: desde la última vez que se cambiaron los ejercicios
+        int max = reglas.semanasMax();
+        long semanas = ReglasRutina.semanas(rutina, java.time.LocalDate.now());
+        dto.setSemanasActual(semanas);
+        dto.setSemanasMax(max);
+        dto.setParaRenovar(rutina.getSocio() != null && semanas >= max);
+        dto.setFechaRenovacion(ReglasRutina.inicio(rutina));
 
         // Resumen para tarjetas/previews (sin contar la entrada en calor)
         List<RutinaEjercicio> ejercicios = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutina.getId());

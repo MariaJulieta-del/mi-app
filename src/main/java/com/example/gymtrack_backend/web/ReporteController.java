@@ -29,6 +29,7 @@ public class ReporteController {
     private final MembresiaRepository  membresiaRepo;
     private final PagoRepository       pagoRepo;
     private final AsistenciaRepository asistenciaRepo;
+    private final TarifaMembresiaRepository tarifaRepo;
     private final com.example.gymtrack_backend.service.MetricasService metricasService;
     private final com.example.gymtrack_backend.service.DemografiaService demografiaService;
 
@@ -50,6 +51,68 @@ public class ReporteController {
     @GetMapping("/demografia")
     public com.example.gymtrack_backend.service.DemografiaService.Demografia demografia(@RequestParam(defaultValue = "60") int dias) {
         return demografiaService.demografia(dias);
+    }
+
+    public record PlanVendido(String tipo, String nombre, long cobros, double monto, long sociosActivos) {}
+
+    /** Qué planes se venden más: cobros y monto por plan en los últimos N meses, y socios activos de cada uno */
+    @GetMapping("/planes")
+    public List<PlanVendido> planes(@RequestParam(defaultValue = "6") int meses) {
+        int m = Math.max(1, Math.min(24, meses));
+        Map<String, String> nombres = new java.util.HashMap<>();
+        tarifaRepo.findAll().forEach(t -> nombres.put(t.getTipo(), t.getNombre() != null ? t.getNombre() : t.getTipo()));
+        return pagoRepo.cobrosPorPlan(LocalDate.now().minusMonths(m).atStartOfDay()).stream()
+                .map(f -> {
+                    String tipo = (String) f[0];
+                    return new PlanVendido(tipo, nombres.getOrDefault(tipo, tipo), ((Number) f[1]).longValue(),
+                            ((Number) f[2]).doubleValue(), membresiaRepo.countActivosByTipo(tipo));
+                })
+                .sorted(java.util.Comparator.comparingLong(PlanVendido::cobros).reversed())
+                .toList();
+    }
+
+    public record EstadoMembresias(int sociosActivos, int alDia, int porVencer, int vencidas, int canceladas, int sinMembresia,
+                                   int alDiaQueVinieron, int alDiaSinVenir, int vencidasQueSiguenViniendo, int diasPorVencer, int diasUso) {}
+
+    /**
+     * Estado de las membresías de los socios activos, con el uso:
+     * de los que están al día, cuántos vinieron en los últimos 30 días; y cuántos con la cuota vencida
+     * igual intentaron entrar (los frenó la recepción: oportunidad de cobro).
+     */
+    @GetMapping("/estado-membresias")
+    public EstadoMembresias estadoMembresias() {
+        LocalDate hoy = LocalDate.now();
+        int diasPorVencer = 7, diasUso = 30;
+        Map<Long, com.example.gymtrack_backend.entities.Membresia> memDe = new java.util.HashMap<>();
+        membresiaRepo.todasConSocio().forEach(m -> memDe.put(m.getSocio().getId(), m));
+        Map<Long, LocalDate> ultimaPermitida = new java.util.HashMap<>();
+        for (Object[] f : asistenciaRepo.ultimaVisitaPorSocio(true)) ultimaPermitida.put((Long) f[0], (LocalDate) f[1]);
+        Map<Long, LocalDate> ultimaCualquiera = new java.util.HashMap<>();
+        for (Object[] f : asistenciaRepo.ultimaVisitaPorSocio(false)) ultimaCualquiera.put((Long) f[0], (LocalDate) f[1]);
+
+        int activos = 0, alDia = 0, porVencer = 0, vencidas = 0, canceladas = 0, sin = 0, vinieron = 0, sinVenir = 0, vencidasVienen = 0;
+        for (var s : socioRepo.findByActivoTrue()) {
+            activos++;
+            var m = memDe.get(s.getId());
+            if (m == null) { sin++; continue; }
+            switch (m.getEstadoMembresia()) {
+                case ACTIVA -> {
+                    if (m.getFechaVencimiento().isBefore(hoy)) { vencidas++; break; }
+                    alDia++;
+                    if (!m.getFechaVencimiento().isAfter(hoy.plusDays(diasPorVencer))) porVencer++;
+                    LocalDate u = ultimaPermitida.get(s.getId());
+                    if (u != null && !u.isBefore(hoy.minusDays(diasUso))) vinieron++; else sinVenir++;
+                }
+                case VENCIDA -> {
+                    vencidas++;
+                    LocalDate u = ultimaCualquiera.get(s.getId());
+                    if (u != null && !u.isBefore(hoy.minusDays(diasUso))) vencidasVienen++;
+                }
+                case CANCELADA -> canceladas++;
+                default -> sin++;
+            }
+        }
+        return new EstadoMembresias(activos, alDia, porVencer, vencidas, canceladas, sin, vinieron, sinVenir, vencidasVienen, diasPorVencer, diasUso);
     }
 
     @GetMapping("/dashboard")

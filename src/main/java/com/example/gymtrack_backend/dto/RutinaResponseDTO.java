@@ -34,6 +34,13 @@ public class RutinaResponseDTO {
     /** Objetivo: FUERZA, HIPERTROFIA, RESISTENCIA, PERDIDA_GRASA, SALUD (null = sin especificar) */
     private String objetivo;
     private String notasProfe;
+    /** Semanas desde la última renovación (o desde que se creó) */
+    private long semanasActual;
+    /** Límite de semanas que define el gimnasio */
+    private int semanasMax;
+    /** Rutina de un socio que ya superó el límite: hay que renovarla */
+    private boolean paraRenovar;
+    private java.time.LocalDateTime fechaRenovacion;
 
     /** Ejercicios de la rutina, sin contar la entrada en calor */
     private int cantidadEjercicios;

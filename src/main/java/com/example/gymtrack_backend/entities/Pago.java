@@ -51,6 +51,10 @@ public class Pago {
     @Column(name = "clave_idempotencia", length = 64, unique = true)
     private String claveIdempotencia;
 
+    /** Plan que se cobró (la membresía puede cambiar de plan después) */
+    @Column(name = "tipo_plan", length = 20)
+    private String tipoPlan;
+
     @PrePersist
     protected void onCreate() {
         this.fechaPago = LocalDateTime.now();

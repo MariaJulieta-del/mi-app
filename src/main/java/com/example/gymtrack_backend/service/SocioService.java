@@ -229,6 +229,7 @@ public class SocioService {
         pago.setMonto(mem.getPrecio());
         pago.setMetodoPago(metodo);
         pago.setEstadoPago(EstadoPago.COMPLETADO);
+        pago.setTipoPlan(mem.getTipoMembresia());
         Pago pagoGuardado = pagoRepository.save(pago);
 
         resp.setMembresiaId(mem.getId());

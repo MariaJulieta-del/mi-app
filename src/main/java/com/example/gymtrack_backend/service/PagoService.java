@@ -71,6 +71,7 @@ public class PagoService {
         pago.setEstadoPago(EstadoPago.COMPLETADO);
         pago.setObservaciones(dto.getObservaciones());
         pago.setClaveIdempotencia(k);
+        pago.setTipoPlan(membresia.getTipoMembresia());
 
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(dto.getSocioId());
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle(
