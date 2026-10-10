@@ -2473,3 +2473,13 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-carga-punto.ultimo { background: var(--accent); }
 .gt-carga-punto:hover, .gt-carga-punto:focus-visible { transform: scale(1.4); background: var(--accent); }
 .gt-carga-fechas { grid-column: 2; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+/* ── App del socio: hace cuánto tiene la misma rutina ── */
+.gt-socio-antiguedad { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--accent-light); color: var(--accent); margin: 12px 0; }
+.gt-socio-antiguedad.pronto { background: var(--yellow-bg); color: var(--yellow-text); }
+.gt-socio-antiguedad.renovar { background: var(--red-light); color: var(--red-text); }
+.gt-socio-antiguedad svg { flex-shrink: 0; margin-top: 2px; }
+.gt-socio-antiguedad strong { display: block; font-size: 15px; }
+.gt-socio-antiguedad span { display: block; font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.gt-socio-antiguedad-barra { height: 6px; border-radius: 3px; background: color-mix(in srgb, currentColor 18%, transparent); margin-top: 8px; overflow: hidden; }
+.gt-socio-antiguedad-barra > div { height: 100%; border-radius: 3px; background: currentColor; }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, ClipboardList, Play } from 'lucide-react'
+import { CalendarClock, ChevronRight, ClipboardList, Play } from 'lucide-react'
 import { CargandoPagina, EmptyState, Pill } from '../../../shared/components/ui'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { OBJETIVO_CONFIG, ordenarDias } from '../../rutinas/utils/rutinaUtils'
@@ -40,7 +40,7 @@ export default function SocioRutinaPage() {
             <Link key={r.id} to={`/rutinas/${r.id}`} className="gt-socio-fila-link">
               <span style={{ flex: 1, minWidth: 0 }}>
                 <strong>{r.nombre}</strong>
-                <small>{r.fechaCreacion ? `Desde el ${formatFecha(r.fechaCreacion)}` : ''}{r.cantidadEjercicios ? ` · ${r.cantidadEjercicios} ejercicios` : ''}</small>
+                <small>{r.fechaCreacion ? `Desde el ${formatFecha(r.fechaCreacion)}` : ''}{r.semanasActual != null ? ` · ${r.semanasActual} ${r.semanasActual === 1 ? 'semana' : 'semanas'}` : ''}{r.cantidadEjercicios ? ` · ${r.cantidadEjercicios} ejercicios` : ''}</small>
               </span>
               <ChevronRight size={18} aria-hidden />
             </Link>
@@ -57,7 +57,9 @@ function RutinaActual({ r }: { r: Rutina }) {
   const cantidadDias = Math.max(dias.length, r.cantidadDias ?? 1, 1)
   const hoy = diaDeHoy()
   const obj = r.objetivo ? OBJETIVO_CONFIG[r.objetivo] : null
-  const semanas = r.fechaCreacion ? Math.floor((ahora - new Date(r.fechaCreacion).getTime()) / (7 * 86400000)) : null
+  // Desde cuándo hace esta rutina: la última vez que el profe le cambió los ejercicios (o cuando se la armó)
+  const desde = r.fechaRenovacion ?? r.fechaCreacion ?? null
+  const semanas = r.semanasActual ?? (desde ? Math.floor((ahora - new Date(desde).getTime()) / (7 * 86400000)) : null)
 
   return (
     <section className="gt-card gt-socio-rutina">
@@ -66,11 +68,11 @@ function RutinaActual({ r }: { r: Rutina }) {
           <h2 style={{ margin: 0, fontSize: 20 }}>{r.nombre}</h2>
           <p className="gt-text-sm gt-text-muted" style={{ margin: '4px 0 0' }}>
             {r.cantidadEjercicios ?? 0} ejercicios · {cantidadDias} {cantidadDias === 1 ? 'día' : 'días'}
-            {semanas != null && ` · hace ${semanas === 0 ? 'menos de una semana' : `${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`}`}
           </p>
         </div>
         {obj && <Pill tono="info">{obj.emoji} {obj.label}</Pill>}
       </div>
+      {semanas != null && <AntiguedadRutina semanas={semanas} max={r.semanasMax ?? null} desde={desde} renovar={!!r.paraRenovar} />}
       {r.descripcion && <p className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>{r.descripcion}</p>}
       {r.notasProfe && (
         <div className="gt-notas-profe" role="note">
@@ -98,5 +100,32 @@ function RutinaActual({ r }: { r: Rutina }) {
         })}
       </div>
     </section>
+  )
+}
+
+/** Cuánto hace que hace la misma rutina y cuánto le falta para renovarla (el límite lo pone el gimnasio) */
+function AntiguedadRutina({ semanas, max, desde, renovar }: { semanas: number; max: number | null; desde: string | null; renovar: boolean }) {
+  const actual = semanas + 1
+  const pct = max ? Math.min(100, (actual / max) * 100) : 0
+  const faltan = max ? max - semanas : null
+  return (
+    <div className={`gt-socio-antiguedad${renovar ? ' renovar' : faltan != null && faltan <= 1 ? ' pronto' : ''}`}>
+      <CalendarClock size={18} aria-hidden />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <strong>
+          {renovar ? `Hace ${semanas} semanas que hacés esta rutina` : max ? `Semana ${actual} de ${max}` : `Semana ${actual} con esta rutina`}
+        </strong>
+        <span>
+          {desde && <>La hacés desde el {formatFecha(desde)}. </>}
+          {renovar ? 'Ya es momento de cambiarla: pedile a tu profe que te la renueve para seguir progresando.'
+            : faltan != null ? (faltan <= 1 ? 'Esta es la última semana: después toca renovarla.' : `Te quedan ${faltan} semanas antes de renovarla.`) : ''}
+        </span>
+        {max != null && (
+          <div className="gt-socio-antiguedad-barra" role="img" aria-label={`Semana ${Math.min(actual, max)} de ${max}`}>
+            <div style={{ width: `${pct}%` }} />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

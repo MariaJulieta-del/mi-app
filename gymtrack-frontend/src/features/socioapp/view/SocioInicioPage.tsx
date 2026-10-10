@@ -27,7 +27,10 @@ export default function SocioInicioPage() {
   const hoy = rutinaDeHoy(rutinas)
   const vigente = membresia && membresia.estadoMembresia === 'ACTIVA' && (membresia.diasRestantes ?? 0) >= 0
   const dias = membresia?.diasRestantes ?? 0
-  const nueva = rutinas.find(r => r.fechaCreacion && ahora - new Date(r.fechaCreacion).getTime() < 7 * 86400000)
+  // Rutina armada o renovada (ejercicios cambiados) en los últimos 7 días
+  const reciente = (iso?: string | null) => !!iso && ahora - new Date(iso).getTime() < 7 * 86400000
+  const nueva = rutinas.find(r => reciente(r.fechaRenovacion ?? r.fechaCreacion))
+  const renovada = !!nueva && !reciente(nueva.fechaCreacion)
 
   return (
     <div className="gt-socio-pagina">
@@ -76,8 +79,14 @@ export default function SocioInicioPage() {
         )}
       </section>
 
+      {rutinas[0]?.paraRenovar && (
+        <div className="gt-alert gt-alert-warning">
+          ⏰ Hace {rutinas[0].semanasActual} semanas que hacés <strong>{rutinas[0].nombre}</strong>. Pedile a tu profe que te la renueve. <Link to="/mi-rutina">Ver mi rutina</Link>
+        </div>
+      )}
+
       {nueva && hoy?.rutina.id !== nueva.id && (
-        <div className="gt-alert gt-alert-info">✨ Tu profe te armó una rutina nueva: <Link to={`/rutinas/${nueva.id}`}>{nueva.nombre}</Link></div>
+        <div className="gt-alert gt-alert-info">✨ {renovada ? 'Tu profe te renovó la rutina' : 'Tu profe te armó una rutina nueva'}: <Link to={`/rutinas/${nueva.id}`}>{nueva.nombre}</Link></div>
       )}
 
       {/* Accesos rápidos */}
