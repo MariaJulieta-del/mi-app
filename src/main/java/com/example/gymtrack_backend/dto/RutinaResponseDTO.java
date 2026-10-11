@@ -41,6 +41,10 @@ public class RutinaResponseDTO {
     /** Rutina de un socio que ya superó el límite: hay que renovarla */
     private boolean paraRenovar;
     private java.time.LocalDateTime fechaRenovacion;
+    /** Plantilla visible en la app del socio */
+    private Boolean visibleSocios;
+    /** La eligió el socio desde las plantillas */
+    private Boolean elegidaPorSocio;
 
     /** Ejercicios de la rutina, sin contar la entrada en calor */
     private int cantidadEjercicios;

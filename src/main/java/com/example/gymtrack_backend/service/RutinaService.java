@@ -49,6 +49,16 @@ public class RutinaService {
     @Autowired
     private ReglasRutina reglas;
 
+    @Autowired
+    private com.example.gymtrack_backend.security.AccesoSocio acceso;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private SolicitudRutinaService solicitudes;
+
+    /** Cuántas plantillas puede elegirse un socio por semana (para que no llene su cuenta de rutinas) */
+    public static final int ELEGIDAS_POR_SEMANA = 3;
+
     // ──────────────────────────────────────────────
     // RUTINAS - CRUD
     // ──────────────────────────────────────────────
@@ -81,6 +91,7 @@ public class RutinaService {
 
         // 1. Guardar la rutina en su propia transacción (commit inmediato)
         Rutina guardada = rutinaRepository.save(rutina);
+        if (guardada.getSocio() != null && acceso.esStaff()) solicitudes.resolverConRutina(guardada);
 
         // 2. Agregar calentamiento. Si falla (p.ej. columna es_calentamiento aún no existe
         //    porque el backend no fue reiniciado desde la migración V19), la rutina ya quedó
@@ -389,6 +400,7 @@ public class RutinaService {
         }
 
         Rutina guardada = rutinaRepository.save(nueva);
+        if (guardada.getSocio() != null && acceso.esStaff()) solicitudes.resolverConRutina(guardada);
 
         // Clonar ejercicios conservando el orden
         List<RutinaEjercicio> ejerciciosOrigen =
@@ -414,6 +426,76 @@ public class RutinaService {
     }
 
     // ──────────────────────────────────────────────
+    // PLANTILLAS EN LA APP DEL SOCIO
+    // ──────────────────────────────────────────────
+
+    @Transactional
+    public RutinaResponseDTO cambiarVisibilidad(Long rutinaId, boolean visible) {
+        Rutina r = rutinaRepository.findById(rutinaId)
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada"));
+        if (r.getSocio() != null) throw new IllegalArgumentException("Solo las plantillas se muestran en la app de los socios");
+        r.setVisibleSocios(visible);
+        return mapearAResponseDTO(rutinaRepository.save(r));
+    }
+
+    /** Plantillas que el socio puede ver: generales, visibles y con al menos un ejercicio */
+    @Transactional(readOnly = true)
+    public List<RutinaResponseDTO> plantillasParaSocios() {
+        return rutinaRepository.findBySocioIsNull().stream()
+            .filter(r -> Boolean.TRUE.equals(r.getVisibleSocios()))
+            .map(this::mapearAResponseDTO)
+            .filter(d -> d.getCantidadEjercicios() > 0)
+            .map(d -> { d.setNotasProfe(null); return d; })   // las notas internas no salen
+            .sorted(java.util.Comparator.comparing(RutinaResponseDTO::getNombre, String.CASE_INSENSITIVE_ORDER))
+            .collect(Collectors.toList());
+    }
+
+    /** Ejercicios de una plantilla visible (para que el socio la mire antes de elegirla) */
+    @Transactional(readOnly = true)
+    public List<EjercicioResponseDTO> ejerciciosDePlantilla(Long plantillaId) {
+        plantillaVisible(plantillaId);
+        return rutinaEjercicioRepository.findByRutinaIdOrderByOrden(plantillaId).stream()
+            .map(this::mapearEjercicioADTO).collect(Collectors.toList());
+    }
+
+    /**
+     * El socio se copia una plantilla como su rutina. Solo plantillas visibles con ejercicios,
+     * y como mucho ELEGIDAS_POR_SEMANA por semana.
+     */
+    @Transactional
+    public RutinaResponseDTO elegirPlantilla(Long socioId, Long plantillaId) {
+        Rutina plantilla = plantillaVisible(plantillaId);
+        if (rutinaEjercicioRepository.countByRutinaId(plantillaId) == 0) {
+            throw new IllegalArgumentException("Esa plantilla todavía no tiene ejercicios");
+        }
+        long recientes = rutinaRepository.findBySocioId(socioId).stream()
+            .filter(r -> Boolean.TRUE.equals(r.getElegidaPorSocio()) && r.getFechaCreacion() != null
+                && r.getFechaCreacion().isAfter(java.time.LocalDateTime.now().minusDays(7)))
+            .count();
+        if (recientes >= ELEGIDAS_POR_SEMANA) {
+            throw new IllegalStateException("Ya elegiste " + ELEGIDAS_POR_SEMANA + " plantillas esta semana. Si ninguna te sirve, pedile una personalizada a tu profe.");
+        }
+        boolean yaLaTiene = rutinaRepository.findBySocioId(socioId).stream()
+            .anyMatch(r -> plantillaId.equals(r.getPlantillaOrigenId()));
+        if (yaLaTiene) throw new IllegalStateException("Ya tenés esta rutina en tu lista");
+
+        RutinaResponseDTO copia = clonarRutina(plantillaId, socioId, plantilla.getNombre());
+        Rutina nueva = rutinaRepository.findById(copia.getId()).orElseThrow();
+        nueva.setElegidaPorSocio(true);
+        nueva.setPlantillaOrigenId(plantillaId);
+        nueva.setFechaRenovacion(java.time.LocalDateTime.now());
+        return mapearAResponseDTO(rutinaRepository.save(nueva));
+    }
+
+    private Rutina plantillaVisible(Long plantillaId) {
+        Rutina r = rutinaRepository.findById(plantillaId).orElse(null);
+        if (r == null || r.getSocio() != null || !Boolean.TRUE.equals(r.getVisibleSocios())) {
+            throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Plantilla no encontrada");
+        }
+        return r;
+    }
+
+    // ──────────────────────────────────────────────
     // HELPERS PRIVADOS
     // ──────────────────────────────────────────────
 
@@ -434,6 +516,9 @@ public class RutinaService {
             // Socio puede acceder a su propia rutina o a rutinas generales (sin socio)
             Socio socioRutina = rutina.getSocio();
             if (socioRutina != null && !socioRutina.getId().equals(socioId)) {
+                throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada");
+            }
+            if (socioRutina == null && !Boolean.TRUE.equals(rutina.getVisibleSocios()) && !acceso.esStaff()) {
                 throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada");
             }
         }
@@ -462,6 +547,8 @@ public class RutinaService {
         dto.setSemanasMax(max);
         dto.setParaRenovar(rutina.getSocio() != null && semanas >= max);
         dto.setFechaRenovacion(ReglasRutina.inicio(rutina));
+        dto.setVisibleSocios(rutina.getVisibleSocios());
+        dto.setElegidaPorSocio(rutina.getElegidaPorSocio());
 
         // Resumen para tarjetas/previews (sin contar la entrada en calor)
         List<RutinaEjercicio> ejercicios = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutina.getId());

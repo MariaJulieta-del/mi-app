@@ -16,6 +16,14 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /** Validación de listas (List<@Valid ...>) y parámetros: 400 con el primer motivo */
+    @ExceptionHandler(org.springframework.web.method.annotation.HandlerMethodValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodValidation(org.springframework.web.method.annotation.HandlerMethodValidationException ex) {
+        String msg = ex.getAllErrors().stream().map(org.springframework.context.MessageSourceResolvable::getDefaultMessage)
+                .filter(java.util.Objects::nonNull).findFirst().orElse("Datos inválidos");
+        return ResponseEntity.badRequest().body(Map.of("error", msg));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors()

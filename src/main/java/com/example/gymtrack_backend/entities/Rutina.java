@@ -41,6 +41,17 @@ public class Rutina {
     @Column(name = "fecha_renovacion")
     private LocalDateTime fechaRenovacion;
 
+    /** Plantilla visible en la app del socio (el profe oculta las que todavía está armando) */
+    @Column(name = "visible_socios", nullable = false)
+    private Boolean visibleSocios = true;
+
+    /** La eligió el propio socio desde las plantillas (no se la armó un profe) */
+    @Column(name = "elegida_por_socio", nullable = false)
+    private Boolean elegidaPorSocio = false;
+
+    @Column(name = "plantilla_origen_id")
+    private Long plantillaOrigenId;
+
     /**
      * Se ejecuta antes de insertar en BD.
      * Asigna automáticamente la fecha y hora actual.

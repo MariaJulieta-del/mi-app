@@ -90,6 +90,15 @@ public class RutinaController {
         return ResponseEntity.ok(rutinaService.actualizarRutina(id, socioId, requestDTO));
     }
 
+    /** PATCH /api/v1/rutinas/{id}/visible — mostrar u ocultar una plantilla en la app de los socios */
+    @PatchMapping("/{id}/visible")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public RutinaResponseDTO visible(@PathVariable Long id, @RequestBody java.util.Map<String, Boolean> body) {
+        Boolean visible = body == null ? null : body.get("visible");
+        if (visible == null) throw new IllegalArgumentException("Falta indicar si es visible");
+        return rutinaService.cambiarVisibilidad(id, visible);
+    }
+
     /** DELETE /api/v1/rutinas/{id} — eliminar una rutina */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
@@ -111,7 +120,8 @@ public class RutinaController {
             Long socioDestinoId = (body != null && body.get("socioId") != null)
                 ? Long.valueOf(body.get("socioId").toString()) : null;
             String nombre = (body != null && body.get("nombre") != null)
-                ? body.get("nombre").toString() : null;
+                ? body.get("nombre").toString().trim() : null;
+            if (nombre != null && nombre.length() > 50) throw new IllegalArgumentException("El nombre no puede superar los 50 caracteres");
             return ResponseEntity.ok(rutinaService.clonarRutina(id, socioDestinoId, nombre));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
@@ -156,7 +166,7 @@ public class RutinaController {
             @PathVariable Long id,
             @PathVariable Long ejId,
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
-            @RequestBody EjercicioUpdateDTO dto) {
+            @Valid @RequestBody EjercicioUpdateDTO dto) {
         socioId = acceso.socioEfectivo(socioId);
         return ResponseEntity.ok(rutinaService.actualizarEjercicio(ejId, id, socioId, dto));
     }
@@ -167,7 +177,7 @@ public class RutinaController {
     public List<EjercicioResponseDTO> reemplazarEjercicios(
             @PathVariable Long id,
             @RequestHeader(value = "X-Socio-Id", required = false) Long socioId,
-            @RequestBody List<EjercicioRequestDTO> lista) {
+            @RequestBody @jakarta.validation.constraints.Size(max = 120, message = "Una rutina no puede tener más de 120 ejercicios") List<@Valid EjercicioRequestDTO> lista) {
         socioId = acceso.socioEfectivo(socioId);
         return rutinaService.reemplazarEjercicios(id, socioId, lista);
     }
