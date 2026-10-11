@@ -19,7 +19,10 @@ import java.util.*;
  *
  *  - Los alumnos fijos (inscriptos) tienen su lugar todas las semanas. Si un día no van, lo "liberan".
  *  - Cualquier socio con membresía vigente puede reservar un lugar libre; si la clase está llena queda en espera.
- *  - Cuando alguien cancela o libera, el primero de la espera pasa a confirmado y se le avisa.
+ *  - Cuando se libera un lugar (cancelación, alumno fijo que avisa, más cupo, baja de un socio), el primero
+ *    de la espera que pueda ir (membresía vigente y pases) pasa a confirmado y se le avisa en la app y por mail.
+ *  - En la última hora antes de la clase no se confirma a nadie solo (podría no enterarse y se le contaría
+ *    el faltazo): se avisa a los que esperan y el lugar es del primero que lo tome.
  *  - Si reservó y no vino, se le cuenta como un pase usado (ver MembresiaService.calcularPases).
  */
 @Service
@@ -28,6 +31,8 @@ public class ReservaService {
 
     /** Se puede reservar hasta esta cantidad de días para adelante */
     public static final int DIAS_ADELANTE = 7;
+    /** Minutos antes de la clase en que la espera deja de confirmarse sola */
+    public static final int CORTE_ESPERA_MIN = 60;
 
     private static final Logger log = LoggerFactory.getLogger(ReservaService.class);
 
@@ -39,6 +44,7 @@ public class ReservaService {
     private final MembresiaService membresiaService;
     private final AsistenciaRepository asistenciaRepo;
     private final NotificacionRepository notificacionRepo;
+    private final EmailService emailService;
 
     public record ClaseAgenda(Long disciplinaId, String nombre, Integer color, String descripcion, String instructor,
                               LocalDate fecha, String dia, String horaInicio, String horaFin,
@@ -99,7 +105,7 @@ public class ReservaService {
 
     @Transactional
     public Resultado reservar(Long socioId, Long disciplinaId, LocalDate fecha, String hora) {
-        Disciplina d = disciplinaRepo.findById(disciplinaId).orElseThrow(() -> new IllegalArgumentException("Disciplina no encontrada"));
+        Disciplina d = disciplinaRepo.bloquear(disciplinaId).orElseThrow(() -> new IllegalArgumentException("Disciplina no encontrada"));
         Disciplina.Horario h = validarClase(d, fecha, hora);
         Socio s = socioRepo.findById(socioId).orElseThrow(() -> new IllegalArgumentException("Socio no encontrado"));
         if (!Boolean.TRUE.equals(s.getActivo())) throw new IllegalArgumentException("El socio está dado de baja");
@@ -112,9 +118,10 @@ public class ReservaService {
         if (fijo && (mia == null || !ReservaClase.LIBERADA.equals(mia.getEstado()))) {
             throw new IllegalArgumentException("Ya tenés tu lugar fijo en esta clase");
         }
-        if (mia != null && (ReservaClase.CONFIRMADA.equals(mia.getEstado()) || ReservaClase.ESPERA.equals(mia.getEstado()))) {
+        if (mia != null && ReservaClase.CONFIRMADA.equals(mia.getEstado())) {
             throw new IllegalArgumentException("Ya tenés esta clase reservada");
         }
+        boolean estabaEsperando = mia != null && ReservaClase.ESPERA.equals(mia.getEstado());
 
         // Cuántos lugares quedan sin contar mi registro anterior (si lo había)
         // (un fijo que liberó su lugar se cuenta con su liberación: no se ocupa a sí mismo)
@@ -127,13 +134,16 @@ public class ReservaService {
         r.setSocio(s);
         r.setFecha(fecha);
         r.setHoraInicio(h.getHoraInicio());
-        r.setCreada(LocalDateTime.now());   // vuelve al final de la espera
+        if (!estabaEsperando) r.setCreada(LocalDateTime.now());   // vuelve al final de la espera (si ya esperaba, conserva su lugar)
         r.setActualizada(LocalDateTime.now());
         if (fijo) {
             // Alumno fijo que había liberado su lugar y lo quiere de vuelta
             if (!hayLugar) throw new IllegalArgumentException("Tu lugar ya lo ocupó otra persona. Probá en otro horario.");
             reservaRepo.delete(r);
             return new Resultado("FIJO", null, "Recuperaste tu lugar en " + d.getNombre());
+        }
+        if (estabaEsperando && !hayLugar) {
+            throw new IllegalArgumentException("Ya estás en la lista de espera. Si se libera un lugar te avisamos.");
         }
         r.setEstado(hayLugar ? ReservaClase.CONFIRMADA : ReservaClase.ESPERA);
         reservaRepo.save(r);
@@ -144,7 +154,7 @@ public class ReservaService {
 
     @Transactional
     public Resultado cancelar(Long socioId, Long disciplinaId, LocalDate fecha, String hora) {
-        Disciplina d = disciplinaRepo.findById(disciplinaId).orElseThrow(() -> new IllegalArgumentException("Disciplina no encontrada"));
+        Disciplina d = disciplinaRepo.bloquear(disciplinaId).orElseThrow(() -> new IllegalArgumentException("Disciplina no encontrada"));
         Disciplina.Horario h = validarClase(d, fecha, hora);
         Socio s = socioRepo.findById(socioId).orElseThrow(() -> new IllegalArgumentException("Socio no encontrado"));
         boolean fijo = inscripcionRepo.existsByDisciplinaIdAndSocioId(disciplinaId, socioId);
@@ -169,25 +179,90 @@ public class ReservaService {
         return new Resultado(mia.getEstado(), null, mensaje);
     }
 
-    /** Pasa a confirmados a los primeros de la espera mientras haya lugar, y les avisa en la app */
+    /**
+     * Se liberó lugar: pasa a confirmados a los primeros de la espera que puedan ir y les avisa (app y mail).
+     * En la última hora antes de la clase no confirma a nadie: avisa a todos los que esperan para que lo tome el primero.
+     */
     private void promover(Disciplina d, LocalDate fecha, String hora) {
         List<ReservaClase> rs = reservaRepo.deLaClase(d.getId(), fecha, hora);
         Ocupacion o = ocupacion(d, fecha, inscripcionRepo.findConSocioByDisciplinaId(d.getId()), rs);
         int libres = o.disponibles() == null ? Integer.MAX_VALUE : o.disponibles();
+        if (libres <= 0 || o.espera().isEmpty()) return;
+        String cuando = diaYFecha(fecha) + " a las " + hora;
+
+        if (ultimaHora(fecha, hora)) {
+            for (ReservaClase r : o.espera()) {
+                avisar(r.getSocio(), "¡Se liberó un lugar!", "Hay lugar en " + d.getNombre() + " hoy a las " + hora
+                        + ". Si podés ir, entrá a Clases y tomalo: es del primero que lo reserve.");
+            }
+            return;
+        }
         for (ReservaClase r : o.espera()) {
             if (libres <= 0) break;
+            if (!puedeIr(r.getSocio(), fecha)) continue;   // cuota vencida o sin pases: sigue esperando y pasa el siguiente
             r.setEstado(ReservaClase.CONFIRMADA);
             r.setActualizada(LocalDateTime.now());
             reservaRepo.save(r);
             libres--;
-            Notificacion n = new Notificacion();
-            n.setTitulo("¡Se liberó un lugar!");
-            n.setMensaje("Tenés lugar en " + d.getNombre() + " el " + diaYFecha(fecha) + " a las " + hora + ". Si no podés ir, cancelá la reserva así lo usa otro.");
-            n.setTipo("RESERVA");
-            n.setDestinatario("SOCIO");
-            n.setSocio(r.getSocio());
-            notificacionRepo.save(n);
+            avisar(r.getSocio(), "¡Se liberó un lugar!", "Tenés lugar en " + d.getNombre() + " el " + cuando
+                    + ". Si no podés ir, cancelá la reserva así lo usa otro.");
         }
+    }
+
+    /** Revisa la espera de las próximas clases de una disciplina (más cupo, alumno fijo que se fue, socio dado de baja) */
+    @Transactional
+    public void promoverProximas(Long disciplinaId) {
+        Disciplina d = disciplinaRepo.bloquear(disciplinaId).orElse(null);
+        if (d == null || !Boolean.TRUE.equals(d.getActiva())) return;
+        LocalDate hoy = LocalDate.now();
+        for (LocalDate f = hoy; f.isBefore(hoy.plusDays(DIAS_ADELANTE)); f = f.plusDays(1)) {
+            String dia = DisciplinaService.DIAS.get(f.getDayOfWeek().getValue() - 1);
+            for (Disciplina.Horario h : d.getHorarios()) {
+                if (dia.equals(h.getDia()) && "PROXIMA".equals(estadoClase(f, h))) promover(d, f, h.getHoraInicio());
+            }
+        }
+    }
+
+    /** Socio dado de baja: se cancelan sus reservas futuras y sus lugares pasan a la espera */
+    @Transactional
+    public void liberarLugaresDe(Long socioId) {
+        LocalDate hoy = LocalDate.now();
+        Set<Long> disciplinas = new HashSet<>();
+        for (ReservaClase r : reservaRepo.delSocioDesde(socioId, hoy)) {
+            if (ReservaClase.CONFIRMADA.equals(r.getEstado()) || ReservaClase.ESPERA.equals(r.getEstado())) {
+                r.setEstado(ReservaClase.CANCELADA);
+                r.setActualizada(LocalDateTime.now());
+                reservaRepo.save(r);
+                disciplinas.add(r.getDisciplina().getId());
+            }
+        }
+        inscripcionRepo.findConDisciplinaBySocioId(socioId).forEach(i -> disciplinas.add(i.getDisciplina().getId()));
+        disciplinas.forEach(this::promoverProximas);
+    }
+
+    /** Falta menos de una hora para que empiece la clase */
+    static boolean ultimaHora(LocalDate fecha, String hora) {
+        return fecha.equals(LocalDate.now()) && !LocalTime.now().isBefore(LocalTime.parse(hora).minusMinutes(CORTE_ESPERA_MIN));
+    }
+
+    /** Puede pasar de la espera a confirmado: activo, membresía vigente y con pases para ese día */
+    private boolean puedeIr(Socio s, LocalDate fecha) {
+        if (!Boolean.TRUE.equals(s.getActivo()) || !membresiaVigente(s.getId())) return false;
+        try { verificarPases(s.getId(), fecha); return true; }
+        catch (IllegalArgumentException e) { return false; }
+    }
+
+    private void avisar(Socio s, String titulo, String mensaje) {
+        Notificacion n = new Notificacion();
+        n.setTitulo(titulo);
+        n.setMensaje(mensaje);
+        n.setTipo("RESERVA");
+        n.setDestinatario("SOCIO");
+        n.setSocio(s);
+        boolean conMail = emailService.habilitado() && s.getEmail() != null && !s.getEmail().isBlank();
+        n.setPorEmail(conMail);
+        notificacionRepo.save(n);
+        if (conMail) emailService.enviar(s.getEmail().trim(), titulo.replace("¡", "").replace("!", ""), "Hola " + s.getNombre() + ":\n\n" + mensaje);
     }
 
     // ── Inscripción como alumno fijo, hecha por el propio socio ─────────────

@@ -39,6 +39,10 @@ public class DisciplinaService {
     private final MembresiaRepository membresiaRepo;
     private final MembresiaService membresiaService;
     private final com.example.gymtrack_backend.repository.AsistenciaRepository asistenciaRepo;
+    /** Para pasar a confirmados a los que esperaban cuando se libera un lugar */
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private ReservaService reservas;
 
     // ── Consultas ────────────────────────────────────────────────────────────
 
@@ -215,7 +219,9 @@ public class DisciplinaService {
             }
         }
         mapear(dto, d);
-        return toDTO(repo.save(d), true);
+        DisciplinaResponseDTO res = toDTO(repo.save(d), true);
+        reservas.promoverProximas(id);   // si subió el cupo, entran los que esperaban
+        return res;
     }
 
     @Transactional
@@ -277,6 +283,7 @@ public class DisciplinaService {
         Disciplina d = obtener(disciplinaId);
         inscripcionRepo.findByDisciplinaIdAndSocioId(disciplinaId, socioId).ifPresent(inscripcionRepo::delete);
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle(d.getNombre());
+        reservas.promoverProximas(disciplinaId);   // su lugar fijo pasa a la espera
         return toDTO(d, true);
     }
 
@@ -296,6 +303,7 @@ public class DisciplinaService {
             }
         }
         com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.detalle(d.getNombre() + ": " + liberados + " cupos liberados");
+        if (liberados > 0) reservas.promoverProximas(disciplinaId);
         return liberados;
     }
 

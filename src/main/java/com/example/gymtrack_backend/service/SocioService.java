@@ -24,6 +24,10 @@ import java.util.Optional;
 public class SocioService {
 
     @Autowired
+    @org.springframework.context.annotation.Lazy
+    private ReservaService reservas;
+
+    @Autowired
     private PinService pinService;
 
     @Autowired
@@ -146,6 +150,8 @@ public class SocioService {
         baja.setDetalle(detalle == null || detalle.isBlank() ? null : detalle.trim());
         baja.setRegistradoPor(usuario);
         bajaSocioRepository.save(baja);
+        // Sus reservas y su lugar fijo en las clases pasan a los que estaban esperando
+        reservas.liberarLugaresDe(id);
     }
 
     // Historial de bajas (la más nueva primero)
