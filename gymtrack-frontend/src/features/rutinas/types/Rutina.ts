@@ -26,6 +26,10 @@ export interface Rutina {
   /** Rutina de un socio que ya superó el límite: hay que renovarla */
   paraRenovar?: boolean
   fechaRenovacion?: string
+  /** Plantilla visible en la app de los socios */
+  visibleSocios?: boolean
+  /** La eligió el propio socio desde las plantillas */
+  elegidaPorSocio?: boolean
 }
 // DTO para crear o actualizar una rutina
 export interface RutinaRequestDTO {

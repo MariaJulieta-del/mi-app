@@ -9,6 +9,7 @@ import { useAuth } from './shared/context/AuthContext'
 import { useMarca } from './shared/context/MarcaContext'
 import { useTema } from './shared/hooks/useTema'
 import { SocioAppProvider } from './features/socioapp/SocioAppContext'
+import { PedidosRutinaProvider, usePedidosRutina } from './shared/context/PedidosRutinaContext'
 import { ToastProvider } from './shared/hooks/useToast'
 import CommandPalette from './shared/components/CommandPalette'
 import ConfirmModal from './shared/components/ConfirmModal'
@@ -50,6 +51,7 @@ const SocioRutinaPage    = lazy(() => import('./features/socioapp/view/SocioRuti
 const SocioClasesPage    = lazy(() => import('./features/socioapp/view/SocioClasesPage'))
 const SocioProgresoPage  = lazy(() => import('./features/socioapp/view/SocioProgresoPage'))
 const SocioCuentaPage    = lazy(() => import('./features/socioapp/view/SocioCuentaPage'))
+const SocioPlantillasPage = lazy(() => import('./features/socioapp/view/SocioPlantillasPage'))
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
 type Rol = 'ADMIN' | 'PROFESOR'
@@ -93,12 +95,19 @@ const BOTTOM_LINKS = [
   { to: '/rutinas', label: 'Rutinas', icono: ClipboardList },
 ]
 
+/** Contador rojo al lado de un ítem del menú (pedidos de rutina sin resolver) */
+function Contador({ ruta }: { ruta: string }) {
+  const { abiertos } = usePedidosRutina()
+  if (ruta !== '/rutinas' || abiertos === 0) return null
+  return <span className="gt-nav-contador" aria-label={`${abiertos} ${abiertos === 1 ? 'pedido' : 'pedidos'} de rutina sin resolver`}>{abiertos > 9 ? '9+' : abiertos}</span>
+}
+
 function BottomNav({ onMas }: { onMas: () => void }) {
   return (
     <nav className="gt-bottom-nav" aria-label="Navegación principal">
       {BOTTOM_LINKS.map(l => (
         <NavLink key={l.to} to={l.to} className={({ isActive }) => 'gt-bottom-link' + (isActive ? ' active' : '')}>
-          <l.icono size={22} aria-hidden />{l.label}
+          <span className="gt-nav-icono"><l.icono size={22} aria-hidden /><Contador ruta={l.to} /></span>{l.label}
         </NavLink>
       ))}
       <button type="button" className="gt-bottom-link" onClick={onMas}>
@@ -148,7 +157,7 @@ function Sidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void
               {items.map(l => (
                 <NavLink key={l.to} to={l.to} end={l.end}
                   className={({ isActive }) => 'gt-sidebar-link' + (isActive ? ' active' : '')} onClick={onCerrar}>
-                  <l.icono size={18} aria-hidden />{l.label}
+                  <l.icono size={18} aria-hidden />{l.label}<Contador ruta={l.to} />
                 </NavLink>
               ))}
             </div>
@@ -225,6 +234,7 @@ function AppLayout() {
       </header>
 
       {user?.rol !== 'SOCIO' && <CommandPalette />}
+      <PedidosRutinaProvider>
       <div className="gt-layout">
         {user?.rol !== 'SOCIO' && <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />}
         {user?.rol !== 'SOCIO' && <BottomNav onMas={() => setMenuAbierto(true)} />}
@@ -239,6 +249,7 @@ function AppLayout() {
               <>
                 <Route path="/"                       element={<SocioInicioPage />} />
                 <Route path="/mi-rutina"              element={<SocioRutinaPage />} />
+                <Route path="/mi-rutina/plantillas"   element={<SocioPlantillasPage />} />
                 <Route path="/clases"                 element={<SocioClasesPage />} />
                 <Route path="/progreso"               element={<SocioProgresoPage />} />
                 <Route path="/yo"                     element={<SocioCuentaPage />} />
@@ -291,6 +302,7 @@ function AppLayout() {
           </SocioAppProvider>
         </main>
       </div>
+      </PedidosRutinaProvider>
     </>
   )
 }

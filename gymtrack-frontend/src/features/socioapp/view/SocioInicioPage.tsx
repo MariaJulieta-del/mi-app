@@ -68,7 +68,8 @@ export default function SocioInicioPage() {
           <>
             <span className="gt-socio-hero-eti">Bienvenido/a</span>
             <h2>Todavía no tenés rutina</h2>
-            <p>Pedile a tu profe que te arme una: la vas a ver acá con los videos de cada ejercicio.</p>
+            <p>Elegí una plantilla del gimnasio o pedile a tu profe una a medida.</p>
+            <Link to="/mi-rutina" className="gt-socio-hero-btn">Elegir o pedir mi rutina</Link>
           </>
         )}
         {logros && (

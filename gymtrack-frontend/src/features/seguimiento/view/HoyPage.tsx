@@ -7,6 +7,7 @@ import { clasesDeHoy, type ClaseHoy } from '../../disciplinas/services/disciplin
 import { colorDisciplina, minutos, textoCupo } from '../../disciplinas/utils/disciplinaUtils'
 import { CargandoPagina } from '../../../shared/components/ui'
 import TareasRetencion from '../components/TareasRetencion'
+import PedidosHoy from '../components/PedidosHoy'
 import ComentariosSocios from '../components/ComentariosSocios'
 
 /**
@@ -69,6 +70,7 @@ export default function HoyPage() {
             )}
           </div>
 
+          <PedidosHoy />
           <TareasRetencion />
           <ComentariosSocios />
 

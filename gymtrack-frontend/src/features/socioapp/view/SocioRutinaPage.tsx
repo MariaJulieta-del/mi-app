@@ -7,6 +7,7 @@ import { OBJETIVO_CONFIG, ordenarDias } from '../../rutinas/utils/rutinaUtils'
 import type { Rutina } from '../../rutinas/types/Rutina'
 import { useSocioApp } from '../SocioAppContext'
 import { diaDeHoy } from '../utils'
+import PedidoRutinaSocio from '../components/PedidoRutinaSocio'
 
 /** Las rutinas del socio: la actual con sus días para entrenar, y las anteriores */
 export default function SocioRutinaPage() {
@@ -19,8 +20,9 @@ export default function SocioRutinaPage() {
         <header className="gt-socio-titulo"><h1>Mi rutina</h1></header>
         <div className="gt-card">
           <EmptyState icono={ClipboardList} titulo="Todavía no tenés rutina"
-            texto="Pedile a tu profe que te arme una. Vas a ver cada ejercicio con su video y la máquina donde hacerlo." />
+            texto="Elegí una de las plantillas del gimnasio o pedile a tu profe una a medida." />
         </div>
+        <PedidoRutinaSocio />
       </div>
     )
   }
@@ -33,6 +35,7 @@ export default function SocioRutinaPage() {
         <p>Elegí el día y tocá Entrenar</p>
       </header>
       <RutinaActual r={actual} />
+      <PedidoRutinaSocio />
       {anteriores.length > 0 && (
         <section className="gt-card gt-socio-bloque">
           <div className="gt-socio-bloque-cab"><h3>Rutinas anteriores</h3></div>
@@ -67,7 +70,7 @@ function RutinaActual({ r }: { r: Rutina }) {
         <div>
           <h2 style={{ margin: 0, fontSize: 20 }}>{r.nombre}</h2>
           <p className="gt-text-sm gt-text-muted" style={{ margin: '4px 0 0' }}>
-            {r.cantidadEjercicios ?? 0} ejercicios · {cantidadDias} {cantidadDias === 1 ? 'día' : 'días'}
+            {r.cantidadEjercicios ?? 0} {r.cantidadEjercicios === 1 ? 'ejercicio' : 'ejercicios'} · {cantidadDias} {cantidadDias === 1 ? 'día' : 'días'}
           </p>
         </div>
         {obj && <Pill tono="info">{obj.emoji} {obj.label}</Pill>}

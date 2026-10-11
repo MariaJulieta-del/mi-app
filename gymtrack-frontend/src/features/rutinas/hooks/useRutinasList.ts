@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { cambiarVisibilidadPlantilla } from '../services/pedidosService'
+import { mensajeError } from '../../../shared/utils/errores'
 import type { Rutina } from '../types/Rutina'
 import {
   obtenerRutinas, obtenerTodasRutinas, obtenerRutinasGenerales, eliminarRutina, clonarRutina,
@@ -7,7 +10,7 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { useToast } from '../../../shared/hooks/useToast'
 import { esPlantilla } from '../utils/rutinaUtils'
 
-export type Tab = 'plantillas' | 'asignadas'
+export type Tab = 'plantillas' | 'asignadas' | 'pedidos'
 
 export function useRutinasList() {
   const { user } = useAuth()
@@ -17,7 +20,8 @@ export function useRutinasList() {
 
   const [asignadas, setAsignadas] = useState<Rutina[]>([])
   const [plantillas, setPlantillas] = useState<Rutina[]>([])
-  const [tab, setTab] = useState<Tab>('plantillas')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(() => (params.get('tab') === 'pedidos' ? 'pedidos' : params.get('tab') === 'asignadas' ? 'asignadas' : 'plantillas'))
   const [filtroTren, setFiltroTren] = useState('')
   const [filtroDificultad, setFiltroDificultad] = useState('')
   const [filtroObjetivo, setFiltroObjetivo] = useState('')
@@ -73,6 +77,20 @@ export function useRutinasList() {
     } finally { setGuardandoPlantillaId(null) }
   }
 
+  /** Mostrar u ocultar una plantilla en la app de los socios */
+  const [cambiandoVisible, setCambiandoVisible] = useState<number | null>(null)
+  const alternarVisible = async (r: Rutina) => {
+    if (!r.id) return
+    setCambiandoVisible(r.id)
+    try {
+      const nueva = await cambiarVisibilidadPlantilla(r.id, !r.visibleSocios)
+      setPlantillas(p => p.map(x => (x.id === r.id ? { ...x, visibleSocios: nueva.visibleSocios } : x)))
+      toast.success(nueva.visibleSocios ? 'Visible para los socios' : 'Oculta para los socios', r.nombre)
+    } catch (e) {
+      toast.error('No se pudo cambiar', mensajeError(e, 'Probá de nuevo'))
+    } finally { setCambiandoVisible(null) }
+  }
+
   const listaBase = tab === 'plantillas' ? plantillas : asignadas
 
   const lista = useMemo(() => listaBase
@@ -98,6 +116,6 @@ export function useRutinasList() {
     filtroTren, setFiltroTren, filtroDificultad, setFiltroDificultad, filtroObjetivo, setFiltroObjetivo, busqueda, setBusqueda,
     error, setError, cargando, lista, hayFiltros, resetFiltros, soloRenovar, setSoloRenovar, paraRenovar,
     confirmarEliminar, setConfirmarEliminar, confirmarEliminarRutina,
-    guardarComoPlantilla, guardandoPlantillaId,
+    guardarComoPlantilla, guardandoPlantillaId, alternarVisible, cambiandoVisible,
   }
 }

@@ -2483,3 +2483,48 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-socio-antiguedad span { display: block; font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 .gt-socio-antiguedad-barra { height: 6px; border-radius: 3px; background: color-mix(in srgb, currentColor 18%, transparent); margin-top: 8px; overflow: hidden; }
 .gt-socio-antiguedad-barra > div { height: 100%; border-radius: 3px; background: currentColor; }
+
+/* ── Pedidos de rutina (staff) ── */
+.gt-nav-contador { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: auto; border-radius: 999px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.gt-nav-icono { position: relative; display: inline-flex; }
+.gt-nav-icono .gt-nav-contador { position: absolute; top: -6px; right: -10px; margin: 0; }
+.gt-pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 12px; }
+.gt-pedido { background: var(--bg-surface); border: 1px solid var(--border); border-left: 4px solid #D97706; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.gt-pedido.en-curso { border-left-color: var(--accent); }
+.gt-pedido-cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gt-pedido-socio { font-weight: 700; color: var(--text-primary); text-decoration: none; }
+.gt-pedido-socio:hover { color: var(--accent); }
+.gt-pedido-detalle { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--text-secondary); }
+.gt-pedido-mensaje { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--bg-surface-2); font-size: 13px; color: var(--text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
+.gt-pedido-acciones { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.gt-pedido-resuelto { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--border-light); font-size: 13px; }
+.gt-pedidos-hoy { margin-bottom: 20px; }
+
+/* ── App del socio: plantillas y pedido de rutina ── */
+.gt-socio-pedido-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px; }
+.gt-socio-opcion { display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 14px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg-surface); color: var(--accent); font: inherit; cursor: pointer; text-decoration: none; }
+.gt-socio-opcion:hover, .gt-socio-opcion.activa { border-color: var(--accent); background: var(--accent-light); }
+.gt-socio-opcion:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gt-socio-opcion svg { flex-shrink: 0; margin-top: 2px; }
+.gt-socio-opcion strong { display: block; color: var(--text-primary); font-size: 15px; }
+.gt-socio-opcion small { display: block; color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+.gt-socio-pedido-form { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.gt-socio-pedido-form .gt-label { margin-top: 6px; }
+.gt-socio-pedido-form .gt-btn { margin-top: 8px; align-self: flex-start; }
+.gt-socio-pedido-dias { display: flex; gap: 6px; flex-wrap: wrap; }
+.gt-socio-pedido-dias .gt-chip-btn { min-width: 44px; justify-content: center; }
+.gt-socio-pedido-estado { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--yellow-bg); color: var(--yellow-text); flex-wrap: wrap; }
+.gt-socio-pedido-estado svg { flex-shrink: 0; margin-top: 2px; }
+.gt-socio-pedido-estado strong { display: block; font-size: 15px; }
+.gt-socio-pedido-estado span { display: block; font-size: 13px; color: var(--text-secondary); }
+.gt-socio-pedido-fin { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+.gt-socio-pedido-fin.ok { color: var(--green-text); }
+.gt-socio-volver { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--accent); text-decoration: none; margin-bottom: 6px; }
+.gt-socio-filtros { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding-bottom: 2px; }
+.gt-socio-filtros .gt-chip-btn { flex-shrink: 0; }
+.gt-socio-plantilla { margin-bottom: 12px; }
+.gt-socio-plantilla h2 { margin: 0; font-size: 18px; }
+.gt-socio-plantilla-ejs { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--bg-surface-2); font-size: 13px; }
+.gt-socio-plantilla-ejs ol { margin: 0 0 8px; padding-left: 18px; color: var(--text-secondary); }
+.gt-socio-plantilla-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+.gt-pedidos-hoy .gt-reporte-fila { text-decoration: none; color: inherit; }

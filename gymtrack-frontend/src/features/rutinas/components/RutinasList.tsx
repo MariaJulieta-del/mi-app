@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ClipboardList, LayoutTemplate, Plus, Search, Trash2, UserRound } from 'lucide-react'
+import { ClipboardList, Eye, EyeOff, Inbox, LayoutTemplate, Plus, Search, Trash2, UserRound } from 'lucide-react'
+import PedidosRutina from './PedidosRutina'
+import { usePedidosRutina } from '../../../shared/context/PedidosRutinaContext'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useRutinasList } from '../hooks/useRutinasList'
 import RutinaCard from './RutinaCard'
@@ -8,6 +10,7 @@ import { EmptyState, PageHeader, Segmentado, SkeletonTarjetas } from '../../../s
 
 export default function RutinasList() {
   const r = useRutinasList()
+  const { abiertos: pedidos } = usePedidosRutina()
 
   return (
     <>
@@ -32,6 +35,7 @@ export default function RutinasList() {
           <Segmentado etiqueta="Tipo de rutina" valor={r.tab} onChange={r.cambiarTab} opciones={[
             { valor: 'plantillas', texto: 'Plantillas', icono: LayoutTemplate, cuenta: r.plantillas.length },
             { valor: 'asignadas', texto: 'De socios', icono: UserRound, cuenta: r.asignadas.length },
+            { valor: 'pedidos', texto: 'Pedidos', icono: Inbox, cuenta: pedidos || undefined },
           ]} />
           {r.paraRenovar > 0 && (
             <button type="button" className={`gt-renovar-filtro${r.soloRenovar ? ' activo' : ''}`} aria-pressed={r.soloRenovar && r.tab === 'asignadas'}
@@ -42,6 +46,8 @@ export default function RutinasList() {
         </div>
       )}
 
+      {r.tab === 'pedidos' ? <PedidosRutina /> : (
+      <>
       {/* Filtros */}
       <div className="gt-toolbar-fila">
         <div className="gt-busqueda">
@@ -94,6 +100,14 @@ export default function RutinasList() {
                     </button>
                   )}
                   {r.esStaff && <Link to={linkEditarRutina(rutina, r.esStaff)}>Editar</Link>}
+                  {r.esStaff && r.tab === 'plantillas' && (
+                    <button type="button" onClick={() => r.alternarVisible(rutina)} disabled={r.cambiandoVisible === rutina.id}
+                      aria-label={rutina.visibleSocios ? `Ocultar ${rutina.nombre} en la app de los socios` : `Mostrar ${rutina.nombre} en la app de los socios`}
+                      title={rutina.visibleSocios ? 'Visible en la app de los socios (tocá para ocultarla)' : 'Oculta en la app de los socios (tocá para mostrarla)'}
+                      style={{ flex: '0 0 44px' }}>
+                      {rutina.visibleSocios ? <Eye size={15} aria-hidden /> : <EyeOff size={15} aria-hidden />}
+                    </button>
+                  )}
                   {r.esStaff && (
                     <button type="button" className="peligro" onClick={() => r.setConfirmarEliminar(rutina)} aria-label={`Eliminar ${rutina.nombre}`} title="Eliminar" style={{ flex: '0 0 44px' }}><Trash2 size={15} aria-hidden /></button>
                   )}
@@ -101,6 +115,9 @@ export default function RutinasList() {
               } />
           ))}
         </div>
+      )}
+
+      </>
       )}
 
       <ConfirmModal
