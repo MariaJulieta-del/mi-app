@@ -172,6 +172,13 @@ function TarjetaClase({ c, ocupado, puedeReservar, onReservar, onCancelar }: {
     if (c.miEstado === 'FIJO') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado} onClick={onCancelar}>No voy</button>
     else if (c.miEstado === 'LIBERADA') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado || llena} onClick={onReservar}>{llena ? 'Lugar ocupado' : 'Recuperar lugar'}</button>
     else if (c.miEstado === 'CONFIRMADA') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado} onClick={onCancelar}>Cancelar</button>
+    else if (c.miEstado === 'ESPERA' && !llena) boton = (
+      // En la última hora el lugar libre no se asigna solo: es del primero que lo toma
+      <span className="gt-socio-clase-botones">
+        <button type="button" className="gt-btn gt-btn-primary gt-btn-sm" disabled={ocupado} onClick={onReservar}>Tomar el lugar</button>
+        <button type="button" className="gt-btn-link" disabled={ocupado} onClick={onCancelar}>Salir de la espera</button>
+      </span>
+    )
     else if (c.miEstado === 'ESPERA') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado} onClick={onCancelar}>Salir de la espera</button>
     else boton = <button type="button" className={`gt-btn gt-btn-sm ${llena ? 'gt-btn-secondary' : 'gt-btn-primary'}`} disabled={ocupado || !puedeReservar} onClick={onReservar}>{llena ? 'Lista de espera' : 'Reservar'}</button>
   }
