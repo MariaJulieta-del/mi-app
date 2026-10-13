@@ -1,0 +1,30 @@
+# Blueprint de Render: New → Blueprint → elegir este repositorio.
+# Los valores marcados sync:false se cargan a mano en el panel (no se guardan en el repo).
+services:
+  - type: web
+    name: gymtrack-backend
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/salud
+    envVars:
+      - key: APP_PRODUCCION
+        value: "true"
+      # Supabase → Project Settings → Database → Connection string → "Session pooler"
+      # Formato: jdbc:postgresql://aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+      - key: DB_URL
+        sync: false
+      # Usuario del pooler: postgres.<referencia-del-proyecto>
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # URL del frontend en Vercel (varias separadas por coma)
+      - key: CORS_ORIGINS
+        sync: false
+      # Solo para crear el primer admin en una base vacía; borrarla después del primer ingreso
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "5"
