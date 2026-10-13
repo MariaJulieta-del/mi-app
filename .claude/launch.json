@@ -49,6 +49,35 @@
         "--strictPort"
       ],
       "port": 4174
+    },
+    {
+      "name": "gymtrack-frontend-demo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "gymtrack-frontend",
+        "run",
+        "dev",
+        "--",
+        "--mode",
+        "demo",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "gymtrack-backend-supabase",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "gymtrack-backend/correr-supabase.ps1"
+      ],
+      "port": 8081
     }
   ]
 }

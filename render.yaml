@@ -1,10 +1,16 @@
-# Blueprint de Render: New → Blueprint → elegir este repositorio.
+# Blueprint de Render: New → Blueprint → elegir el repositorio mi-app.
+# El backend está en la carpeta gymtrack-backend (ahí está el Dockerfile).
 # Los valores marcados sync:false se cargan a mano en el panel (no se guardan en el repo).
 services:
   - type: web
     name: gymtrack-backend
     runtime: docker
     plan: free
+    # Carpeta del backend dentro del repo: se usa su Dockerfile y solo se
+    # vuelve a publicar cuando cambia algo adentro de ella.
+    rootDir: gymtrack-backend
+    # La región de Render más cercana a Supabase (São Paulo)
+    region: virginia
     healthCheckPath: /api/v1/salud
     envVars:
       - key: APP_PRODUCCION
@@ -28,3 +34,12 @@ services:
         sync: false
       - key: DB_POOL_SIZE
         value: "5"
+      # Copias de seguridad en Supabase Storage (ver gymtrack-backend/CONFIGURAR-BACKUP.md)
+      # Project URL: https://<ref>.supabase.co
+      - key: BACKUP_SUPABASE_URL
+        sync: false
+      # Clave service_role / Secret key (solo va acá, nunca en el frontend)
+      - key: BACKUP_SUPABASE_KEY
+        sync: false
+      - key: BACKUP_BUCKET
+        value: backups

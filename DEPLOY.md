@@ -3,7 +3,7 @@
 | Parte | Dónde | Repositorio |
 |---|---|---|
 | Base de datos | **Supabase** (Postgres) | — |
-| Backend (Spring Boot) | **Render** | `MariaJulieta-del/gymtrack` (carpeta `gymtrack-backend`) |
+| Backend (Spring Boot) | **Render** | `MariaJulieta-del/mi-app` (carpeta `gymtrack-backend`) |
 | Frontend (React + Vite) | **Vercel** | `MariaJulieta-del/mi-app` (carpeta `gymtrack-frontend`) |
 
 ---
@@ -67,7 +67,7 @@ Al arrancar, Flyway reconoce la base existente (la marca como V1) y aplica solo 
 
 ## 3. Backend en Render
 
-1. https://render.com → **New → Blueprint** → elegí el repositorio `gymtrack`. Toma la configuración de `render.yaml` (Docker, plan gratis, chequeo de salud en `/api/v1/salud`).
+1. https://render.com → **New → Blueprint** → elegí el repositorio `mi-app`. Toma la configuración de `render.yaml` (en la raíz): Docker con la carpeta `gymtrack-backend`, región Virginia (la más cercana a Supabase São Paulo), plan gratis y chequeo de salud en `/api/v1/salud`.
 2. Completá las variables que pide:
 
 | Variable | Valor |
@@ -77,6 +77,7 @@ Al arrancar, Flyway reconoce la base existente (la marca como V1) y aplica solo 
 | `ADMIN_PASSWORD` | Contraseña del primer admin (8+ caracteres, letras y números). **Solo la primera vez** si la base está vacía. |
 | `JWT_SECRET` | Render la genera solo |
 | `APP_PRODUCCION` | `true` (ya viene) |
+| `BACKUP_SUPABASE_URL`, `BACKUP_SUPABASE_KEY` | Project URL y clave *service_role* de Supabase (ver `gymtrack-backend/CONFIGURAR-BACKUP.md`) |
 
 3. Cuando termine, probá `https://<tu-servicio>.onrender.com/api/v1/salud` → `{"estado":"ok"}`.
 4. Entrá como `admin` y **borrá `ADMIN_PASSWORD`** de las variables.
