@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Dumbbell, Flame, Footprints, HeartPulse, Zap, type LucideIcon } from 'lucide-react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../../shared/context/AuthContext'
 import type { Rutina, Ejercicio, EjercicioRequestDTO } from '../types/Rutina'
@@ -12,12 +13,12 @@ import { listarTodosEjercicios, type Ejercicio as EjercicioCat } from '../../eje
 import { listarMaquinas, type Maquina } from '../../maquinas/services/maquinaService'
 import { resolverImagenEjercicio } from '../../ejercicios/assets/imagenesEjercicios'
 
-export const TREN_CONFIG: Record<string, { emoji: string; label: string; bg: string; color: string; grupos: string[] }> = {
-  SUPERIOR:  { emoji: '💪', label: 'Tren Superior',  bg: 'var(--blue-bg)',    color: 'var(--blue-text)',    grupos: ['Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps', 'Antebrazos'] },
-  INFERIOR:  { emoji: '🦵', label: 'Tren Inferior',  bg: 'var(--green-bg)',   color: 'var(--green-text)',   grupos: ['Cuádriceps', 'Femoral', 'Glúteos', 'Pantorrillas'] },
-  CORE:      { emoji: '🔥', label: 'Core / Abdomen', bg: 'var(--yellow-bg)',  color: 'var(--yellow-text)',  grupos: ['Abdominales', 'Core', 'Lumbares'] },
-  CARDIO:    { emoji: '❤️', label: 'Cardio',          bg: 'var(--red-light)', color: 'var(--red)',          grupos: ['Cardio'] },
-  FULL_BODY: { emoji: '⚡', label: 'Full Body',       bg: 'var(--purple-bg)', color: 'var(--purple-text)', grupos: [] },
+export const TREN_CONFIG: Record<string, { icono: LucideIcon; label: string; bg: string; color: string; grupos: string[] }> = {
+  SUPERIOR:  { icono: Dumbbell, label: 'Tren Superior',  bg: 'var(--blue-bg)',    color: 'var(--blue-text)',    grupos: ['Pecho', 'Espalda', 'Hombros', 'Bíceps', 'Tríceps', 'Antebrazos'] },
+  INFERIOR:  { icono: Footprints, label: 'Tren Inferior',  bg: 'var(--green-bg)',   color: 'var(--green-text)',   grupos: ['Cuádriceps', 'Femoral', 'Glúteos', 'Pantorrillas'] },
+  CORE:      { icono: Flame, label: 'Core / Abdomen', bg: 'var(--yellow-bg)',  color: 'var(--yellow-text)',  grupos: ['Abdominales', 'Core', 'Lumbares'] },
+  CARDIO:    { icono: HeartPulse, label: 'Cardio',          bg: 'var(--red-light)', color: 'var(--red)',          grupos: ['Cardio'] },
+  FULL_BODY: { icono: Zap, label: 'Full Body',       bg: 'var(--purple-bg)', color: 'var(--purple-text)', grupos: [] },
 }
 export const DIAS_ORDER = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 

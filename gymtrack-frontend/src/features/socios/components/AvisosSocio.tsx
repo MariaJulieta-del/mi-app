@@ -50,7 +50,7 @@ export default function AvisosSocio() {
   return (
     <div className="gt-card gt-avisos-socio" style={{ marginBottom: 16 }}>
       <p className="gt-card-title" style={{ margin: '0 0 8px' }}>
-        🔔 Avisos del gimnasio {nuevos > 0 && <span className="gt-badge gt-badge-green" style={{ marginLeft: 6 }}>{nuevos} {nuevos === 1 ? 'nuevo' : 'nuevos'}</span>}
+        Avisos del gimnasio {nuevos > 0 && <span className="gt-badge gt-badge-green" style={{ marginLeft: 6 }}>{nuevos} {nuevos === 1 ? 'nuevo' : 'nuevos'}</span>}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {visibles.map(a => (

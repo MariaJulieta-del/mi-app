@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { Monitor } from 'lucide-react'
 import PantallaQr from '../components/PantallaQr'
 import { tokenPantalla, guardarTokenPantalla, borrarTokenPantalla, qrPantalla, ultimosPantalla } from '../services/kioscoService'
 
@@ -32,7 +33,7 @@ export default function KioscoPage() {
     return (
       <div className="gt-login-page">
         <div className="gt-login-card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40 }}>📺</div>
+          <div style={{ color: 'var(--text-muted)' }}><Monitor size={40} aria-hidden /></div>
           <h1 style={{ fontSize: 22, color: 'var(--text-primary)' }}>Pantalla de recepción</h1>
           <p className="gt-text-muted">
             Esta pantalla no está vinculada. El administrador tiene que entrar a
@@ -46,7 +47,7 @@ export default function KioscoPage() {
   return (
     <div ref={contRef} className="gt-qr-kiosco gt-kiosco-solo">
       <div className="gt-qr-kiosco-barra">
-        <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: 18 }}>🏋️ GymTrack</span>
+        <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: 18 }}>GymTrack</span>
         <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={pantallaCompleta}>⛶ Pantalla completa</button>
       </div>
       <PantallaQr obtenerQr={qrPantalla} obtenerUltimos={ultimosPantalla} onNoAutorizado={desvinculada} />

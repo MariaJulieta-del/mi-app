@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
-import { Calculator, Check, Expand, Flame, Link2, Plus, Star, Timer, X } from 'lucide-react'
+import { Calculator, Check, Expand, Feather, Flame, Link2, PartyPopper, Plus, Star, ThumbsUp, Timer, Trophy, X } from 'lucide-react'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { obtenerRutina, obtenerEjercicios } from '../services/rutinaService'
 import { guardarProgreso, getProgresoRutina } from '../services/progresoService'
@@ -24,9 +24,9 @@ interface RecordNuevo { ejercicio: string; kg: number; e1rm: number; tipo: 'peso
 
 /** Esfuerzo percibido: tres opciones simples en vez de la escala de 1 a 10 */
 const ESFUERZOS = [
-  { rpe: 6, emoji: '😌', texto: 'Fácil' },
-  { rpe: 8, emoji: '🙂', texto: 'Justo' },
-  { rpe: 10, emoji: '🥵', texto: 'Al límite' },
+  { rpe: 6, icono: Feather, texto: 'Fácil' },
+  { rpe: 8, icono: ThumbsUp, texto: 'Justo' },
+  { rpe: 10, icono: Flame, texto: 'Al límite' },
 ]
 
 /**
@@ -347,7 +347,7 @@ export default function EntrenarPage() {
     return (
       <div className="gt-entreno">
         <div className="gt-card gt-entreno-fin">
-          <p className="gt-entreno-fin-emoji" aria-hidden>{nuevos.length ? '🏆' : '🎉'}</p>
+          <p className="gt-entreno-fin-emoji" aria-hidden>{nuevos.length ? <Trophy size={48} /> : <PartyPopper size={48} />}</p>
           <h1>¡Entrenamiento terminado!</h1>
           <p className="gt-text-muted" style={{ margin: 0 }}>{rutina.nombre} · {etiquetaDia(rutina.diasSemana, dia)}</p>
           <div className="gt-progreso-stats" style={{ margin: '18px 0' }}>
@@ -371,7 +371,7 @@ export default function EntrenarPage() {
               {SENSACIONES.map(s => (
                 <button key={s.valor} type="button" role="radio" aria-checked={sensacion === s.valor}
                   className={`gt-sensacion${sensacion === s.valor ? ' activa' : ''}`} onClick={() => setSensacion(s.valor)}>
-                  <span aria-hidden>{s.emoji}</span>{s.texto}
+                  <s.icono size={22} aria-hidden />{s.texto}
                 </button>
               ))}
             </div>
@@ -397,7 +397,7 @@ export default function EntrenarPage() {
       <div className="gt-entreno-cab">
         <Link to={volver} className="gt-icon-btn" aria-label="Salir del entrenamiento"><X size={18} /></Link>
         <span className="gt-text-muted gt-text-sm" style={{ flex: 1, textAlign: 'center' }}>
-          {objetivo && <>{objetivo.emoji} {objetivo.label} · </>}{etiquetaDia(rutina.diasSemana, dia)}
+          {objetivo && <>{objetivo.label} · </>}{etiquetaDia(rutina.diasSemana, dia)}
         </span>
         <span className="gt-entreno-contador">{paso + 1}/{pasos.length}</span>
       </div>
@@ -458,7 +458,7 @@ export default function EntrenarPage() {
       {/* Récord nuevo */}
       {festejo && (
         <div className="gt-festejo" role="status" onClick={() => setFestejo(null)}>
-          <span className="gt-festejo-icono" aria-hidden>🏆</span>
+          <span className="gt-festejo-icono" aria-hidden><Trophy size={30} /></span>
           <strong>¡Nuevo récord!</strong>
           <span>{festejo.ejercicio}: {kgTxt(festejo.kg)}{festejo.tipo === 'e1rm' ? ` · 1RM ≈ ${kgTxt(festejo.e1rm)}` : ''}</span>
         </div>
@@ -527,7 +527,7 @@ function TarjetaEjercicio({ ej, etiqueta, esCalor, filas, ultima, sugerida, reco
           {!esCalor && <button type="button" className="gt-icon-btn" onClick={() => onDiscos(kgActual)} aria-label="Calculadora de discos" title="Calculadora de discos"><Calculator size={17} /></button>}
         </div>
         {(ej.maquinas?.length ?? 0) > 0 && <div style={{ marginTop: 10 }}><MaquinasEjercicio maquinas={ej.maquinas} grande /></div>}
-        {ej.notas && <p className="gt-text-sm" style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>📝 {ej.notas}</p>}
+        {ej.notas && <p className="gt-text-sm" style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>{ej.notas}</p>}
         {ej.descripcionEjercicio && (
           <details style={{ marginTop: 8 }}>
             <summary className="gt-text-sm" style={{ cursor: 'pointer', color: 'var(--accent)', fontWeight: 600 }}>¿Cómo se hace?</summary>
@@ -539,7 +539,7 @@ function TarjetaEjercicio({ ej, etiqueta, esCalor, filas, ultima, sugerida, reco
           <div className="gt-entreno-ultima">
             {ultima && <span>Última vez ({formatFecha(ultima.fecha)}): <strong>{ultima.pesoKg ?? '—'} kg × {ultima.reps ?? '—'}</strong></span>}
             {record?.pesoMax != null && <span className="gt-entreno-record"><Star size={13} aria-hidden /> Récord: {kgTxt(Number(record.pesoMax))}</span>}
-            {sugerida && <span className="gt-chip" style={{ background: 'var(--green-bg)', color: 'var(--green-text)' }}>💪 {sugerida.texto}</span>}
+            {sugerida && <span className="gt-chip" style={{ background: 'var(--green-bg)', color: 'var(--green-text)' }}>{sugerida.texto}</span>}
           </div>
         )}
 
@@ -571,7 +571,7 @@ function TarjetaEjercicio({ ej, etiqueta, esCalor, filas, ultima, sugerida, reco
             <div className="gt-esfuerzo-opciones" role="radiogroup" aria-label="Esfuerzo">
               {ESFUERZOS.map(o => (
                 <button key={o.rpe} type="button" role="radio" aria-checked={rpe === o.rpe} className={rpe === o.rpe ? 'activo' : ''} onClick={() => onRpe(o.rpe)}>
-                  <span aria-hidden>{o.emoji}</span> {o.texto}
+                  <o.icono size={14} aria-hidden /> {o.texto}
                 </button>
               ))}
             </div>

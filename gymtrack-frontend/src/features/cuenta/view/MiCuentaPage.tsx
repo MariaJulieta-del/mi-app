@@ -55,7 +55,7 @@ export default function MiCuentaPage() {
       </div>
 
       <form className="gt-card" onSubmit={guardar}>
-        <p className="gt-card-title" style={{ marginTop: 0 }}>🔒 Cambiar contraseña</p>
+        <p className="gt-card-title" style={{ marginTop: 0 }}>Cambiar contraseña</p>
         {error && <div className="gt-alert gt-alert-error">{error}</div>}
         <div className="gt-form-group">
           <label className="gt-label" htmlFor="pass-actual">Contraseña actual</label>

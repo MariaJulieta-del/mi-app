@@ -60,13 +60,13 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
           {(rutina.trenes?.length ? rutina.trenes : ['']).map(t => {
             const cfg = TREN_CONFIG[t] ?? TREN_DEFAULT
-            return <span key={t || 'x'} className="gt-chip" style={{ background: cfg.bg, color: cfg.color }}>{cfg.emoji} {cfg.label}</span>
+            return <span key={t || 'x'} className="gt-chip" style={{ background: cfg.bg, color: cfg.color }}><cfg.icono size={12} aria-hidden /> {cfg.label}</span>
           })}
-          {obj && <span className="gt-chip" style={{ background: obj.bg, color: obj.color }}>{obj.emoji} {obj.label}</span>}
+          {obj && <span className="gt-chip" style={{ background: obj.bg, color: obj.color }}><obj.icono size={12} aria-hidden /> {obj.label}</span>}
           {dif && <span className="gt-chip" style={{ background: dif.bg, color: dif.color }}>Dificultad {dif.label.toLowerCase()}</span>}
           {!esPlantilla(rutina) && rutina.semanasMax != null && (
             rutina.paraRenovar
-              ? <span className="gt-chip gt-chip-renovar" title={`Lleva ${rutina.semanasActual} semanas con estos ejercicios (el límite es ${rutina.semanasMax})`}>⏰ Renovar · {rutina.semanasActual} sem.</span>
+              ? <span className="gt-chip gt-chip-renovar" title={`Lleva ${rutina.semanasActual} semanas con estos ejercicios (el límite es ${rutina.semanasMax})`}>Renovar · {rutina.semanasActual} sem.</span>
               : <span className="gt-chip gt-chip-semana" title={`Se renueva a las ${rutina.semanasMax} semanas`}>Semana {(rutina.semanasActual ?? 0) + 1} de {rutina.semanasMax}</span>
           )}
           {esPlantilla(rutina) && rutina.visibleSocios === false && (
@@ -76,7 +76,7 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
             <span className="gt-chip" style={{ background: 'var(--purple-bg)', color: 'var(--purple-text)' }} title="El socio la eligió de las plantillas desde su app">La eligió el socio</span>
           )}
           {mostrarSocio && !esPlantilla(rutina) && (
-            <span className="gt-chip" style={{ background: 'var(--blue-bg)', color: 'var(--blue-text)' }}>👤 {rutina.socioNombre}</span>
+            <span className="gt-chip" style={{ background: 'var(--blue-bg)', color: 'var(--blue-text)' }}>{rutina.socioNombre}</span>
           )}
         </div>
 

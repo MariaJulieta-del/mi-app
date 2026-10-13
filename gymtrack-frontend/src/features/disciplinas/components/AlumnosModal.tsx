@@ -78,9 +78,9 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
       </>}>
       <div className="gt-alumnos-resumen">
         <div>
-          {resumenHorarios(disciplina.horarios).map(l => <div key={l} className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>🕐 {l}</div>)}
+          {resumenHorarios(disciplina.horarios).map(l => <div key={l} className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>{l}</div>)}
           {disciplina.horarios.length === 0 && <div className="gt-text-sm gt-text-muted">Sin horarios cargados</div>}
-          {disciplina.instructor && <div className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>👤 {disciplina.instructor}</div>}
+          {disciplina.instructor && <div className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>{disciplina.instructor}</div>}
         </div>
         <CupoMeter total={disciplina.totalInscritos} cupo={disciplina.cupoMaximo} />
       </div>

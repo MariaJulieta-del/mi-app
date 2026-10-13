@@ -86,7 +86,7 @@ export default function PedidoRutinaSocio() {
               <label className="gt-label" htmlFor="ped-obj">¿Qué buscás?</label>
               <select id="ped-obj" className="gt-select" value={objetivo} onChange={e => setObjetivo(e.target.value)}>
                 <option value="">Que me recomiende el profe</option>
-                {Object.entries(OBJETIVO_CONFIG).map(([k, c]) => <option key={k} value={k}>{c.emoji} {c.label}</option>)}
+                {Object.entries(OBJETIVO_CONFIG).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}
               </select>
               <label className="gt-label" htmlFor="ped-dias">¿Cuántos días por semana podés venir?</label>
               <div className="gt-socio-pedido-dias" role="radiogroup" aria-label="Días por semana" id="ped-dias">

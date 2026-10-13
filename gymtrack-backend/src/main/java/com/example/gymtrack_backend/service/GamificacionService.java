@@ -68,17 +68,17 @@ public class GamificacionService {
                 mes.lengthOfMonth() - hoy.getDayOfMonth(), actual >= META_DESAFIO);
 
         List<Insignia> insignias = new ArrayList<>();
-        insignias.add(ins("PRIMER_DIA", "Primer paso", "Tu primer entrenamiento", "🌱", total, 1));
-        insignias.add(ins("DIAS_10", "Arrancaste", "10 días entrenados", "💪", total, 10));
-        insignias.add(ins("DIAS_25", "Constante", "25 días entrenados", "🔥", total, 25));
-        insignias.add(ins("DIAS_50", "Imparable", "50 días entrenados", "🚀", total, 50));
-        insignias.add(ins("DIAS_100", "Centenario", "100 días entrenados", "🏆", total, 100));
-        insignias.add(ins("RACHA_4", "Un mes sin fallar", "4 semanas seguidas entrenando", "📅", rachas[1], 4));
-        insignias.add(ins("RACHA_12", "Hábito formado", "12 semanas seguidas entrenando", "🧱", rachas[1], 12));
-        insignias.add(ins("RECORD_1", "Nuevo récord", "Superaste tu mejor marca", "⭐", records, 1));
-        insignias.add(ins("RECORD_10", "Coleccionista", "10 récords personales", "🌟", records, 10));
-        insignias.add(ins("DESAFIO_1", "Desafío cumplido", "Ganaste un desafío del mes", "🎯", ganados, 1));
-        insignias.add(ins("TEMPRANO_10", "Madrugador", "10 entrenamientos antes de las 8", "🌅", tempranos, 10));
+        insignias.add(ins("PRIMER_DIA", "Primer paso", "Tu primer entrenamiento", "sprout", total, 1));
+        insignias.add(ins("DIAS_10", "Arrancaste", "10 días entrenados", "dumbbell", total, 10));
+        insignias.add(ins("DIAS_25", "Constante", "25 días entrenados", "flame", total, 25));
+        insignias.add(ins("DIAS_50", "Imparable", "50 días entrenados", "rocket", total, 50));
+        insignias.add(ins("DIAS_100", "Centenario", "100 días entrenados", "trophy", total, 100));
+        insignias.add(ins("RACHA_4", "Un mes sin fallar", "4 semanas seguidas entrenando", "calendar-check", rachas[1], 4));
+        insignias.add(ins("RACHA_12", "Hábito formado", "12 semanas seguidas entrenando", "brick-wall", rachas[1], 12));
+        insignias.add(ins("RECORD_1", "Nuevo récord", "Superaste tu mejor marca", "star", records, 1));
+        insignias.add(ins("RECORD_10", "Coleccionista", "10 récords personales", "sparkles", records, 10));
+        insignias.add(ins("DESAFIO_1", "Desafío cumplido", "Ganaste un desafío del mes", "target", ganados, 1));
+        insignias.add(ins("TEMPRANO_10", "Madrugador", "10 entrenamientos antes de las 8", "sunrise", tempranos, 10));
 
         return new Logros(total, rachas[0], rachas[1], records, insignias, desafio, ganados, Boolean.TRUE.equals(socio.getRankingVisible()));
     }

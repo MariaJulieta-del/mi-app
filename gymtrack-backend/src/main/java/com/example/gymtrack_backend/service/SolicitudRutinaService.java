@@ -125,7 +125,7 @@ public class SolicitudRutinaService {
                 .filter(r -> r.getFechaCreacion() != null)
                 .max(java.util.Comparator.comparing(ReglasRutina::inicio))
                 .ifPresent(r -> s.setRutinaId(r.getId()));
-        avisar(s.getSocio(), "Tu rutina está lista 💪", "Tu profe ya te armó la rutina que pediste. Mirala en \"Rutina\".");
+        avisar(s.getSocio(), "Tu rutina está lista", "Tu profe ya te armó la rutina que pediste. Mirala en \"Rutina\".");
         return dto(s);
     }
 
@@ -137,7 +137,7 @@ public class SolicitudRutinaService {
             s.setResuelta(LocalDateTime.now());
             s.setResueltaPor(usuario());
             s.setRutinaId(rutina.getId());
-            avisar(s.getSocio(), "Tu rutina está lista 💪", "Tu profe te armó \"" + rutina.getNombre() + "\", la rutina que pediste. Mirala en \"Rutina\".");
+            avisar(s.getSocio(), "Tu rutina está lista", "Tu profe te armó \"" + rutina.getNombre() + "\", la rutina que pediste. Mirala en \"Rutina\".");
         });
     }
 

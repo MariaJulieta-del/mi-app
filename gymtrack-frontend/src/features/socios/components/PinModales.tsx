@@ -24,7 +24,7 @@ function Modal({ onCerrar, children, ancho = 420 }: { onCerrar: () => void; chil
 export function PinEntregaModal({ nombre, dni, pin, onCerrar }: { nombre: string; dni: string; pin: string; onCerrar: () => void }) {
   return (
     <Modal onCerrar={onCerrar}>
-      <h2 className="gt-modal-title">🔑 PIN de {nombre}</h2>
+      <h2 className="gt-modal-title">PIN de {nombre}</h2>
       <p className="gt-modal-body" style={{ marginBottom: 8 }}>
         Con su <strong>DNI {dni}</strong> y este PIN entra a la app para ver su rutina y registrar su ingreso con el QR.
       </p>
@@ -45,7 +45,7 @@ export function PinesPendientesModal({ pines, onCerrar }: { pines: PinGenerado[]
   return (
     <Modal onCerrar={onCerrar} ancho={640}>
       <div className="gt-pines-imprimible">
-        <h2 className="gt-modal-title">🔑 PIN de acceso de los socios</h2>
+        <h2 className="gt-modal-title">PIN de acceso de los socios</h2>
         {pines.length === 0 ? (
           <p className="gt-modal-body">Todos los socios activos ya tienen su PIN.</p>
         ) : (
@@ -72,7 +72,7 @@ export function PinesPendientesModal({ pines, onCerrar }: { pines: PinGenerado[]
         )}
       </div>
       <div className="gt-modal-actions">
-        {pines.length > 0 && <button className="gt-btn gt-btn-secondary" onClick={() => window.print()}>🖨 Imprimir</button>}
+        {pines.length > 0 && <button className="gt-btn gt-btn-secondary" onClick={() => window.print()}>Imprimir</button>}
         <button className="gt-btn gt-btn-primary" onClick={onCerrar}>Cerrar</button>
       </div>
     </Modal>

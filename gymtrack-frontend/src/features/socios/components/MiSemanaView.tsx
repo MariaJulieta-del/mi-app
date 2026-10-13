@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Dumbbell } from 'lucide-react'
 import type { Maquina } from '../../maquinas/services/maquinaService'
 import type { Ejercicio, Rutina } from '../../rutinas/types/Rutina'
 import { resolverImg } from '../utils/socioUtils'
@@ -118,7 +119,7 @@ export default function MiSemanaView({
                   </div>
                   {img
                     ? <img src={img} alt={ej.nombreEjercicio} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} />
-                    : <div style={{ width: 56, height: 56, borderRadius: 10, background: 'var(--bg-surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🏋️</div>
+                    : <div style={{ width: 56, height: 56, borderRadius: 10, background: 'var(--bg-surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--text-muted)' }}><Dumbbell size={22} aria-hidden /></div>
                   }
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
@@ -130,7 +131,7 @@ export default function MiSemanaView({
                         ej.repeticiones ? `${ej.repeticiones} reps` : null,
                         ej.pesoKg ? `${ej.pesoKg} kg` : null,
                         ej.descansoSeg ? `${ej.descansoSeg}s desc.` : null,
-                        ...(ej.maquinas ?? []).filter(m => m.nroMaquina).map(m => `⚙ N° ${m.nroMaquina}`),
+                        ...(ej.maquinas ?? []).filter(m => m.nroMaquina).map(m => `Máquina N° ${m.nroMaquina}`),
                       ].filter(Boolean).join('  ·  ')}
                     </p>
                     {ej.grupos && ej.grupos.length > 0 && (
@@ -142,7 +143,7 @@ export default function MiSemanaView({
                     )}
                     <Link to={`/rutinas/${rutinaId}?socioId=${socioId}`} onClick={e => e.stopPropagation()}
                       style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>
-                      📋 {rutinaNombre}
+                      {rutinaNombre}
                     </Link>
                   </div>
                   <span style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0 }}>{abierto ? '▾' : '▸'}</span>
@@ -152,13 +153,13 @@ export default function MiSemanaView({
                   <div style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {(ej.maquinas ?? []).length > 0 && (
                       <div>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>⚙️ Dónde hacerlo</p>
+                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Dónde hacerlo</p>
                         <MaquinasEjercicio maquinas={ej.maquinas} grande />
                       </div>
                     )}
                     {maqRecomendadas.length > 0 && (
                       <div>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>💡 Máquinas recomendadas</p>
+                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Máquinas recomendadas</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {maqRecomendadas.map(m => (
                             <span key={m.id} style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px', fontSize: 12 }}>
@@ -178,7 +179,7 @@ export default function MiSemanaView({
                     )}
                     {ej.id && (
                       <div style={{ marginTop: 4, padding: '10px 12px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px dashed var(--border)' }}>
-                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>📊 Mi sesión de hoy:</p>
+                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>Mi sesión de hoy:</p>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                           {[
                             { label: 'Series', field: 'seriesRealizadas' as const, max: 99, placeholder: String(ej.series ?? '—') },

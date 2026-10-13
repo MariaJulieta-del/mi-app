@@ -11,9 +11,9 @@ const MOTIVO: Record<SocioEnRiesgo['motivos'][number], string> = {
 
 function mensaje(s: SocioEnRiesgo): string {
   const nombre = s.nombre.split(' ')[0]
-  if (s.motivos.includes('NUNCA_VINO')) return `¡Hola ${nombre}! Te esperamos en el gimnasio para arrancar. ¿Querés que te armemos la rutina? 💪`
+  if (s.motivos.includes('NUNCA_VINO')) return `¡Hola ${nombre}! Te esperamos en el gimnasio para arrancar. ¿Querés que te armemos la rutina?`
   if (s.motivos.includes('VENCE_SIN_VENIR')) return `¡Hola ${nombre}! Hace unos días que no te vemos y tu membresía vence ${s.diasParaVencer <= 0 ? 'hoy' : `en ${s.diasParaVencer} días`}. ¿Te esperamos esta semana?`
-  return `¡Hola ${nombre}! Hace ${s.diasSinVenir} días que no te vemos por el gimnasio. ¿Todo bien? Te esperamos 💪`
+  return `¡Hola ${nombre}! Hace ${s.diasSinVenir} días que no te vemos por el gimnasio. ¿Todo bien? Te esperamos.`
 }
 
 /** Socios con membresía vigente que conviene contactar antes de que abandonen */
@@ -28,7 +28,7 @@ export default function SociosEnRiesgo({ max = 8 }: { max?: number }) {
 
   return (
     <div className="gt-card" style={{ marginBottom: 20, borderLeft: '3px solid var(--yellow-text)' }}>
-      <p className="gt-card-title" style={{ marginTop: 0, marginBottom: 2 }}>⚠️ Socios en riesgo de abandonar ({lista.length})</p>
+      <p className="gt-card-title" style={{ marginTop: 0, marginBottom: 2 }}>Socios en riesgo de abandonar ({lista.length})</p>
       <p className="gt-text-muted gt-text-sm" style={{ margin: '0 0 12px' }}>
         Tienen la membresía vigente pero dejaron de venir. Un mensaje a tiempo ayuda a que renueven.
       </p>

@@ -142,7 +142,7 @@ public class RutinaController {
         try {
             return ResponseEntity.ok(rutinaService.obtenerEjercicios(id, socioId));
         } catch (RuntimeException e) {
-            System.err.println("[RutinaController] ❌ ejercicios rutinaId=" + id
+            System.err.println("[RutinaController] Error en ejercicios rutinaId=" + id
                 + " socioId=" + socioId + " → " + e.getClass().getSimpleName() + ": " + e.getMessage());
             return ResponseEntity.notFound().build();
         }

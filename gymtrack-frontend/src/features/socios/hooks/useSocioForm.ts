@@ -22,9 +22,9 @@ export interface AltaForm {
 export type AltaFormValida = Omit<AltaForm, 'formaDePago' | 'fechaNacimiento'> & { formaDePago: FormaDePago; fechaNacimiento?: string }
 
 export const FORMAS: { value: FormaDePago; label: string; color: string; bg: string }[] = [
-  { value: 'EFECTIVO',      label: '💵 Efectivo',           color: 'var(--green-text)',   bg: 'var(--green-bg)' },
-  { value: 'TARJETA',       label: '💳 Tarjeta',            color: 'var(--blue-text)',    bg: 'var(--blue-bg)' },
-  { value: 'TRANSFERENCIA', label: '🔄 Transferencia',      color: 'var(--purple-text)',  bg: 'var(--purple-bg)' },
+  { value: 'EFECTIVO',      label: 'Efectivo',           color: 'var(--green-text)',   bg: 'var(--green-bg)' },
+  { value: 'TARJETA',       label: 'Tarjeta',            color: 'var(--blue-text)',    bg: 'var(--blue-bg)' },
+  { value: 'TRANSFERENCIA', label: 'Transferencia',      color: 'var(--purple-text)',  bg: 'var(--purple-bg)' },
 ]
 
 interface Props {

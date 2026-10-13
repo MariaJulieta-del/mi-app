@@ -73,7 +73,7 @@ function RutinaActual({ r }: { r: Rutina }) {
             {r.cantidadEjercicios ?? 0} {r.cantidadEjercicios === 1 ? 'ejercicio' : 'ejercicios'} · {cantidadDias} {cantidadDias === 1 ? 'día' : 'días'}
           </p>
         </div>
-        {obj && <Pill tono="info">{obj.emoji} {obj.label}</Pill>}
+        {obj && <Pill tono="info" icono={obj.icono}>{obj.label}</Pill>}
       </div>
       {semanas != null && <AntiguedadRutina semanas={semanas} max={r.semanasMax ?? null} desde={desde} renovar={!!r.paraRenovar} />}
       {r.descripcion && <p className="gt-text-sm" style={{ color: 'var(--text-secondary)' }}>{r.descripcion}</p>}

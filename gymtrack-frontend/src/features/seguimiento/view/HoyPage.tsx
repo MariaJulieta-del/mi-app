@@ -44,7 +44,7 @@ export default function HoyPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link to="/rutinas/asignar" className="gt-btn gt-btn-primary">+ Asignar rutina</Link>
-          <Link to="/qr-ingreso" className="gt-btn gt-btn-secondary">📱 QR de ingreso</Link>
+          <Link to="/qr-ingreso" className="gt-btn gt-btn-secondary">QR de ingreso</Link>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export default function HoyPage() {
             {hoy.denegadosHoy > 0 && (
               <Link to="/acceso" className="gt-stat-card" style={{ textDecoration: 'none' }}>
                 <div className="gt-stat-number" style={{ color: 'var(--red)' }}>{hoy.denegadosHoy}</div>
-                <div className="gt-stat-label">🚫 ingresos denegados</div>
+                <div className="gt-stat-label">ingresos denegados</div>
               </Link>
             )}
           </div>
@@ -119,7 +119,7 @@ export default function HoyPage() {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, alignItems: 'center' }}>
                         {s.rutina ? (
                           <Link to={`/rutinas/${s.rutina.id}?socioId=${s.socioId}`} className="gt-chip" style={{ background: 'var(--accent-light)', color: 'var(--accent)', textDecoration: 'none' }}>
-                            📋 {s.rutina.nombre}{s.rutina.semanas >= hoy.semanasRenovar ? ` · ${s.rutina.semanas} sem.` : ''}
+                            {s.rutina.nombre}{s.rutina.semanas >= hoy.semanasRenovar ? ` · ${s.rutina.semanas} sem.` : ''}
                           </Link>
                         ) : (
                           <Link to={`/rutinas/asignar?socioId=${s.socioId}`} className="gt-chip" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-text)', textDecoration: 'none' }}>
@@ -128,13 +128,13 @@ export default function HoyPage() {
                         )}
                         {s.diasParaVencer != null && s.diasParaVencer <= 5 && s.diasParaVencer >= 0 && (
                           <span className="gt-chip" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-text)' }}>
-                            ⏳ Vence {s.diasParaVencer === 0 ? 'hoy' : `en ${s.diasParaVencer} d`}
+                            Vence {s.diasParaVencer === 0 ? 'hoy' : `en ${s.diasParaVencer} d`}
                           </span>
                         )}
                       </div>
                       {s.alertaMedica && (
                         <p className="gt-text-sm" style={{ margin: '6px 0 0', color: 'var(--red-text)' }}>
-                          ⚠ {s.alertaMedica}
+                          {s.alertaMedica}
                         </p>
                       )}
                     </div>
@@ -150,7 +150,7 @@ export default function HoyPage() {
                 Socios que vinieron en las últimas 2 semanas sin rutina o con una de más de {hoy.semanasRenovar} semanas.
               </p>
               {hoy.renovarRutina.length === 0 ? (
-                <div className="gt-empty">Todos tienen una rutina al día 👌</div>
+                <div className="gt-empty">Todos tienen una rutina al día</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {hoy.renovarRutina.slice(0, 15).map(s => (

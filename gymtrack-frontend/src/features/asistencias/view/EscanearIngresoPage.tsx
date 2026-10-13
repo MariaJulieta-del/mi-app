@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Hourglass, TriangleAlert } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import QrScanner from 'qr-scanner'
 import { ingresoPorQr } from '../services/asistenciaService'
@@ -106,14 +107,14 @@ export default function EscanearIngresoPage() {
 
       {estado === 'enviando' && (
         <div className="gt-card" style={{ textAlign: 'center', padding: 32 }}>
-          <p style={{ fontSize: 32, margin: 0 }}>⏳</p>
+          <p style={{ margin: 0, color: 'var(--text-muted)' }}><Hourglass size={32} aria-hidden /></p>
           <p className="gt-text-muted" style={{ margin: '8px 0 0' }}>Registrando tu ingreso…</p>
         </div>
       )}
 
       {estado === 'error' && (
         <div className="gt-card" style={{ textAlign: 'center', padding: 24 }}>
-          <p style={{ fontSize: 36, margin: 0 }}>😕</p>
+          <p style={{ margin: 0, color: 'var(--red)' }}><TriangleAlert size={36} aria-hidden /></p>
           <p style={{ margin: '8px 0 16px', color: 'var(--text-primary)' }}>{error}</p>
           <button type="button" className="gt-btn gt-btn-primary" onClick={reintentar}>Escanear de nuevo</button>
         </div>
@@ -122,7 +123,7 @@ export default function EscanearIngresoPage() {
       {estado === 'listo' && resultado && sem && (
         <div className="gt-acceso-result" style={{ borderColor: sem.color }}>
           <div className="gt-acceso-head" style={{ background: sem.bg, flexDirection: 'column', textAlign: 'center', padding: '24px 18px' }}>
-            <span style={{ fontSize: 56 }}>{sem.icono}</span>
+            <span style={{ display: 'flex', color: sem.color }}><sem.icono size={56} aria-hidden /></span>
             <div style={{ fontWeight: 800, fontSize: 20, color: sem.color }}>
               {resultado.permitido ? '¡Bienvenido/a!' : 'No pudimos registrar tu ingreso'}
             </div>

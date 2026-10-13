@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Ban, CircleCheck } from 'lucide-react'
 import QRCode from 'qrcode'
 import type { CodigoQr } from '../services/asistenciaService'
 
@@ -89,7 +90,7 @@ export default function PantallaQr({ obtenerQr, obtenerUltimos, onNoAutorizado }
           <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>Todavía nadie ingresó hoy.</p>
         ) : ultimos.map((a, i) => (
           <div key={`${a.nombre}-${i}`} className="gt-qr-ultimo">
-            <span style={{ fontSize: 20 }}>{a.permitido ? '✅' : '🚫'}</span>
+            <span style={{ display: 'flex', color: a.permitido ? 'var(--green-text)' : 'var(--red)' }}>{a.permitido ? <CircleCheck size={20} aria-label="Permitido" /> : <Ban size={20} aria-label="Denegado" />}</span>
             <span style={{ flex: 1, fontWeight: 600, color: 'var(--text-primary)' }}>{a.nombre}</span>
             <span className="gt-text-muted gt-text-sm">{String(a.hora).slice(0, 5)}</span>
           </div>

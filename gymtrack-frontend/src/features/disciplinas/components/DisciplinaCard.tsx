@@ -32,7 +32,7 @@ export default function DisciplinaCard({ d, onAlumnos, onEditar, onCambiarActiva
 
       <div className="gt-disc-card-lado">
         <CupoMeter total={d.totalInscritos} cupo={d.cupoMaximo} compacto />
-        {sinVigencia > 0 && <span className="gt-text-sm" style={{ color: 'var(--yellow-text)' }}>⚠ {sinVigencia} sin membresía vigente</span>}
+        {sinVigencia > 0 && <span className="gt-text-sm" style={{ color: 'var(--yellow-text)' }}>{sinVigencia} sin membresía vigente</span>}
       </div>
 
       <div className="gt-rutina-card-actions">

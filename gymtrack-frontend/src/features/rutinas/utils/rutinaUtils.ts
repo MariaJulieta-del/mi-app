@@ -1,4 +1,5 @@
 import type { Rutina } from '../types/Rutina'
+import { Dumbbell, Flame, Footprints, HeartPulse, Repeat, Sprout, Weight, Zap, type LucideIcon } from 'lucide-react'
 
 /**
  * Convención única de días:
@@ -17,14 +18,14 @@ export function etiquetaDia(diasSemana: string[] | undefined | null, n: number):
   return nombre ? `Día ${n} · ${nombre}` : `Día ${n}`
 }
 
-export const TREN_CONFIG: Record<string, { label: string; emoji: string; bg: string; color: string }> = {
-  SUPERIOR:  { label: 'Tren Superior',  emoji: '💪', bg: 'var(--blue-bg)',   color: 'var(--blue-text)' },
-  INFERIOR:  { label: 'Tren Inferior',  emoji: '🦵', bg: 'var(--green-bg)',  color: 'var(--green-text)' },
-  CORE:      { label: 'Core / Abdomen', emoji: '🔥', bg: 'var(--yellow-bg)', color: 'var(--yellow-text)' },
-  CARDIO:    { label: 'Cardio',         emoji: '❤️', bg: 'var(--red-light)', color: 'var(--red-text)' },
-  FULL_BODY: { label: 'Full Body',      emoji: '⚡', bg: 'var(--purple-bg)', color: 'var(--purple-text)' },
+export const TREN_CONFIG: Record<string, { label: string; icono: LucideIcon; bg: string; color: string }> = {
+  SUPERIOR:  { label: 'Tren Superior',  icono: Dumbbell, bg: 'var(--blue-bg)',   color: 'var(--blue-text)' },
+  INFERIOR:  { label: 'Tren Inferior',  icono: Footprints, bg: 'var(--green-bg)',  color: 'var(--green-text)' },
+  CORE:      { label: 'Core / Abdomen', icono: Flame, bg: 'var(--yellow-bg)', color: 'var(--yellow-text)' },
+  CARDIO:    { label: 'Cardio',         icono: HeartPulse, bg: 'var(--red-light)', color: 'var(--red-text)' },
+  FULL_BODY: { label: 'Full Body',      icono: Zap, bg: 'var(--purple-bg)', color: 'var(--purple-text)' },
 }
-export const TREN_DEFAULT = { label: 'Sin especificar', emoji: '🏋️', bg: 'var(--bg-surface-2)', color: 'var(--text-muted)' }
+export const TREN_DEFAULT = { label: 'Sin especificar', icono: Dumbbell, bg: 'var(--bg-surface-2)', color: 'var(--text-muted)' }
 
 export const DIFICULTAD_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
   BAJA:  { label: 'Baja',  bg: 'var(--green-bg)',  color: 'var(--green-text)' },
@@ -43,13 +44,13 @@ export interface Esquema { series: number; reps: number; descanso: number }
 export type Progresion = 'carga' | 'reps'
 
 export const OBJETIVO_CONFIG: Record<string, {
-  label: string; emoji: string; desc: string; esquema: Esquema; progresion: Progresion; bg: string; color: string
+  label: string; icono: LucideIcon; desc: string; esquema: Esquema; progresion: Progresion; bg: string; color: string
 }> = {
-  FUERZA:        { label: 'Fuerza',           emoji: '🏋️', desc: 'Pocas repeticiones con mucha carga y descansos largos.',      esquema: { series: 5, reps: 5,  descanso: 150 }, progresion: 'carga', bg: 'var(--red-light)',   color: 'var(--red-text)' },
-  HIPERTROFIA:   { label: 'Hipertrofia',      emoji: '💪', desc: 'Ganar masa muscular: volumen medio y descansos moderados.',   esquema: { series: 4, reps: 10, descanso: 90 },  progresion: 'carga', bg: 'var(--purple-bg)',  color: 'var(--purple-text)' },
-  RESISTENCIA:   { label: 'Resistencia',      emoji: '🔁', desc: 'Muchas repeticiones con carga liviana y poco descanso.',      esquema: { series: 3, reps: 15, descanso: 45 },  progresion: 'reps',  bg: 'var(--blue-bg)',    color: 'var(--blue-text)' },
-  PERDIDA_GRASA: { label: 'Pérdida de grasa', emoji: '🔥', desc: 'Circuitos dinámicos para gastar más energía.',                esquema: { series: 3, reps: 12, descanso: 30 },  progresion: 'reps',  bg: 'var(--yellow-bg)',  color: 'var(--yellow-text)' },
-  SALUD:         { label: 'Salud / inicio',   emoji: '🌱', desc: 'Técnica, movilidad y acondicionamiento general para empezar.', esquema: { series: 3, reps: 12, descanso: 60 },  progresion: 'reps',  bg: 'var(--green-bg)',   color: 'var(--green-text)' },
+  FUERZA:        { label: 'Fuerza',           icono: Weight, desc: 'Pocas repeticiones con mucha carga y descansos largos.',      esquema: { series: 5, reps: 5,  descanso: 150 }, progresion: 'carga', bg: 'var(--red-light)',   color: 'var(--red-text)' },
+  HIPERTROFIA:   { label: 'Hipertrofia',      icono: Dumbbell, desc: 'Ganar masa muscular: volumen medio y descansos moderados.',   esquema: { series: 4, reps: 10, descanso: 90 },  progresion: 'carga', bg: 'var(--purple-bg)',  color: 'var(--purple-text)' },
+  RESISTENCIA:   { label: 'Resistencia',      icono: Repeat, desc: 'Muchas repeticiones con carga liviana y poco descanso.',      esquema: { series: 3, reps: 15, descanso: 45 },  progresion: 'reps',  bg: 'var(--blue-bg)',    color: 'var(--blue-text)' },
+  PERDIDA_GRASA: { label: 'Pérdida de grasa', icono: Flame, desc: 'Circuitos dinámicos para gastar más energía.',                esquema: { series: 3, reps: 12, descanso: 30 },  progresion: 'reps',  bg: 'var(--yellow-bg)',  color: 'var(--yellow-text)' },
+  SALUD:         { label: 'Salud / inicio',   icono: Sprout, desc: 'Técnica, movilidad y acondicionamiento general para empezar.', esquema: { series: 3, reps: 12, descanso: 60 },  progresion: 'reps',  bg: 'var(--green-bg)',   color: 'var(--green-text)' },
 }
 
 /** Nivel de la ficha médica → dificultad de plantilla recomendada */

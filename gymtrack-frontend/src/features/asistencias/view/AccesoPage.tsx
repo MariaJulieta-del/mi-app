@@ -3,6 +3,7 @@ import { useAcceso } from '../hooks/useAcceso'
 import { PasesMeter } from '../../membresias/components/MembresiaResumen'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { SEMAFORO } from '../utils/semaforo'
+import IconoAcceso from '../components/IconoAcceso'
 
 
 export default function AccesoPage() {
@@ -11,8 +12,8 @@ export default function AccesoPage() {
   return (
     <>
       <div className="gt-section-header">
-        <h1 className="gt-page-title" style={{ margin: 0 }}>🚪 Control de Acceso</h1>
-        <Link to="/qr-ingreso" className="gt-btn gt-btn-primary">📱 Mostrar QR de ingreso</Link>
+        <h1 className="gt-page-title" style={{ margin: 0 }}>Control de Acceso</h1>
+        <Link to="/qr-ingreso" className="gt-btn gt-btn-primary">Mostrar QR de ingreso</Link>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, marginBottom: 24 }}>
@@ -26,7 +27,7 @@ export default function AccesoPage() {
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" disabled={a.loading}
               style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '10px 0' }}>
-              {a.loading ? '⏳ Verificando...' : '✅ Registrar ingreso'}
+              {a.loading ? 'Verificando...' : 'Registrar ingreso'}
             </button>
           </form>
 
@@ -35,7 +36,7 @@ export default function AccesoPage() {
           {a.resultado && a.semaforo && (
             <div className="gt-acceso-result" style={{ borderColor: SEMAFORO[a.semaforo].color }}>
               <div className="gt-acceso-head" style={{ background: SEMAFORO[a.semaforo].bg }}>
-                <span style={{ fontSize: 32 }}>{SEMAFORO[a.semaforo].icono}</span>
+                <span style={{ display: 'flex', color: SEMAFORO[a.semaforo].color }}><IconoAcceso estado={a.semaforo} size={32} /></span>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: SEMAFORO[a.semaforo].color }}>
                     {SEMAFORO[a.semaforo].titulo}
@@ -96,7 +97,7 @@ export default function AccesoPage() {
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, margin: '0 0 16px' }}>ingresos registrados</p>
           {a.historial.filter(h => !h.permitido).length > 0 && (
             <div style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 8, padding: '8px 12px', textAlign: 'center', fontSize: 13 }}>
-              ⚠️ {a.historial.filter(h => !h.permitido).length} acceso{a.historial.filter(h => !h.permitido).length !== 1 ? 's' : ''} denegado{a.historial.filter(h => !h.permitido).length !== 1 ? 's' : ''}
+              {a.historial.filter(h => !h.permitido).length} acceso{a.historial.filter(h => !h.permitido).length !== 1 ? 's' : ''} denegado{a.historial.filter(h => !h.permitido).length !== 1 ? 's' : ''}
             </div>
           )}
         </div>

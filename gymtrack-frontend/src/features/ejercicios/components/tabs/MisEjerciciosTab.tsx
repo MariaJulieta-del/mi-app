@@ -1,4 +1,5 @@
 import type { Ejercicio } from '../../services/ejercicioService'
+import { Dumbbell } from 'lucide-react'
 import type { Maquina } from '../../../maquinas/services/maquinaService'
 import { GRUPOS_CATEGORIAS } from '../../services/ejercicioService'
 
@@ -132,7 +133,7 @@ export default function MisEjerciciosTab({
                     </div>
                   ) : (
                     <button type="button" className="gt-subir-imagen" onClick={() => imgRef.current?.click()} disabled={subiendoImg}>
-                      {subiendoImg ? '⏳ Procesando…' : '📷 Subir imagen o GIF'}
+                      {subiendoImg ? 'Procesando…' : 'Subir imagen o GIF'}
                     </button>
                   )}
                   <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagen} />
@@ -140,7 +141,7 @@ export default function MisEjerciciosTab({
 
                 <div className="gt-form-group" style={{ margin: 0 }}>
                   <span className="gt-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>🔧 Máquinas asociadas</span>
+                    <span>Máquinas asociadas</span>
                     {(form.maquinaIds ?? []).length > 0 && (
                       <span style={{ fontSize: 11, background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 8px', fontWeight: 700 }}>
                         {(form.maquinaIds ?? []).length} seleccionada{(form.maquinaIds ?? []).length !== 1 ? 's' : ''}
@@ -258,7 +259,7 @@ export default function MisEjerciciosTab({
 
         {filtrados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: 28, marginBottom: 6 }}>💪</p>
+            <p style={{ marginBottom: 6 }}><Dumbbell size={28} aria-hidden /></p>
             <p style={{ margin: '0 0 12px' }}>
               {ejercicios.filter(e => !e.esMaquina).length === 0
                 ? 'Todavía no hay ejercicios guardados.'
@@ -302,8 +303,8 @@ export default function MisEjerciciosTab({
                         <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 9, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 2, padding: '0 2px', lineHeight: '13px', pointerEvents: 'none' }}>▶</span>
                       </button>
                     ) : (
-                      <div style={{ width: 44, height: 44, borderRadius: 7, background: 'var(--blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                        💪
+                      <div style={{ width: 44, height: 44, borderRadius: 7, background: 'var(--blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, color: 'var(--blue-text)' }}>
+                        <Dumbbell size={20} aria-hidden />
                       </div>
                     )}
 
@@ -328,7 +329,7 @@ export default function MisEjerciciosTab({
                     {maquinasAsig.length > 0 ? (
                       <span title={maquinasAsig.map(m => m.nombre).join(', ')}
                         style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 6, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
-                        ⚙ {maquinasAsig.map(m => m.nroMaquina ? `N° ${m.nroMaquina}` : m.nombre).join(', ')}
+                        Máquina {maquinasAsig.map(m => m.nroMaquina ? `N° ${m.nroMaquina}` : m.nombre).join(', ')}
                       </span>
                     ) : (
                       <span style={{ fontSize: 11, color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 6, padding: '1px 8px', flexShrink: 0 }}>
@@ -358,7 +359,7 @@ export default function MisEjerciciosTab({
                       {maquinasAsig.length > 0 && (
                         <div style={{ marginBottom: 12 }}>
                           <p style={{ margin: '0 0 7px', fontSize: 11, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                            🔧 Máquinas asignadas
+                            Máquinas asignadas
                           </p>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                             {maquinasAsig.map(m => {

@@ -14,9 +14,9 @@ import { useToast } from '../../../shared/hooks/useToast'
 import { fechaLocalISO } from '../../../shared/utils/fechas'
 
 export const METODOS: { value: MetodoPago; label: string }[] = [
-  { value: 'EFECTIVO',      label: '💵 Efectivo' },
-  { value: 'TARJETA',       label: '💳 Tarjeta' },
-  { value: 'TRANSFERENCIA', label: '🔄 Transferencia' },
+  { value: 'EFECTIVO',      label: 'Efectivo' },
+  { value: 'TARJETA',       label: 'Tarjeta' },
+  { value: 'TRANSFERENCIA', label: 'Transferencia' },
 ]
 
 /** Identificador único de un intento de cobro */

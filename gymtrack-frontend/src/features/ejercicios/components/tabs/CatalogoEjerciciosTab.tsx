@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Dumbbell, Search } from 'lucide-react'
 import type { Ejercicio } from '../../services/ejercicioService'
 import { crearEjercicio } from '../../services/ejercicioService'
 import { EXERCISES_CATALOG, CATALOG_BODY_PARTS, type CatalogExercise } from '../../assets/exercisesCatalog'
@@ -151,7 +152,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                       loading="lazy"
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                   ) : (
-                    <span style={{ fontSize: 40 }}>💪</span>
+                    <span style={{ color: 'var(--text-muted)', display: 'flex' }}><Dumbbell size={40} aria-hidden /></span>
                   )}
                   {ex.gifUrl && (
                     <span style={{ position: 'absolute', bottom: 6, right: 6, fontSize: 10, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>▶ GIF</span>
@@ -213,7 +214,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                     disabled={cargando || yaGuardado}
                     onClick={ev => { ev.stopPropagation(); if (!yaGuardado) guardarDeCatalogo(ex) }}
                   >
-                    {cargando ? '⏳ Guardando…' : yaGuardado ? '✓ En mis ejercicios' : '+ Guardar en mis ejercicios'}
+                    {cargando ? 'Guardando…' : yaGuardado ? '✓ En mis ejercicios' : '+ Guardar en mis ejercicios'}
                   </button>
                 </div>
               </div>
@@ -222,7 +223,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
         </div>
       ) : (
         <div className="gt-card" style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-          <p style={{ fontSize: 24, marginBottom: 6 }}>🔍</p>
+          <p style={{ marginBottom: 6 }}><Search size={24} aria-hidden /></p>
           <p style={{ margin: 0 }}>Sin resultados para "{catQActivo || catBodyPart}"</p>
         </div>
       )}

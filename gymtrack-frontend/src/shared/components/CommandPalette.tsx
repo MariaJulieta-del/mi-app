@@ -1,4 +1,5 @@
 import { mensajeError } from '../utils/errores'
+import { Ban, CircleCheck, TriangleAlert } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBuscarSocios } from '../hooks/useBuscarSocios'
@@ -15,15 +16,15 @@ interface AccesoResultado {
 
 const ACCESO_CFG = {
   VERDE: {
-    bg: '#16A34A', icon: '✓', titulo: 'ACCESO PERMITIDO',
+    bg: '#16A34A', icon: CircleCheck, titulo: 'ACCESO PERMITIDO',
     subtitulo: 'El socio puede ingresar',
   },
   AMARILLO: {
-    bg: '#D97706', icon: '⚠', titulo: 'PERÍODO DE GRACIA',
-    subtitulo: 'Acceso permitido — recordar renovar',
+    bg: '#D97706', icon: TriangleAlert, titulo: 'ACCESO PERMITIDO · ATENCIÓN',
+    subtitulo: 'Le quedan pocos pases o la membresía vence pronto',
   },
   ROJO: {
-    bg: 'var(--red)', icon: '✕', titulo: 'ACCESO DENEGADO',
+    bg: 'var(--red)', icon: Ban, titulo: 'ACCESO DENEGADO',
     subtitulo: 'El socio no puede ingresar',
   },
 }
@@ -134,7 +135,7 @@ export default function CommandPalette() {
             }}
           >
             <div style={{ fontSize: 100, color: 'rgba(255,255,255,0.9)', lineHeight: 1, marginBottom: 16 }}>
-              {cfg.icon}
+              <cfg.icon size={100} aria-hidden />
             </div>
             <div style={{ fontSize: 42, fontWeight: 900, color: '#fff', letterSpacing: 2, marginBottom: 8 }}>
               {cfg.titulo}

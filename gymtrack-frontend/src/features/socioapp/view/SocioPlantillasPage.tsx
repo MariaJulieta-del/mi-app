@@ -60,7 +60,7 @@ export default function SocioPlantillasPage() {
           <button type="button" role="radio" aria-checked={!filtro} className={`gt-chip-btn${!filtro ? ' activo' : ''}`} onClick={() => setFiltro('')}>Todas</button>
           {objetivos.map(o => (
             <button key={o} type="button" role="radio" aria-checked={filtro === o} className={`gt-chip-btn${filtro === o ? ' activo' : ''}`} onClick={() => setFiltro(o)}>
-              {OBJETIVO_CONFIG[o]?.emoji} {OBJETIVO_CONFIG[o]?.label ?? o}
+              {OBJETIVO_CONFIG[o]?.label ?? o}
             </button>
           ))}
         </div>
@@ -87,7 +87,7 @@ export default function SocioPlantillasPage() {
                   {dif && ` · Nivel ${dif.label.toLowerCase()}`}
                 </p>
               </div>
-              {obj && <Pill tono="info">{obj.emoji} {obj.label}</Pill>}
+              {obj && <Pill tono="info" icono={obj.icono}>{obj.label}</Pill>}
             </div>
             {p.descripcion && <p className="gt-text-sm" style={{ color: 'var(--text-secondary)', margin: '8px 0 0' }}>{p.descripcion}</p>}
 

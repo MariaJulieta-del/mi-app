@@ -28,7 +28,7 @@ export default function EjerciciosPage() {
         {tab === 'mis' && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {user?.rol === 'ADMIN' && (
-              <button className="gt-btn gt-btn-secondary" onClick={() => setLimpiando(true)}>🧹 Limpiar viejos</button>
+              <button className="gt-btn gt-btn-secondary" onClick={() => setLimpiando(true)}>Limpiar viejos</button>
             )}
             <button className="gt-btn gt-btn-primary" onClick={ej.abrirNuevo}>+ Nuevo ejercicio</button>
           </div>
@@ -37,7 +37,7 @@ export default function EjerciciosPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid var(--border)' }}>
-        {([['catalogo', '📚 Catálogo'], ['mis', '⭐ Mis ejercicios']] as const).map(([key, label]) => (
+        {([['catalogo', 'Catálogo'], ['mis', 'Mis ejercicios']] as const).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             style={{
               padding: '10px 24px', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: tab === key ? 700 : 400,

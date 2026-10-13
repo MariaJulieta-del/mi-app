@@ -36,7 +36,7 @@ export default function MotivosBaja() {
     <div className="gt-card" style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         <div>
-          <p className="gt-card-title" style={{ margin: 0 }}>🚪 Por qué se van los socios</p>
+          <p className="gt-card-title" style={{ margin: 0 }}>Por qué se van los socios</p>
           <p className="gt-text-muted gt-text-sm" style={{ margin: '2px 0 0' }}>
             {enPeriodo.length} baja{enPeriodo.length !== 1 ? 's' : ''}
             {volvieron > 0 && ` · ${volvieron} volvieron después`}

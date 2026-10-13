@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageSquareText, Star } from 'lucide-react'
+import { MessageCircle, MessageSquareText, Star } from 'lucide-react'
 import axiosInstance from '../../../shared/services/axiosInstance'
 import { Pill } from '../../../shared/components/ui'
 import { formatFecha } from '../../../shared/utils/fechas'
@@ -41,7 +41,7 @@ export default function ComentariosSocios() {
           <div key={s.id} className={`gt-comentario${s.leida ? ' leida' : ''}`} onClick={() => !s.leida && leer(s)}
             {...(!s.leida ? { role: 'button', tabIndex: 0, 'aria-label': `Marcar como leído el comentario de ${s.socioNombre}`,
               onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); leer(s) } } } : {})}>
-            <span className="gt-sesion-emoji" aria-hidden>{sen?.emoji ?? '💬'}</span>
+            <span className="gt-sesion-emoji" aria-hidden>{sen ? <sen.icono size={18} /> : <MessageCircle size={18} />}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Link to={`/socios/${s.socioId}/perfil`} style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>{s.socioNombre}</Link>

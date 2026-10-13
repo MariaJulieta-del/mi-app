@@ -1,4 +1,5 @@
 import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { CalendarDays } from 'lucide-react'
 import { useDisciplinas } from '../hooks/useDisciplinas'
 import HorarioSemanal from '../components/HorarioSemanal'
 import DisciplinaCard from '../components/DisciplinaCard'
@@ -42,8 +43,8 @@ export default function DisciplinasPage() {
       {d.disciplinas.length > 0 && (
         <div className="gt-disc-barra">
           <div className="gt-segmentado" role="tablist" aria-label="Vista">
-            <button type="button" role="tab" aria-selected={d.vista === 'semana'} className={d.vista === 'semana' ? 'activo' : ''} onClick={() => d.setVista('semana')}>📅 Semana</button>
-            <button type="button" role="tab" aria-selected={d.vista === 'lista'} className={d.vista === 'lista' ? 'activo' : ''} onClick={() => d.setVista('lista')}>☰ Lista</button>
+            <button type="button" role="tab" aria-selected={d.vista === 'semana'} className={d.vista === 'semana' ? 'activo' : ''} onClick={() => d.setVista('semana')}>Semana</button>
+            <button type="button" role="tab" aria-selected={d.vista === 'lista'} className={d.vista === 'lista' ? 'activo' : ''} onClick={() => d.setVista('lista')}>Lista</button>
           </div>
           <input className="gt-input" style={{ flex: 1, minWidth: 160, maxWidth: 280 }} placeholder="Buscar disciplina o instructor…"
             value={d.busqueda} onChange={e => d.setBusqueda(e.target.value)} aria-label="Buscar" />
@@ -79,7 +80,7 @@ export default function DisciplinasPage() {
       {d.cargando ? <CargandoPagina resumen={false} filas={4} />
         : d.disciplinas.length === 0 ? (
           <div className="gt-card gt-empty" style={{ padding: '40px 20px' }}>
-            <p style={{ fontSize: 34, margin: 0 }}>🧘</p>
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}><CalendarDays size={34} aria-hidden /></p>
             <p style={{ margin: '8px 0 14px' }}>Todavía no hay disciplinas. Creá la primera (Funcional, Yoga, Spinning…) con sus días, horarios y cupo.</p>
             <button type="button" className="gt-btn gt-btn-primary" onClick={() => d.setFormulario('nueva')}>+ Crear disciplina</button>
           </div>

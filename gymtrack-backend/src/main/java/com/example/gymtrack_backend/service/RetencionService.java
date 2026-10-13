@@ -95,17 +95,17 @@ public class RetencionService {
 
             // ── Primeros 30 días ──
             if (diasDesdeAlta >= 3 && diasDesdeAlta <= 6) {
-                if (vino.isEmpty()) tarea(s, "NUEVO_SIN_VENIR", 60, "¡Hola " + nombre + "! ¿Cómo estás? Te esperamos para tu primer entrenamiento: avisanos qué horario te queda cómodo y te armamos la rutina 💪", cuenta);
-                else aviso(s, "BIENVENIDA_3", 60, "¡Buen arranque! 🎉", "Ya entrenaste " + vino.size() + (vino.size() == 1 ? " vez" : " veces") + ". Los primeros días son los que arman el hábito: apuntá a 2 o 3 por semana.", cuenta);
+                if (vino.isEmpty()) tarea(s, "NUEVO_SIN_VENIR", 60, "¡Hola " + nombre + "! ¿Cómo estás? Te esperamos para tu primer entrenamiento: avisanos qué horario te queda cómodo y te armamos la rutina", cuenta);
+                else aviso(s, "BIENVENIDA_3", 60, "¡Buen arranque!", "Ya entrenaste " + vino.size() + (vino.size() == 1 ? " vez" : " veces") + ". Los primeros días son los que arman el hábito: apuntá a 2 o 3 por semana.", cuenta);
             }
             if (diasDesdeAlta >= 7 && diasDesdeAlta <= 9) {
-                aviso(s, "PRUEBA_CLASE", 60, "¿Probaste una clase? 🤸", "Además del salón tenés clases grupales. Mirá los horarios en \"Clases\" y reservá tu lugar desde la app.", cuenta);
+                aviso(s, "PRUEBA_CLASE", 60, "¿Probaste una clase?", "Además del salón tenés clases grupales. Mirá los horarios en \"Clases\" y reservá tu lugar desde la app.", cuenta);
             }
             if (diasDesdeAlta >= 14 && diasDesdeAlta <= 16) {
-                tarea(s, "SEGUIMIENTO_14", 60, "¡Hola " + nombre + "! Ya van dos semanas desde que arrancaste 🙌 ¿Cómo te sentís con la rutina? Si querés ajustamos algo.", cuenta);
+                tarea(s, "SEGUIMIENTO_14", 60, "¡Hola " + nombre + "! Ya van dos semanas desde que arrancaste. ¿Cómo te sentís con la rutina? Si querés ajustamos algo.", cuenta);
             }
             if (diasDesdeAlta >= 25 && diasDesdeAlta <= 30 && visitasMes1 < 4) {
-                tarea(s, "POCAS_VISITAS", 60, "¡Hola " + nombre + "! Vimos que este primer mes viniste poco. ¿Te podemos ayudar con horarios o con la rutina? La idea es que le encuentres el gusto 😊", cuenta);
+                tarea(s, "POCAS_VISITAS", 60, "¡Hola " + nombre + "! Vimos que este primer mes viniste poco. ¿Te podemos ayudar con horarios o con la rutina? La idea es que le encuentres el gusto.", cuenta);
             }
 
             // ── Ausencia (comparada con su propia frecuencia) ──
@@ -114,7 +114,7 @@ public class RetencionService {
                 long sinVenir = ChronoUnit.DAYS.between(ultima, hoy);
                 double frecuencia = frecuenciaHabitual(vino, hoy);
                 if (sinVenir >= Math.max(5, Math.round(frecuencia * 2.5)) && sinVenir < 10) {
-                    aviso(s, "AUSENCIA_AVISO", 21, "Te extrañamos 👋", "Hace " + sinVenir + " días que no venís. ¡Tu rutina te espera! Volver es más fácil de lo que parece.", cuenta);
+                    aviso(s, "AUSENCIA_AVISO", 21, "Te extrañamos", "Hace " + sinVenir + " días que no venís. ¡Tu rutina te espera! Volver es más fácil de lo que parece.", cuenta);
                 }
                 if (sinVenir >= Math.max(10, Math.round(frecuencia * 4))) {
                     tarea(s, "AUSENCIA_LLAMAR", 30, "¡Hola " + nombre + "! Hace " + sinVenir + " días que no te vemos por el gimnasio. ¿Todo bien? Si necesitás cambiar horarios o la rutina, decinos y lo armamos.", cuenta);
@@ -126,7 +126,7 @@ public class RetencionService {
                 Rutina actual = rutinaRepo.findBySocioId(s.getId()).stream().filter(r -> ReglasRutina.inicio(r) != null)
                         .max(Comparator.comparing(ReglasRutina::inicio)).orElse(null);
                 if (actual == null) {
-                    tarea(s, "SIN_RUTINA", 30, "¡Hola " + nombre + "! Vimos que todavía no tenés una rutina armada en la app. Pasá por el salón y el profe te arma una a tu medida 💪", cuenta);
+                    tarea(s, "SIN_RUTINA", 30, "¡Hola " + nombre + "! Vimos que todavía no tenés una rutina armada en la app. Pasá por el salón y el profe te arma una a tu medida.", cuenta);
                 } else {
                     long semanas = ReglasRutina.semanas(actual, hoy);
                     if (semanas >= reglas.semanasMax()) {
@@ -175,7 +175,7 @@ public class RetencionService {
             case "MUDANZA" -> "Si algún día pasás por la zona, tenés las puertas abiertas.";
             default -> "Te extrañamos en el gimnasio. Si querés volver, te esperamos con una rutina nueva.";
         };
-        return base + cuerpo + (dias >= 60 ? " Si volvés este mes, la primera semana va por nuestra cuenta 🎁" : "");
+        return base + cuerpo + (dias >= 60 ? " Si volvés este mes, la primera semana va por nuestra cuenta." : "");
     }
 
     // ── Tareas para el staff ─────────────────────────────────────────────────

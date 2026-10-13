@@ -36,7 +36,7 @@ export default function SocioInicioPage() {
     <div className="gt-socio-pagina">
       <header className="gt-socio-saludo">
         <p>{fechaLarga()}</p>
-        <h1>{saludo()}, {socio?.nombre ?? ''} 👋</h1>
+        <h1>{saludo()}, {socio?.nombre ?? ''}</h1>
       </header>
 
       {/* Membresía: solo si hay algo que avisar */}
@@ -60,7 +60,7 @@ export default function SocioInicioPage() {
         ) : rutinas.length > 0 ? (
           <>
             <span className="gt-socio-hero-eti">Hoy</span>
-            <h2>Día de descanso 😌</h2>
+            <h2>Día de descanso</h2>
             <p>{proximoDia(rutinas[0]) ? `Tu próximo entrenamiento es ${proximoDia(rutinas[0])}.` : 'Recuperarse también es entrenar.'}</p>
             <Link to="/mi-rutina" className="gt-socio-hero-btn secundario">Quiero entrenar igual</Link>
           </>
@@ -82,12 +82,12 @@ export default function SocioInicioPage() {
 
       {rutinas[0]?.paraRenovar && (
         <div className="gt-alert gt-alert-warning">
-          ⏰ Hace {rutinas[0].semanasActual} semanas que hacés <strong>{rutinas[0].nombre}</strong>. Pedile a tu profe que te la renueve. <Link to="/mi-rutina">Ver mi rutina</Link>
+          Hace {rutinas[0].semanasActual} semanas que hacés <strong>{rutinas[0].nombre}</strong>. Pedile a tu profe que te la renueve. <Link to="/mi-rutina">Ver mi rutina</Link>
         </div>
       )}
 
       {nueva && hoy?.rutina.id !== nueva.id && (
-        <div className="gt-alert gt-alert-info">✨ {renovada ? 'Tu profe te renovó la rutina' : 'Tu profe te armó una rutina nueva'}: <Link to={`/rutinas/${nueva.id}`}>{nueva.nombre}</Link></div>
+        <div className="gt-alert gt-alert-info">{renovada ? 'Tu profe te renovó la rutina' : 'Tu profe te armó una rutina nueva'}: <Link to={`/rutinas/${nueva.id}`}>{nueva.nombre}</Link></div>
       )}
 
       {/* Accesos rápidos */}
@@ -136,7 +136,7 @@ export default function SocioInicioPage() {
         <Link to="/progreso" className="gt-card gt-socio-bloque gt-socio-desafio">
           <span className="gt-socio-desafio-icono"><Trophy size={22} aria-hidden /></span>
           <span style={{ flex: 1 }}>
-            <strong>{logros.desafio.completado ? '¡Desafío cumplido! 🎉' : logros.desafio.titulo}</strong>
+            <strong>{logros.desafio.completado ? '¡Desafío cumplido!' : logros.desafio.titulo}</strong>
             <span className="gt-barra-progreso" aria-hidden><span style={{ width: `${Math.min(100, (logros.desafio.actual / logros.desafio.meta) * 100)}%` }} /></span>
             <small>{logros.desafio.actual} de {logros.desafio.meta} días · quedan {logros.desafio.diasRestantes} días del mes</small>
           </span>

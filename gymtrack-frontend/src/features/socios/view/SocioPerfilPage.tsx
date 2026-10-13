@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Camera, ClipboardList, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { useToast } from '../../../shared/hooks/useToast'
@@ -64,7 +65,7 @@ export default function SocioPerfilPage() {
       {/* ── Ingreso con QR (solo el socio): recién al escanear se descuenta el pase ── */}
       {esSocio && (
         <Link to="/ingreso" className="gt-ingreso-cta">
-          <span className="gt-ingreso-cta-icono">📷</span>
+          <span className="gt-ingreso-cta-icono"><Camera size={22} aria-hidden /></span>
           <span className="gt-flex-1">
             <strong>Escanear QR de ingreso</strong>
             <span className="gt-ingreso-cta-sub">Al llegar al gimnasio, escaneá el código de recepción</span>
@@ -85,15 +86,15 @@ export default function SocioPerfilPage() {
             </div>
             <div className="gt-perfil-datos">
               <span>DNI <strong>{socio.dni}</strong></span>
-              {socio.email && <span>✉ {socio.email}</span>}
-              {socio.telefono && <span>📞 {socio.telefono}</span>}
+              {socio.email && <span>{socio.email}</span>}
+              {socio.telefono && <span>{socio.telefono}</span>}
               {edadDe(socio.fechaNacimiento) != null && <span>{edadDe(socio.fechaNacimiento)} años</span>}
               {textoGenero(socio.genero) && <span>{textoGenero(socio.genero)}</span>}
             </div>
           </div>
           {esSocio ? (
             <div className="gt-perfil-acciones">
-              <button className="gt-btn gt-btn-secondary" onClick={() => setCambiandoPin(true)}>🔑 Cambiar PIN</button>
+              <button className="gt-btn gt-btn-secondary" onClick={() => setCambiandoPin(true)}>Cambiar PIN</button>
               <button className="gt-btn gt-btn-secondary" onClick={() => p.setConfirmLogout(true)}>Cerrar sesión</button>
             </div>
           ) : (
@@ -101,7 +102,7 @@ export default function SocioPerfilPage() {
               <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-btn gt-btn-primary">Asignar rutina</Link>
               <Link to={`/socios/${id}/ficha`} className="gt-btn gt-btn-secondary">Ficha médica</Link>
               {socio.activo !== false && (
-                <button className="gt-btn gt-btn-secondary" onClick={() => setConfirmarPin(true)} title="Para que entre a la app con DNI + PIN">🔑 Generar PIN</button>
+                <button className="gt-btn gt-btn-secondary" onClick={() => setConfirmarPin(true)} title="Para que entre a la app con DNI + PIN">Generar PIN</button>
               )}
             </div>
           )}
@@ -109,7 +110,7 @@ export default function SocioPerfilPage() {
 
         {!esSocio && p.observacionesMedicas && (
           <div className="gt-alert gt-alert-warning gt-perfil-ficha">
-            <strong>⚠ Ficha médica:</strong> {p.observacionesMedicas}
+            <strong>Ficha médica:</strong> {p.observacionesMedicas}
           </div>
         )}
 
@@ -162,12 +163,12 @@ export default function SocioPerfilPage() {
         esSocio ? <div className="gt-empty">Todavía no tenés rutinas asignadas. Consultá con tu profesor.</div> : (
           <div className="gt-choice-grid gt-mb-20">
             <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-choice gt-sin-subrayado">
-              <p className="gt-choice-icon">📋</p>
+              <p className="gt-choice-icon"><ClipboardList size={28} aria-hidden /></p>
               <p className="gt-choice-title">Asignar una plantilla</p>
               <p className="gt-choice-desc">Elegí una rutina modelo y se copia a {socio.nombre}.</p>
             </Link>
             <Link to={`/rutinas/nueva?socioId=${id}`} className="gt-choice gt-sin-subrayado">
-              <p className="gt-choice-icon">✏️</p>
+              <p className="gt-choice-icon"><Pencil size={28} aria-hidden /></p>
               <p className="gt-choice-title">Crear personalizada</p>
               <p className="gt-choice-desc">Armala a medida con ejercicios del catálogo.</p>
             </Link>
@@ -177,7 +178,7 @@ export default function SocioPerfilPage() {
         <>
         {!esSocio && rutinas.filter(r => r.paraRenovar).map(r => (
           <div key={r.id} className="gt-alert gt-alert-warning gt-renovar-aviso" role="note">
-            <span>⏰ <strong>{r.nombre}</strong> lleva {r.semanasActual} semanas con los mismos ejercicios (el gimnasio las renueva cada {r.semanasMax}). Cambiale los ejercicios para que siga progresando.</span>
+            <span><strong>{r.nombre}</strong> lleva {r.semanasActual} semanas con los mismos ejercicios (el gimnasio las renueva cada {r.semanasMax}). Cambiale los ejercicios para que siga progresando.</span>
             <Link to={linkEditarRutina(r, true)} className="gt-btn gt-btn-secondary gt-btn-sm">Renovar</Link>
           </div>
         ))}
@@ -189,7 +190,7 @@ export default function SocioPerfilPage() {
                 {!esSocio && <Link to={linkEditarRutina(r, true)}>Editar</Link>}
                 {!esSocio && (
                   <button type="button" className="peligro" disabled={p.eliminandoRutinaId === r.id}
-                    onClick={() => p.setConfirmarEliminarRutinaId(r.id!)} aria-label={`Eliminar ${r.nombre}`}>🗑</button>
+                    onClick={() => p.setConfirmarEliminarRutinaId(r.id!)} aria-label={`Eliminar ${r.nombre}`}><Trash2 size={15} aria-hidden /></button>
                 )}
               </>
             } />

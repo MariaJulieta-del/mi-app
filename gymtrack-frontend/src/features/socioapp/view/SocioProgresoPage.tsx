@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Award, Flame, Medal, Star, Target, Trophy } from 'lucide-react'
+import { Award, BrickWall, CalendarCheck, Dumbbell, Flame, type LucideIcon, Medal, Rocket, Sparkles, Sprout, Star, Sunrise, Target, Trophy } from 'lucide-react'
 import { CargandoPagina, Pill } from '../../../shared/components/ui'
 import { useToast } from '../../../shared/hooks/useToast'
 import { formatFecha } from '../../../shared/utils/fechas'
@@ -13,6 +13,19 @@ import {
 const kg = (n: number | null) => (n == null ? '—' : `${Number(n).toLocaleString('es-AR')} kg`)
 
 /** Progreso del socio: logros, desafío del mes, récords, cargas, ranking e historial */
+/** Ícono de cada insignia (el backend manda el código) */
+const ICONOS_INSIGNIA: Record<string, LucideIcon> = {
+  PRIMER_DIA: Sprout, DIAS_10: Dumbbell, DIAS_25: Flame, DIAS_50: Rocket, DIAS_100: Trophy,
+  RACHA_4: CalendarCheck, RACHA_12: BrickWall, RECORD_1: Star, RECORD_10: Sparkles,
+  DESAFIO_1: Target, TEMPRANO_10: Sunrise,
+}
+function IconoInsignia({ codigo }: { codigo: string }) {
+  const Icono = ICONOS_INSIGNIA[codigo] ?? Award
+  return <Icono size={22} />
+}
+/** Oro, plata y bronce del ranking */
+const COLOR_MEDALLA = ['#D4A017', '#9CA3AF', '#B87333']
+
 export default function SocioProgresoPage() {
   const { socioId } = useSocioApp()
   const toast = useToast()
@@ -82,7 +95,7 @@ export default function SocioProgresoPage() {
         <div className="gt-insignias">
           {insignias.map(i => (
             <div key={i.codigo} className={`gt-insignia${i.obtenida ? ' obtenida' : ''}`} title={i.descripcion}>
-              <span className="gt-insignia-icono" aria-hidden>{i.icono}</span>
+              <span className="gt-insignia-icono" aria-hidden><IconoInsignia codigo={i.codigo} /></span>
               <strong>{i.titulo}</strong>
               <small>{i.obtenida ? i.descripcion : `${i.progreso}/${i.meta}`}</small>
               {!i.obtenida && <span className="gt-barra-progreso" aria-hidden><span style={{ width: `${(i.progreso / i.meta) * 100}%` }} /></span>}
@@ -137,7 +150,7 @@ export default function SocioProgresoPage() {
               <ol className="gt-ranking">
                 {ranking.top.map(p => (
                   <li key={p.socioId} className={p.esVos ? 'vos' : ''}>
-                    <span className="gt-ranking-pos">{p.posicion <= 3 ? ['🥇', '🥈', '🥉'][p.posicion - 1] : p.posicion}</span>
+                    <span className="gt-ranking-pos">{p.posicion <= 3 ? <Medal size={18} aria-label={`${p.posicion}°`} style={{ color: COLOR_MEDALLA[p.posicion - 1] }} /> : p.posicion}</span>
                     <span style={{ flex: 1 }}>{p.nombre}{p.esVos ? ' (vos)' : ''}</span>
                     <strong>{p.dias} {p.dias === 1 ? 'día' : 'días'}</strong>
                   </li>
@@ -158,7 +171,7 @@ export default function SocioProgresoPage() {
             const sen = SENSACIONES.find(x => x.valor === s.sensacion)
             return (
               <div key={s.id} className="gt-sesion-fila">
-                <span className="gt-sesion-emoji" aria-hidden>{sen?.emoji ?? '🏋️'}</span>
+                <span className="gt-sesion-emoji" aria-hidden>{sen ? <sen.icono size={18} /> : <Dumbbell size={18} />}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <strong>{s.rutinaNombre ?? 'Entrenamiento'}{s.dia ? ` · Día ${s.dia}` : ''}</strong>
                   <small>{formatFecha(s.fecha)}{s.duracionMin ? ` · ${s.duracionMin} min` : ''}{s.series ? ` · ${s.series} series` : ''}{s.volumenKg ? ` · ${Number(s.volumenKg).toLocaleString('es-AR')} kg` : ''}</small>

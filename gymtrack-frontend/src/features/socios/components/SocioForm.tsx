@@ -172,7 +172,7 @@ const SocioForm = (props: Props) => {
                     onClick={() => { s.setAltaForm(f => ({ ...f, tipoMembresia: t.tipo })); s.touch('tipoMembresia') }}>
                     <strong>{t.nombre}</strong>
                     <span>${t.precio.toLocaleString('es-AR')} · {t.duracionDias} días</span>
-                    <small>🎟️ {textoPases(t.pasesMensuales)}</small>
+                    <small>{textoPases(t.pasesMensuales)}</small>
                   </button>
                 )
               })}

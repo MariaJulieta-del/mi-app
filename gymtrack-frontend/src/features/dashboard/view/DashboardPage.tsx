@@ -71,7 +71,7 @@ export default function DashboardPage() {
         <div className="gt-card" style={{ marginBottom: 20, borderLeft: '3px solid var(--red)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <p className="gt-card-title" style={{ marginTop: 0, marginBottom: 0, color: 'var(--red)' }}>
-              🔧 Máquinas con mantenimiento pendiente ({d.maqPendientes.length})
+              Máquinas con mantenimiento pendiente ({d.maqPendientes.length})
             </p>
             <Link to="/maquinas" style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'underline' }}>Ver en Máquinas →</Link>
           </div>

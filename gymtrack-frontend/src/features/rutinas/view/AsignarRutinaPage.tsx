@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ClipboardList, PartyPopper, Pencil } from 'lucide-react'
 import { useAsignarRutina } from '../hooks/useAsignarRutina'
 import RutinaCard from '../components/RutinaCard'
 import { TREN_CONFIG, OBJETIVO_CONFIG, DIFICULTAD_CONFIG, linkRutina } from '../utils/rutinaUtils'
@@ -38,7 +39,7 @@ export default function AsignarRutinaPage() {
       {/* ── Listo ── */}
       {a.asignada && a.socio && (
         <div className="gt-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
-          <p style={{ fontSize: 44, margin: '0 0 8px' }}>🎉</p>
+          <p style={{ margin: '0 0 8px', color: 'var(--accent)' }}><PartyPopper size={44} aria-hidden /></p>
           <h2 style={{ margin: '0 0 6px', color: 'var(--text-primary)' }}>¡Rutina asignada!</h2>
           <p className="gt-text-muted" style={{ margin: '0 0 20px' }}>
             <strong>{a.asignada.nombre}</strong> ya figura en el perfil de {a.socio.nombre} {a.socio.apellido}.
@@ -68,7 +69,7 @@ export default function AsignarRutinaPage() {
                 </div>
                 {a.observaciones && (
                   <div className="gt-alert gt-alert-warning" style={{ marginTop: 10, marginBottom: 0 }}>
-                    <strong>⚠ Tené en cuenta antes de asignar:</strong>
+                    <strong>Tené en cuenta antes de asignar:</strong>
                     <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{a.observaciones}</p>
                   </div>
                 )}
@@ -95,14 +96,14 @@ export default function AsignarRutinaPage() {
               <p className="gt-card-title">2. ¿Cómo querés armarla?</p>
               <div className="gt-choice-grid">
                 <button type="button" className={`gt-choice${a.modo === 'plantilla' ? ' selected' : ''}`} onClick={() => a.elegirModo('plantilla')}>
-                  <p className="gt-choice-icon">📋</p>
+                  <p className="gt-choice-icon"><ClipboardList size={28} aria-hidden /></p>
                   <p className="gt-choice-title">Usar una plantilla</p>
                   <p className="gt-choice-desc">
                     Lo más rápido. Elegís una rutina modelo ({a.plantillas.length} disponibles), se copia al socio y después la ajustás si hace falta.
                   </p>
                 </button>
                 <button type="button" className="gt-choice" onClick={() => a.elegirModo('personalizada')}>
-                  <p className="gt-choice-icon">✏️</p>
+                  <p className="gt-choice-icon"><Pencil size={28} aria-hidden /></p>
                   <p className="gt-choice-title">Crear personalizada</p>
                   <p className="gt-choice-desc">
                     Armás la rutina a medida: días, ejercicios del catálogo, series y repeticiones. Ideal si tiene lesiones u objetivos específicos.
@@ -124,14 +125,14 @@ export default function AsignarRutinaPage() {
                   onClick={() => a.setFiltroTren('')}>Todas</button>
                 {Object.entries(TREN_CONFIG).map(([id, cfg]) => (
                   <button key={id} type="button" className={`gt-option${a.filtroTren === id ? ' selected' : ''}`} style={{ padding: '4px 12px' }}
-                    onClick={() => a.setFiltroTren(a.filtroTren === id ? '' : id)}>{cfg.emoji} {cfg.label}</button>
+                    onClick={() => a.setFiltroTren(a.filtroTren === id ? '' : id)}><cfg.icono size={13} aria-hidden /> {cfg.label}</button>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
                 <span className="gt-text-muted gt-text-sm">Objetivo:</span>
                 {Object.entries(OBJETIVO_CONFIG).map(([id, cfg]) => (
                   <button key={id} type="button" className={`gt-option${a.filtroObjetivo === id ? ' selected' : ''}`} style={{ padding: '4px 12px' }}
-                    onClick={() => a.setFiltroObjetivo(a.filtroObjetivo === id ? '' : id)}>{cfg.emoji} {cfg.label}</button>
+                    onClick={() => a.setFiltroObjetivo(a.filtroObjetivo === id ? '' : id)}><cfg.icono size={13} aria-hidden /> {cfg.label}</button>
                 ))}
                 {a.nivelRecomendado && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: 'auto' }}>

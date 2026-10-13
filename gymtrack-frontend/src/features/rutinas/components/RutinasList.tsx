@@ -40,7 +40,7 @@ export default function RutinasList() {
           {r.paraRenovar > 0 && (
             <button type="button" className={`gt-renovar-filtro${r.soloRenovar ? ' activo' : ''}`} aria-pressed={r.soloRenovar && r.tab === 'asignadas'}
               onClick={() => { if (r.tab !== 'asignadas') r.cambiarTab('asignadas'); r.setSoloRenovar(!(r.soloRenovar && r.tab === 'asignadas')) }}>
-              ⏰ {r.paraRenovar} para renovar
+              {r.paraRenovar} para renovar
             </button>
           )}
         </div>

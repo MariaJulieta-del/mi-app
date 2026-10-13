@@ -24,7 +24,7 @@ export default function LimpiezaModal({ onListo, onCerrar }: { onListo: (borrado
   const n = vista?.borrables.length ?? 0
 
   return (
-    <Modal titulo="🧹 Limpiar ejercicios viejos" onCerrar={onCerrar} ancho={640}
+    <Modal titulo="Limpiar ejercicios viejos" onCerrar={onCerrar} ancho={640}
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cerrar</button>
         {n > 0 && (confirmar ? (
@@ -51,7 +51,7 @@ export default function LimpiezaModal({ onListo, onCerrar }: { onListo: (borrado
           )}
 
           <p className="gt-stat-label" style={{ margin: '12px 0 6px' }}>Se van a borrar ({n})</p>
-          {n === 0 ? <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>No hay ejercicios viejos para borrar. 👌</p> : (
+          {n === 0 ? <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>No hay ejercicios viejos para borrar.</p> : (
             <div className="gt-limpieza-lista">
               {vista.borrables.map(e => <span key={e.id} className="gt-chip gt-chip-neutro">{e.nombre}</span>)}
             </div>

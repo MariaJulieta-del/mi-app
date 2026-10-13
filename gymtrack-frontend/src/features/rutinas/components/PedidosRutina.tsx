@@ -32,7 +32,7 @@ export function DetallePedido({ p }: { p: PedidoRutina }) {
   const obj = p.objetivo ? OBJETIVO_CONFIG[p.objetivo] : null
   return (
     <span className="gt-pedido-detalle">
-      {obj && <span>{obj.emoji} {obj.label}</span>}
+      {obj && <span>{obj.label}</span>}
       {p.diasSemana && <span>{p.diasSemana} {p.diasSemana === 1 ? 'día' : 'días'} por semana</span>}
       {p.rutinaActualNombre && <span>Hoy hace: {p.rutinaActualNombre}</span>}
     </span>

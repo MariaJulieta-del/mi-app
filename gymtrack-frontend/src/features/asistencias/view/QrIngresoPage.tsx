@@ -39,7 +39,7 @@ function PantallasRecepcion() {
 
   return (
     <div className="gt-card" style={{ marginTop: 24 }}>
-      <p className="gt-card-title" style={{ marginTop: 0 }}>📺 Pantallas de recepción</p>
+      <p className="gt-card-title" style={{ marginTop: 0 }}>Pantallas de recepción</p>
       <p className="gt-text-muted gt-text-sm" style={{ marginTop: -6 }}>
         Vinculá la tablet o el monitor de la entrada para que muestre el QR sin dejar tu sesión abierta.
         La pantalla solo puede mostrar el QR y los últimos ingresos.

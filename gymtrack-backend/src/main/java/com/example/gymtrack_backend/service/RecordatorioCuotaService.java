@@ -119,7 +119,7 @@ public class RecordatorioCuotaService {
             String cuando = venceEn == 0 ? "hoy" : venceEn == 1 ? "mañana" : "en " + venceEn + " días";
             titulo = "Tu cuota vence " + cuando;
             texto = "Hola " + nombre + ": tu plan " + plan + " vence el " + fecha + ". Renovalo" + importe
-                    + " en recepción o por transferencia y seguí entrenando sin cortes 💪";
+                    + " en recepción o por transferencia y seguí entrenando sin cortes.";
             asunto = gym + ": tu cuota vence el " + fecha;
         } else {
             titulo = "Se venció tu cuota";
@@ -127,7 +127,7 @@ public class RecordatorioCuotaService {
                     + " en recepción o por transferencia y volvé a entrenar. ¡Te esperamos!";
             asunto = gym + ": se venció tu cuota";
         }
-        String cuerpo = texto.replace(" 💪", ".") + "\n\nSi ya pagaste, no hace falta que hagas nada.\n\n" + gym
+        String cuerpo = texto + "\n\nSi ya pagaste, no hace falta que hagas nada.\n\n" + gym
                 + "\n\n(Mensaje automático: no hace falta responderlo.)";
         return new Mensaje(titulo, texto, asunto, cuerpo);
     }

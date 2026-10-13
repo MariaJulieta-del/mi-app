@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import MaquinasEjercicio from './MaquinasEjercicio'
-import { Link2 } from 'lucide-react'
+import { Cog, Dumbbell, Flame, Link2, Lock, Pencil } from 'lucide-react'
 import { PasesMeter } from '../../membresias/components/MembresiaResumen'
 import { formatFecha } from '../../../shared/utils/fechas'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
@@ -83,11 +83,11 @@ export default function RutinasDetail() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
         {(rutina.trenes ?? []).map(tid => {
           const cfg = TREN_CONFIG[tid]; if (!cfg) return null
-          return <span key={tid} style={{ fontSize: 13, fontWeight: 700, borderRadius: 8, padding: '5px 14px', background: cfg.bg, color: cfg.color }}>{cfg.emoji} {cfg.label}</span>
+          return <span key={tid} style={{ fontSize: 13, fontWeight: 700, borderRadius: 8, padding: '5px 14px', background: cfg.bg, color: cfg.color }}><cfg.icono size={14} aria-hidden /> {cfg.label}</span>
         })}
         {rutina.socioId === null
-          ? <span style={{ fontSize: 13, fontWeight: 700, borderRadius: 8, padding: '5px 14px', background: 'var(--purple-bg)', color: 'var(--purple-text)' }}>📋 Rutina general</span>
-          : rutina.socioNombre && <span style={{ fontSize: 13, fontWeight: 600, borderRadius: 8, padding: '5px 14px', background: 'var(--blue-bg)', color: 'var(--blue-text)' }}>👤 {rutina.socioNombre}</span>
+          ? <span style={{ fontSize: 13, fontWeight: 700, borderRadius: 8, padding: '5px 14px', background: 'var(--purple-bg)', color: 'var(--purple-text)' }}>Rutina general</span>
+          : rutina.socioNombre && <span style={{ fontSize: 13, fontWeight: 600, borderRadius: 8, padding: '5px 14px', background: 'var(--blue-bg)', color: 'var(--blue-text)' }}>{rutina.socioNombre}</span>
         }
         {(rutina.diasSemana ?? []).length > 0 && (
           <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -107,7 +107,7 @@ export default function RutinasDetail() {
         <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', border: '2px solid var(--yellow-text)' }}>
           <button type="button" disabled={!d.esSocio} onClick={() => setCalorAbierto(v => !v)} aria-expanded={!d.esSocio || calorAbierto}
             style={{ width: '100%', border: 'none', cursor: d.esSocio ? 'pointer' : 'default', textAlign: 'left', background: 'linear-gradient(90deg, #EA580C 0%, #F97316 100%)', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 18 }}>🔥</span>
+            <Flame size={18} color="#fff" aria-hidden />
             <span style={{ fontWeight: 800, fontSize: 14, color: '#fff', letterSpacing: 0.3 }}>ENTRADA EN CALOR</span>
             <span style={{ fontSize: 12, color: '#FFF7ED', marginLeft: 6, flex: 1 }}>({calentamiento.length} ejercicios de movilidad{d.esSocio ? '' : ' — inamovibles'})</span>
             {d.esSocio && <span style={{ color: '#fff', fontSize: 16 }}>{calorAbierto ? '▾' : '▸'}</span>}
@@ -134,13 +134,13 @@ export default function RutinasDetail() {
                     {ej.repeticiones != null && <span>× <strong style={{ color: 'var(--text-secondary)' }}>{ej.repeticiones}</strong> reps</span>}
                     {ej.descansoSeg != null && ej.descansoSeg > 0 && <span>{ej.descansoSeg}s desc.</span>}
                   </div>
-                  {ej.notas && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>📝 {ej.notas}</p>}
+                  {ej.notas && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>{ej.notas}</p>}
                 </div>
                 {d.esAdmin && (
                   <button type="button" onClick={() => d.abrirEdicion(ej)} title="Editar series/reps"
-                    style={{ padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--yellow-text)', cursor: 'pointer' }}>✏</button>
+                    style={{ padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--yellow-text)', cursor: 'pointer' }}><Pencil size={12} aria-hidden /></button>
                 )}
-                {!d.esSocio && <span title="Ejercicio inamovible" style={{ fontSize: 16, color: 'var(--yellow-text)', marginLeft: 4 }}>🔒</span>}
+                {!d.esSocio && <span title="Ejercicio inamovible" style={{ fontSize: 16, color: 'var(--yellow-text)', marginLeft: 4, display: 'inline-flex' }}><Lock size={14} aria-hidden /></span>}
               </div>
             ))}
           </div>
@@ -177,7 +177,7 @@ export default function RutinasDetail() {
                   onMouseLeave={ev => { if (d.ejSel?.id !== e.id) ev.currentTarget.style.background = 'var(--bg-surface)' }}>
                   {e.imagenUrl
                     ? <img src={e.imagenUrl} alt={e.nombre} style={{ width: 34, height: 34, objectFit: 'cover', borderRadius: 5, flexShrink: 0 }} />
-                    : <div style={{ width: 34, height: 34, borderRadius: 5, background: 'var(--bg-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{e.esMaquina ? '⚙' : '💪'}</div>
+                    : <div style={{ width: 34, height: 34, borderRadius: 5, background: 'var(--bg-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, color: 'var(--text-muted)' }}>{e.esMaquina ? <Cog size={16} aria-hidden /> : <Dumbbell size={16} aria-hidden />}</div>
                   }
                   <span style={{ flex: 1, fontWeight: d.ejSel?.id === e.id ? 700 : 400, fontSize: 13 }}>{e.nombre}</span>
                   {(e.grupos ?? []).slice(0, 2).map(g => (
@@ -225,7 +225,7 @@ export default function RutinasDetail() {
         {/* Lista de ejercicios por día */}
         {principales.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-            <p style={{ fontSize: 28, marginBottom: 8 }}>🏋️</p>
+            <p style={{ marginBottom: 8 }}><Dumbbell size={28} aria-hidden /></p>
             <p style={{ margin: 0 }}>Todavía no hay ejercicios principales.</p>
             {d.esAdmin && <p style={{ margin: '4px 0 0', fontSize: 12 }}>Usá "Agregar ejercicio" para agregar ejercicios al bloque principal.</p>}
           </div>
@@ -263,12 +263,12 @@ export default function RutinasDetail() {
                         <span className="gt-ej-plegable-n" style={{ background: d.trenInfo?.bg ?? 'var(--bg-surface-3)', color: d.trenInfo?.color ?? 'var(--text-muted)' }}>{idx + 1}</span>
                         {gifUrl
                           ? <img src={gifUrl} alt="" className="gt-ej-plegable-img" loading="lazy" onError={e => { e.currentTarget.style.visibility = 'hidden' }} />
-                          : <span className="gt-ej-plegable-img" aria-hidden>{ej.esMaquina ? '⚙' : '💪'}</span>}
+                          : <span className="gt-ej-plegable-img" aria-hidden>{ej.esMaquina ? <Cog size={18} /> : <Dumbbell size={18} />}</span>}
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span className="gt-ej-plegable-nombre">{ej.nombreEjercicio}</span>
                           <span className="gt-ej-plegable-sub">
                             {ej.series ?? '?'} × {ej.repeticiones ?? '?'}{ej.pesoKg != null ? ` · ${ej.pesoKg} kg` : ''}
-                            {nros.length > 0 && <> · <strong>⚙ N° {nros.join(', ')}</strong></>}
+                            {nros.length > 0 && <> · <strong>Máquina N° {nros.join(', ')}</strong></>}
                             {enSuperserie && <> · <span className="gt-superserie-chip"><Link2 size={11} aria-hidden /> superserie</span></>}
                           </span>
                         </span>
@@ -294,7 +294,7 @@ export default function RutinasDetail() {
                           )}
                           {ej.id && (
                             <div style={{ padding: '10px 12px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px dashed var(--border)', display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                              <span style={{ width: '100%', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>📊 Mi sesión de hoy</span>
+                              <span style={{ width: '100%', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>Mi sesión de hoy</span>
                               {[
                                 { label: 'Series',    field: 'seriesRealizadas'  as const, placeholder: String(ej.series ?? '—') },
                                 { label: 'Reps',      field: 'repeticionesReales' as const, placeholder: String(ej.repeticiones ?? '—') },
@@ -333,7 +333,7 @@ export default function RutinasDetail() {
                           <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 10, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 3, padding: '0 3px', lineHeight: '14px', pointerEvents: 'none' }}>▶</span>
                         </button>
                       ) : (
-                        <div style={{ width: 52, height: 52, borderRadius: 8, background: 'var(--bg-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>{ej.esMaquina ? '⚙' : '💪'}</div>
+                        <div style={{ width: 52, height: 52, borderRadius: 8, background: 'var(--bg-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, color: 'var(--text-muted)' }}>{ej.esMaquina ? <Cog size={24} aria-hidden /> : <Dumbbell size={24} aria-hidden />}</div>
                       )}
 
                       <div style={{ flex: 1 }}>
@@ -345,7 +345,7 @@ export default function RutinasDetail() {
                           {ej.pesoKg != null && <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{ej.pesoKg} kg</span>}
                           {d.esAdmin && (
                             <button type="button" onClick={() => d.abrirEdicion(ej)} title="Editar"
-                              style={{ marginLeft: 2, padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', cursor: 'pointer' }}>✏</button>
+                              style={{ marginLeft: 2, padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', cursor: 'pointer' }}><Pencil size={12} aria-hidden /></button>
                           )}
                         </div>
                         {(ej.grupos ?? []).length > 0 && (
@@ -355,7 +355,7 @@ export default function RutinasDetail() {
                         )}
                         {maks.length > 0 && (
                           <div style={{ marginBottom: 4 }}>
-                            <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.4 }}>⚙ Máquinas asignadas</p>
+                            <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Máquinas asignadas</p>
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                               {maks.map(m => <span key={m.id} style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 5, padding: '2px 8px', fontWeight: 600, border: '1px solid var(--border)' }}>{m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}</span>)}
                             </div>
@@ -363,14 +363,14 @@ export default function RutinasDetail() {
                         )}
                         {maqRecomendadas.length > 0 && (
                           <div style={{ marginBottom: 4 }}>
-                            <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>⚙ Máquinas recomendadas</p>
+                            <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Máquinas recomendadas</p>
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                               {maqRecomendadas.map(m => <span key={m.id} style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 5, padding: '2px 8px', fontWeight: 500, border: '1px solid var(--border)' }}>{m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}</span>)}
                             </div>
                           </div>
                         )}
                         {ej.descripcionEjercicio && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{ej.descripcionEjercicio}</p>}
-                        {ej.notas && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>📝 {ej.notas}</p>}
+                        {ej.notas && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>{ej.notas}</p>}
                       </div>
 
                       {d.esAdmin && (
@@ -420,7 +420,7 @@ export default function RutinasDetail() {
       {d.editingId !== null && (
         <div onClick={() => d.setEditingId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-surface)', borderRadius: 12, padding: 24, width: 340, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-            <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>✏ Editar ejercicio</p>
+            <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Editar ejercicio</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               {[
                 { label: 'Series',        val: d.editSeries,   set: d.setEditSeries,   min: 1,  max: 99  },

@@ -1,4 +1,5 @@
 import axiosInstance from '../../../shared/services/axiosInstance'
+import { Dumbbell, Feather, Flame, ThumbsUp, type LucideIcon } from 'lucide-react'
 
 // ── Clases y reservas ──────────────────────────────────────────────────────
 
@@ -77,11 +78,11 @@ export interface SesionNueva {
 export const registrarSesion = async (s: SesionNueva): Promise<Sesion> => (await axiosInstance.post('/api/v1/sesiones', s)).data
 export const sesionesDelSocio = async (socioId: number): Promise<Sesion[]> => (await axiosInstance.get(`/api/v1/sesiones/socio/${socioId}`)).data
 
-export const SENSACIONES: { valor: Sensacion; emoji: string; texto: string }[] = [
-  { valor: 'MUY_FACIL', emoji: '😴', texto: 'Muy fácil' },
-  { valor: 'BIEN', emoji: '💪', texto: 'Bien' },
-  { valor: 'DURO', emoji: '😤', texto: 'Duro' },
-  { valor: 'MUY_DURO', emoji: '🥵', texto: 'Al límite' },
+export const SENSACIONES: { valor: Sensacion; icono: LucideIcon; texto: string }[] = [
+  { valor: 'MUY_FACIL', icono: Feather, texto: 'Muy fácil' },
+  { valor: 'BIEN', icono: ThumbsUp, texto: 'Bien' },
+  { valor: 'DURO', icono: Dumbbell, texto: 'Duro' },
+  { valor: 'MUY_DURO', icono: Flame, texto: 'Al límite' },
 ]
 
 /** 1RM estimado (Epley) */
