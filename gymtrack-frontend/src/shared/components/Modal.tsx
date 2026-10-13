@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 /** Ventana modal: se cierra con Escape o tocando afuera. En el celular aparece desde abajo. */
 export default function Modal({ titulo, onCerrar, children, pie, ancho = 560 }: {
@@ -17,7 +18,8 @@ export default function Modal({ titulo, onCerrar, children, pie, ancho = 560 }: 
     return () => { window.removeEventListener('keydown', h); document.body.style.overflow = overflow }
   }, [onCerrar])
 
-  return (
+  // En <body> para que ningún contenedor con transform u overflow lo recorte (Safari en iPhone)
+  return createPortal(
     <div className="gt-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onCerrar() }}>
       <div className="gt-modal gt-modal-flex" role="dialog" aria-modal="true" style={{ maxWidth: ancho }}>
         <div className="gt-modal-cab">
@@ -27,6 +29,7 @@ export default function Modal({ titulo, onCerrar, children, pie, ancho = 560 }: 
         <div className="gt-modal-cuerpo">{children}</div>
         {pie && <div className="gt-modal-actions gt-modal-pie">{pie}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

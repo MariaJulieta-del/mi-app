@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { PinGenerado } from '../services/socioService'
 import CampoClave from '../../../shared/components/CampoClave'
 
@@ -8,10 +9,11 @@ function Modal({ onCerrar, children, ancho = 420 }: { onCerrar: () => void; chil
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onCerrar])
-  return (
+  return createPortal(
     <div className="gt-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onCerrar() }}>
       <div className="gt-modal" role="dialog" aria-modal="true" style={{ maxWidth: ancho }}>{children}</div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

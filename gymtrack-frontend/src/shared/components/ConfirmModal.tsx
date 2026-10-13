@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   open: boolean
@@ -30,7 +31,9 @@ export default function ConfirmModal({
 
   if (!open) return null
 
-  return (
+  // Se dibuja directo en <body>: si el modal está dentro de un contenedor con transform u overflow
+  // (como el menú lateral deslizable del celular), Safari lo recortaba al ancho de ese contenedor.
+  return createPortal(
     <div className="gt-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}>
       <div className="gt-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -58,6 +61,7 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
