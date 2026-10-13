@@ -55,7 +55,7 @@ function PantallasRecepcion() {
               <li>Tocá “Pantalla completa”. Queda vinculada aunque se apague.</li>
             </ol>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={copiar}>{copiado ? '✓ Copiado' : 'Copiar link'}</button>
+              <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={copiar}>{copiado ? 'Copiado' : 'Copiar link'}</button>
               <button type="button" className="gt-btn gt-btn-primary gt-btn-sm" onClick={() => setNueva(null)}>Listo</button>
             </div>
             <p className="gt-text-muted gt-text-sm" style={{ margin: '8px 0 0' }}>El link se muestra una sola vez.</p>

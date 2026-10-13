@@ -120,7 +120,7 @@ export default function AccesoPage() {
                     <td><span className={h.tipo === 'ENTRADA' ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-blue'}>{h.tipo}</span></td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span className={h.permitido ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-red'}>{h.permitido ? '✓ Permitido' : '✗ Denegado'}</span>
+                        <span className={h.permitido ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-red'}>{h.permitido ? 'Permitido' : 'Denegado'}</span>
                       </div>
                     </td>
                     <td style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 200 }}>{h.observacion ?? '—'}</td>
