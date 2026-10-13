@@ -34,3 +34,6 @@ backups/
 
 ### VS Code ###
 .vscode/
+
+### Conexión a Supabase (tiene la contraseña) ###
+supabase.env
