@@ -7,7 +7,7 @@ import { formatFecha } from '../../../shared/utils/fechas'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { etiquetaDia } from '../utils/rutinaUtils'
 import { useRutinasDetail, TREN_CONFIG, DIAS_ORDER, resolverImgEstatica } from '../hooks/useRutinasDetail'
-import { CargandoPagina } from '../../../shared/components/ui'
+import { CargandoPagina, Spinner } from '../../../shared/components/ui'
 
 export default function RutinasDetail() {
   const d = useRutinasDetail()
@@ -224,7 +224,7 @@ export default function RutinasDetail() {
               </div>
             </div>
             <button className="gt-btn gt-btn-primary" disabled={d.agregando || (!d.ejSel && !d.busqEj.trim())} onClick={d.handleAgregar}>
-              {d.agregando ? 'Guardando…' : '✓ Agregar a la rutina'}
+              {d.agregando ? <><Spinner /> Guardando…</> : '✓ Agregar a la rutina'}
             </button>
           </div>
         )}
@@ -443,7 +443,7 @@ export default function RutinasDetail() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" className="gt-btn gt-btn-primary" style={{ flex: 1 }} disabled={d.guardandoEdit} onClick={() => d.guardarEdicion(d.editingId!)}>
-                {d.guardandoEdit ? 'Guardando…' : '✓ Guardar cambios'}
+                {d.guardandoEdit ? <><Spinner /> Guardando…</> : '✓ Guardar cambios'}
               </button>
               <button type="button" className="gt-btn" onClick={() => d.setEditingId(null)}>Cancelar</button>
             </div>

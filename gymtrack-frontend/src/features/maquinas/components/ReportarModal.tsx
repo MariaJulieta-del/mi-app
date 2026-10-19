@@ -2,6 +2,7 @@ import { CircleAlert, Wrench } from 'lucide-react'
 import Modal from '../../../shared/components/Modal'
 import type { Maquina } from '../types/Maquina'
 import NroMaquina from './NroMaquina'
+import { Spinner } from '../../../shared/components/ui'
 
 /** Reporte rápido: algo se rompió (correctivo) o hay que revisarla (preventivo) */
 export default function ReportarModal({ maquina, tipo, setTipo, descripcion, setDescripcion, costo, setCosto, guardando, error, onGuardar, onCerrar }: {
@@ -23,7 +24,7 @@ export default function ReportarModal({ maquina, tipo, setTipo, descripcion, set
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cancelar</button>
         <button type="button" className={`gt-btn ${tipo === 'CORRECTIVO' ? 'gt-btn-danger' : 'gt-btn-primary'}`} disabled={guardando || !descripcion.trim()} onClick={onGuardar}>
-          {guardando ? 'Guardando…' : tipo === 'CORRECTIVO' ? 'Reportar falla' : 'Pedir revisión'}
+          {guardando ? <><Spinner /> Guardando…</> : tipo === 'CORRECTIVO' ? 'Reportar falla' : 'Pedir revisión'}
         </button>
       </>}>
       {error && <div className="gt-alert gt-alert-error">{error}</div>}

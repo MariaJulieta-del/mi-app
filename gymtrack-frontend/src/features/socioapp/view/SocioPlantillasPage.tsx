@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronUp, LayoutTemplate } from 'lucide-react'
-import { CargandoPagina, EmptyState, Pill } from '../../../shared/components/ui'
+import { Cargando, CargandoPagina, EmptyState, Pill } from '../../../shared/components/ui'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
@@ -93,7 +93,7 @@ export default function SocioPlantillasPage() {
 
             {abierta === p.id && (
               <div className="gt-socio-plantilla-ejs">
-                {ejercicios[p.id!] === undefined ? <p className="gt-text-sm gt-text-muted">Cargando…</p> : diasEj.map(n => (
+                {ejercicios[p.id!] === undefined ? <Cargando texto="Cargando ejercicios…" /> : diasEj.map(n => (
                   <div key={n}>
                     <p className="gt-preview-dia">{etiquetaDia(p.diasSemana, n)}</p>
                     <ol>

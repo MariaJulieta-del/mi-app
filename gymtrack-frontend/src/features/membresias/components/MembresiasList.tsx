@@ -4,7 +4,7 @@ import { useMembresiasList, colorPara } from '../hooks/useMembresiasList'
 import { textoPases, type Tarifa } from '../types/Tarifa'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import Modal from '../../../shared/components/Modal'
-import { EmptyState, IconButton, PageHeader, Pill, SkeletonTarjetas } from '../../../shared/components/ui'
+import { EmptyState, IconButton, PageHeader, Pill, SkeletonTarjetas, Spinner } from '../../../shared/components/ui'
 
 const pesos = (n: number) => `$${Number(n).toLocaleString('es-AR')}`
 
@@ -91,7 +91,7 @@ export default function MembresiasList() {
         <Modal titulo="Editar plan" onCerrar={() => m.setEditando(null)} ancho={520}
           pie={<>
             <button type="button" className="gt-btn gt-btn-secondary" onClick={() => m.setEditando(null)}>Cancelar</button>
-            <button type="submit" form="form-plan" className="gt-btn gt-btn-primary" disabled={m.guardando}>{m.guardando ? 'Guardando…' : 'Guardar'}</button>
+            <button type="submit" form="form-plan" className="gt-btn gt-btn-primary" disabled={m.guardando}>{m.guardando ? <><Spinner /> Guardando…</> : 'Guardar'}</button>
           </>}>
           <form id="form-plan" onSubmit={e => { e.preventDefault(); m.guardarPlan() }}>
             <div className="gt-form-grid">

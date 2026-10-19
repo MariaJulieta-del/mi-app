@@ -3,7 +3,7 @@ import { BellRing, KeyRound, Search, UserPlus, Users, X } from 'lucide-react'
 import SocioForm from '../components/SocioForm'
 import SocioTabla from '../components/SocioTabla'
 import BajaSocioModal from '../components/BajaSocioModal'
-import { EmptyState, IconButton, PageHeader, Resumen, Segmentado, Skeleton } from '../../../shared/components/ui'
+import { EmptyState, IconButton, PageHeader, Resumen, Segmentado, Skeleton, Spinner } from '../../../shared/components/ui'
 import { PinEntregaModal, PinesPendientesModal } from '../components/PinModales'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { useSociosPage } from '../hooks/useSociosPage'
@@ -38,7 +38,7 @@ export default function SociosPage() {
           {esAdmin && (
             <button type="button" className="gt-btn gt-btn-secondary" disabled={p.generandoPines}
               onClick={p.handleGenerarPinesPendientes} title="Genera el PIN de acceso de los socios activos que todavía no tienen">
-              <KeyRound size={16} aria-hidden /> {p.generandoPines ? 'Generando…' : 'PIN pendientes'}
+              <KeyRound size={16} aria-hidden /> {p.generandoPines ? <><Spinner /> Generando…</> : 'PIN pendientes'}
             </button>
           )}
           <button type="button" className="gt-btn gt-btn-primary" onClick={() => setAltaAbierta(true)}>

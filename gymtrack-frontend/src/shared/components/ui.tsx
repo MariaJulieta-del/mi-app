@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 
 /**
  * Piezas comunes de las pantallas (encabezado, resumen, pestañas, estados vacíos y de carga).
@@ -142,4 +143,19 @@ export function CargandoPagina({ filas = 5, resumen = true }: { filas?: number; 
       {Array.from({ length: filas }, (_, i) => <Skeleton key={i} alto={52} radio={10} />)}
     </div>
   )
+}
+
+/** Ruedita de carga: en botones mientras se guarda, o junto a un texto */
+export function Spinner({ size = 16 }: { size?: number }) {
+  return <LoaderCircle size={size} className="gt-spinner" aria-hidden />
+}
+
+/** "Cargando…" con la ruedita, para listas y secciones que todavía no llegaron */
+export function Cargando({ texto = 'Cargando…', tarjeta = false }: { texto?: string; tarjeta?: boolean }) {
+  const contenido = (
+    <div className="gt-cargando" role="status" aria-live="polite">
+      <Spinner size={18} /><span>{texto}</span>
+    </div>
+  )
+  return tarjeta ? <div className="gt-card gt-mb-20">{contenido}</div> : contenido
 }

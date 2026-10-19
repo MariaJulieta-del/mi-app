@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getMetricas, type Metricas } from '../services/reporteService'
 import FuenteDatos from './FuenteDatos'
 import { BarraPct } from './Graficos'
+import { Cargando } from '../../../shared/components/ui'
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -57,14 +58,16 @@ function MapaOcupacion({ m }: { m: Metricas }) {
 }
 
 function useMetricas() {
-  const [m, setM] = useState<Metricas | null>(null)
-  useEffect(() => { getMetricas().then(setM).catch(() => {}) }, [])
+  // undefined = todavía cargando · null = no se pudo cargar
+  const [m, setM] = useState<Metricas | null | undefined>(undefined)
+  useEffect(() => { getMetricas().then(setM).catch(() => setM(null)) }, [])
   return m
 }
 
 /** Retención mes a mes: de los que pagaron el mes anterior, cuántos renovaron, y cuántos nuevos entraron */
 export function RetencionMensual() {
   const m = useMetricas()
+  if (m === undefined) return <Cargando tarjeta />
   if (!m) return null
 
   // Último mes con base para medir retención (el mes en curso puede estar incompleto)
@@ -118,6 +121,7 @@ export function RetencionMensual() {
 /** Ocupación por día y hora (mapa de calor) */
 export function OcupacionHoraria() {
   const m = useMetricas()
+  if (m === undefined) return <Cargando tarjeta />
   if (!m) return null
   return (
     <div className="gt-card" style={{ marginBottom: 20 }}>

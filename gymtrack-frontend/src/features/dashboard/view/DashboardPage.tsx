@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import SociosEnRiesgo from '../../reportes/components/SociosEnRiesgo'
 import { useDashboard } from '../hooks/useDashboard'
 import { Eye, EyeOff } from 'lucide-react'
-import { CargandoPagina, IconButton } from '../../../shared/components/ui'
+import { CargandoPagina, IconButton, Spinner } from '../../../shared/components/ui'
 import { useMontosVisibles } from '../../../shared/hooks/useMontosVisibles'
 
 function BellIcon() {
@@ -115,7 +115,7 @@ export default function DashboardPage() {
             <button className="gt-btn" style={{ fontSize: 12, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', border: '1px solid var(--yellow-text)', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
               disabled={d.notificandoTodos} onClick={d.notificarTodos}>
               <BellIcon />
-              {d.notificandoTodos ? 'Enviando...' : `Notificar todos (${d.proximas.length})`}
+              {d.notificandoTodos ? <><Spinner /> Enviando…</> : `Notificar todos (${d.proximas.length})`}
             </button>
           )}
         </div>

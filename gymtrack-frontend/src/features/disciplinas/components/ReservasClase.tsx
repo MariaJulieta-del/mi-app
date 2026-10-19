@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import axiosInstance from '../../../shared/services/axiosInstance'
-import { Pill } from '../../../shared/components/ui'
+import { Cargando, Pill } from '../../../shared/components/ui'
 import type { ClaseAgenda } from '../../socioapp/services/socioAppService'
 import { cuandoClase } from '../../socioapp/utils'
 
@@ -27,7 +27,7 @@ export default function ReservasClase({ disciplinaId }: { disciplinaId: number }
       .then(r => setDetalle(r.data)).catch(() => setDetalle(null))
   }, [sel, disciplinaId])
 
-  if (!clases) return <p className="gt-text-muted">Cargando…</p>
+  if (!clases) return <Cargando texto="Cargando clases…" />
   if (clases.length === 0) return <p className="gt-text-muted">No hay clases en los próximos 7 días.</p>
 
   return (

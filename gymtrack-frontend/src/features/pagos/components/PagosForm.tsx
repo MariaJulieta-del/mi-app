@@ -4,6 +4,7 @@ import MembresiaResumen from '../../membresias/components/MembresiaResumen'
 import { textoPases } from '../../membresias/types/Tarifa'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { usePagosForm, METODOS } from '../hooks/usePagosForm'
+import { Cargando, Spinner } from '../../../shared/components/ui'
 
 const PASOS = ['Socio', 'Plan', 'Método de pago', 'Confirmar']
 
@@ -98,7 +99,7 @@ export default function PagosForm() {
         {f.socioSel && (
           <div className="gt-step-section">
             <span className="gt-label">Estado actual</span>
-            {f.cargandoMembresia ? <p className="gt-text-muted">Cargando membresía…</p> : <MembresiaResumen m={f.membresiaActual} />}
+            {f.cargandoMembresia ? <Cargando texto="Cargando membresía…" /> : <MembresiaResumen m={f.membresiaActual} />}
           </div>
         )}
 
@@ -181,7 +182,7 @@ export default function PagosForm() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="gt-btn gt-btn-primary" disabled={!f.listo || f.guardando}
             onClick={f.handleConfirmar}>
-            {f.guardando ? 'Registrando…' : `Cobrar${f.planSel ? ' ' + pesos(f.planSel.precio) : ''}`}
+            {f.guardando ? <><Spinner /> Registrando…</> : `Cobrar${f.planSel ? ' ' + pesos(f.planSel.precio) : ''}`}
           </button>
           <button type="button" className="gt-btn gt-btn-secondary" onClick={() => f.navigate(f.volverA)}>Volver</button>
         </div>

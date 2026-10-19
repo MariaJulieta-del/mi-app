@@ -2,6 +2,7 @@ import { useLogin } from '../hooks/useLogin'
 import { Dumbbell } from 'lucide-react'
 import { useMarca } from '../../../shared/context/MarcaContext'
 import CampoClave from '../../../shared/components/CampoClave'
+import { Spinner } from '../../../shared/components/ui'
 
 type Modo = 'staff' | 'socio'
 
@@ -46,7 +47,7 @@ export default function LoginPage() {
               <CampoClave id="loginpage-campo-2" className="gt-input" value={l.password} onChange={e => l.setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={l.loading}>
-              {l.loading ? 'Iniciando sesión...' : 'Ingresar'}
+              {l.loading ? <><Spinner /> Iniciando sesión…</> : 'Ingresar'}
             </button>
           </form>
         )}
@@ -69,7 +70,7 @@ export default function LoginPage() {
                 onChange={e => l.setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} />
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={l.loading}>
-              {l.loading ? 'Ingresando…' : 'Entrar'}
+              {l.loading ? <><Spinner /> Ingresando…</> : 'Entrar'}
             </button>
             <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--text-muted)' }}>
               ¿No tenés PIN o te lo olvidaste? Pedilo en recepción.

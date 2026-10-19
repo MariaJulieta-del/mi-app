@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { PinGenerado } from '../services/socioService'
 import CampoClave from '../../../shared/components/CampoClave'
+import { Spinner } from '../../../shared/components/ui'
 
 function Modal({ onCerrar, children, ancho = 420 }: { onCerrar: () => void; children: React.ReactNode; ancho?: number }) {
   useEffect(() => {
@@ -120,7 +121,7 @@ export function CambiarPinModal({ onGuardar, onCerrar }: {
         <p className="gt-text-muted gt-text-sm" style={{ marginTop: 0 }}>Evitá PIN fáciles como 1234, 1111 o parte de tu DNI.</p>
         <div className="gt-modal-actions">
           <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cancelar</button>
-          <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>{guardando ? 'Guardando…' : 'Cambiar PIN'}</button>
+          <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>{guardando ? <><Spinner /> Guardando…</> : 'Cambiar PIN'}</button>
         </div>
       </form>
     </Modal>

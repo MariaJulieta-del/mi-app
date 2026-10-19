@@ -1,6 +1,7 @@
 import Modal from '../../../shared/components/Modal'
 import type { Maquina } from '../types/Maquina'
 import type { CategoriaMantenimiento, MantenimientoRequest, TipoMantenimiento } from '../types/Mantenimiento'
+import { Spinner } from '../../../shared/components/ui'
 
 /** Registrar o editar un trabajo de mantenimiento */
 export default function MantenimientoFormModal({ maquinas, form, setForm, editando, guardando, error, onGuardar, onCerrar }: {
@@ -22,7 +23,7 @@ export default function MantenimientoFormModal({ maquinas, form, setForm, editan
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cancelar</button>
         <button type="submit" form="form-mant" className="gt-btn gt-btn-primary" disabled={guardando}>
-          {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Registrar'}
+          {guardando ? <><Spinner /> Guardando…</> : editando ? 'Guardar cambios' : 'Registrar'}
         </button>
       </>}>
       <form id="form-mant" onSubmit={onGuardar}>

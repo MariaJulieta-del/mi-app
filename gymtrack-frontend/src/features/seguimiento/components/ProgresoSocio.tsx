@@ -3,6 +3,7 @@ import { TrendingDown, TrendingUp } from 'lucide-react'
 import { obtenerProgreso, type Progreso, type EjercicioProgreso } from '../services/seguimientoService'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { useGlobo } from '../../../shared/hooks/useGlobo'
+import { Cargando } from '../../../shared/components/ui'
 
 const fmtKg = (n: number | null | undefined) => (n == null ? '—' : `${Number(n).toLocaleString('es-AR')} kg`)
 const fechaCorta = (iso: string) => {
@@ -128,7 +129,7 @@ export default function ProgresoSocio({ socioId, titulo = 'Progreso', objetivoDi
   }, [socioId])
 
   if (error) return null
-  if (!p) return <div className="gt-card"><p className="gt-text-muted" style={{ margin: 0 }}>Cargando progreso…</p></div>
+  if (!p) return <Cargando tarjeta texto="Cargando progreso…" />
 
   // Primero los ejercicios con más registros (los que de verdad muestran evolución)
   const ordenados = [...p.ejercicios].sort((a, b) => b.registros.length - a.registros.length)

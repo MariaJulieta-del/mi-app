@@ -1,6 +1,7 @@
 import Modal from '../../../shared/components/Modal'
 import { GRUPOS_CATEGORIAS } from '../../ejercicios/services/ejercicioService'
 import type { Maquina } from '../types/Maquina'
+import { Spinner } from '../../../shared/components/ui'
 
 /** Alta o edición de una máquina */
 export default function MaquinaFormModal({ editando, form, setForm, toggleGrupo, guardando, error, onGuardar, onCerrar }: {
@@ -18,7 +19,7 @@ export default function MaquinaFormModal({ editando, form, setForm, toggleGrupo,
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cancelar</button>
         <button type="submit" form="form-maquina" className="gt-btn gt-btn-primary" disabled={guardando}>
-          {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Crear máquina'}
+          {guardando ? <><Spinner /> Guardando…</> : editando ? 'Guardar cambios' : 'Crear máquina'}
         </button>
       </>}>
       <form id="form-maquina" onSubmit={onGuardar}>

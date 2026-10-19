@@ -4,6 +4,7 @@ import axiosInstance from '../../../shared/services/axiosInstance'
 import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
 import { formatFecha } from '../../../shared/utils/fechas'
+import { Cargando, Spinner } from '../../../shared/components/ui'
 
 interface Config { activo: boolean; dias: number; porMail: boolean; avisarVencida: boolean; mailListo: boolean }
 interface Enviado { socioId: number; socio: string; tipo: 'ANTES' | 'VENCIDA'; fechaVencimiento: string; enviado: string; porMail: boolean }
@@ -16,6 +17,7 @@ const cuando = (iso: string) => new Date(iso).toLocaleString('es-AR', { day: '2-
 export default function RecordatoriosCuota() {
   const toast = useToast()
   const [config, setConfig] = useState<Config | null>(null)
+  const [fallo, setFallo] = useState(false)
   const [guardada, setGuardada] = useState<Config | null>(null)
   const [enviados, setEnviados] = useState<Enviado[]>([])
   const [guardando, setGuardando] = useState(false)
@@ -24,10 +26,10 @@ export default function RecordatoriosCuota() {
 
   const cargar = () => axiosInstance.get<{ config: Config; ultimos: Enviado[] }>(API)
     .then(r => { setConfig(r.data.config); setGuardada(r.data.config); setEnviados(r.data.ultimos) })
-    .catch(() => {})
+    .catch(() => setFallo(true))
   useEffect(() => { cargar() }, [])
 
-  if (!config) return null
+  if (!config) return fallo ? null : <Cargando tarjeta texto="Cargando recordatorios…" />
   const cambio = JSON.stringify(config) !== JSON.stringify(guardada)
   const set = (p: Partial<Config>) => setConfig({ ...config, ...p })
 
@@ -92,11 +94,11 @@ export default function RecordatoriosCuota() {
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
         <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando || !cambio || config.dias < 1 || config.dias > 15}>
-          {guardando ? 'Guardando…' : 'Guardar'}
+          {guardando ? <><Spinner /> Guardando…</> : 'Guardar'}
         </button>
         <button type="button" className="gt-btn gt-btn-secondary" disabled={mandando || cambio || !config.activo} onClick={mandarAhora}
           title={cambio ? 'Guardá los cambios primero' : 'Manda ahora los que correspondan (si no, salen solos durante el día)'}>
-          <Send size={15} aria-hidden /> {mandando ? 'Enviando…' : 'Mandar ahora'}
+          <Send size={15} aria-hidden /> {mandando ? <><Spinner /> Enviando…</> : 'Mandar ahora'}
         </button>
       </div>
 

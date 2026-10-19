@@ -5,6 +5,7 @@ import type { Ejercicio, Rutina } from '../../rutinas/types/Rutina'
 import { resolverImg } from '../utils/socioUtils'
 import { ordenarDias } from '../../rutinas/utils/rutinaUtils'
 import MaquinasEjercicio from '../../rutinas/components/MaquinasEjercicio'
+import { Cargando } from '../../../shared/components/ui'
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const hoyIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1 })()
@@ -93,7 +94,7 @@ export default function MiSemanaView({
 
       {/* Ejercicios del día */}
       {cargandoEjs ? (
-        <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Cargando...</p>
+        <Cargando texto="Cargando ejercicios…" />
       ) : ejsHoy.length === 0 ? (
         <div className="gt-list-card" style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>
           <p style={{ margin: 0, fontSize: 14 }}>No hay ejercicios asignados para {DIAS_SEMANA[diaSeleccionado]}.</p>

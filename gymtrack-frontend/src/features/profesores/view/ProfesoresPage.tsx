@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useProfesores } from '../hooks/useProfesores'
-import { CargandoPagina, PageHeader, Pill } from '../../../shared/components/ui'
+import { CargandoPagina, PageHeader, Pill, Spinner } from '../../../shared/components/ui'
 import CampoClave from '../../../shared/components/CampoClave'
 
 /** Campo con su etiqueta asociada (lector de pantalla y clic en la etiqueta) */
@@ -42,7 +42,7 @@ export default function ProfesoresPage() {
               <Campo id="prof-esp" etiqueta="Especialidad"><input id="prof-esp" className="gt-input" value={p.especialidad} onChange={e => p.setEspecialidad(e.target.value)} placeholder="ej: Musculación" /></Campo>
             </div>
             <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardando}>
-              {p.guardando ? 'Guardando…' : 'Crear profesor'}
+              {p.guardando ? <><Spinner /> Guardando…</> : 'Crear profesor'}
             </button>
           </form>
         </section>
@@ -68,7 +68,7 @@ export default function ProfesoresPage() {
                       <Campo id={`ed-clave-${prof.id}`} etiqueta="Nueva contraseña"><CampoClave id={`ed-clave-${prof.id}`} className="gt-input" value={p.editPassword} onChange={e => p.setEditPassword(e.target.value)} placeholder="Vacío = no cambia" /></Campo>
                     </div>
                     <div className="gt-prof-acciones">
-                      <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardandoEdit}>{p.guardandoEdit ? 'Guardando…' : 'Guardar'}</button>
+                      <button className="gt-btn gt-btn-primary" type="submit" disabled={p.guardandoEdit}>{p.guardandoEdit ? <><Spinner /> Guardando…</> : 'Guardar'}</button>
                       <button className="gt-btn gt-btn-secondary" type="button" onClick={() => p.setEditId(null)}>Cancelar</button>
                     </div>
                   </form>

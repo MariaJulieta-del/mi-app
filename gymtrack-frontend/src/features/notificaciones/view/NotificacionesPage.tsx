@@ -3,7 +3,7 @@ import {
   Archive, Bell, CalendarDays, Mail, MessageCircle, Search, Send, Smartphone, UserRound, Users, X,
 } from 'lucide-react'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
-import { EmptyState, IconButton, PageHeader, Pill, Segmentado, SkeletonTarjetas } from '../../../shared/components/ui'
+import { EmptyState, IconButton, PageHeader, Pill, Segmentado, SkeletonTarjetas, Spinner } from '../../../shared/components/ui'
 import { useNotificaciones, TIPOS, TONO_TIPO, PLANTILLAS } from '../hooks/useNotificaciones'
 import WhatsappModal from '../components/WhatsappModal'
 import type { Notificacion } from '../services/notificacionService'
@@ -130,7 +130,7 @@ export default function NotificacionesPage() {
             <span className="gt-text-sm gt-text-muted">
               {n.para === 'TODOS' ? `Llega a ${n.alcance} socios activos` : n.para === 'DISCIPLINA' ? (n.disciplinaId ? `Llega a ${n.alcance} alumnos` : 'Elegí la clase') : n.socioSel ? `Para ${n.socioSel.nombre}` : 'Elegí el socio'}
             </span>
-            <button type="submit" className="gt-btn gt-btn-primary" disabled={n.creando}><Send size={16} aria-hidden /> {n.creando ? 'Enviando…' : 'Enviar aviso'}</button>
+            <button type="submit" className="gt-btn gt-btn-primary" disabled={n.creando}><Send size={16} aria-hidden /> {n.creando ? <><Spinner /> Enviando…</> : 'Enviar aviso'}</button>
           </div>
         </form>
 

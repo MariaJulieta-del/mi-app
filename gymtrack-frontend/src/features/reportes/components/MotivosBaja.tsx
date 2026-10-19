@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { listarBajas, type BajaSocio } from '../../socios/services/socioService'
 import { textoMotivoBaja } from '../../socios/utils/motivosBaja'
 import { formatFecha } from '../../../shared/utils/fechas'
+import { Cargando } from '../../../shared/components/ui'
 
 const PERIODOS = [
   { dias: 90, texto: '3 meses' },
@@ -28,7 +29,7 @@ export default function MotivosBaja() {
     return [...cuenta.entries()].sort((a, b) => b[1] - a[1])
   }, [enPeriodo])
 
-  if (!bajas) return null
+  if (!bajas) return <Cargando tarjeta texto="Cargando bajas…" />
   const max = ranking[0]?.[1] ?? 1
   const volvieron = enPeriodo.filter(b => b.socioActivo).length
 

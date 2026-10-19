@@ -3,6 +3,7 @@ import Modal from '../../../shared/components/Modal'
 import { mensajeError } from '../../../shared/utils/errores'
 import type { DisciplinaApi, DisciplinaRequest, Instructor } from '../services/disciplinaService'
 import { COLORES, DIAS, DIAS_CORTO, aFranjas, colorDisciplina, deFranjas, minutos, resumenHorarios, type Franja } from '../utils/disciplinaUtils'
+import { Spinner } from '../../../shared/components/ui'
 
 
 /** Alta y edición de una disciplina, con sus horarios por día */
@@ -64,7 +65,7 @@ export default function DisciplinaFormModal({ inicial, instructores, colorSugeri
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cancelar</button>
         <button type="submit" form="form-disciplina" className="gt-btn gt-btn-primary" disabled={guardando}>
-          {guardando ? 'Guardando…' : inicial ? 'Guardar cambios' : 'Crear disciplina'}
+          {guardando ? <><Spinner /> Guardando…</> : inicial ? 'Guardar cambios' : 'Crear disciplina'}
         </button>
       </>}>
       <form id="form-disciplina" onSubmit={guardar} noValidate>

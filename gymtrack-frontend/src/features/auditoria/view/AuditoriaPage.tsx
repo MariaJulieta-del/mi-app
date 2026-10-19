@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axiosInstance from '../../../shared/services/axiosInstance'
 import { fechaLocalISO } from '../../../shared/utils/fechas'
+import { Cargando } from '../../../shared/components/ui'
 
 interface Registro {
   id: number
@@ -75,7 +76,7 @@ export default function AuditoriaPage() {
       {error && <div className="gt-alert gt-alert-error">{error}</div>}
 
       <div className="gt-card">
-        {cargando ? <p className="gt-text-muted" style={{ margin: 0 }}>Cargando…</p>
+        {cargando ? <Cargando />
           : filtrados.length === 0 ? <div className="gt-empty">No hay movimientos en ese período.</div>
           : (
             <div className="gt-table-wrap">

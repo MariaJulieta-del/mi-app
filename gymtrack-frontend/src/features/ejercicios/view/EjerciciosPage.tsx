@@ -2,10 +2,11 @@ import { lazy, Suspense, useState } from 'react'
 import { useEjercicios } from '../hooks/useEjercicios'
 import { SkeletonTarjetas } from '../../../shared/components/ui'
 // El catálogo (1.324 ejercicios) se descarga aparte, recién cuando se abre esa pestaña
-const CatalogoEjerciciosTab = lazy(() => import('../components/tabs/CatalogoEjerciciosTab'))
+const CatalogoEjerciciosTab = lazy(conCarga(() => import('../components/tabs/CatalogoEjerciciosTab')))
 import MisEjerciciosTab from '../components/tabs/MisEjerciciosTab'
 import LimpiezaModal from '../components/LimpiezaModal'
 import { useAuth } from '../../../shared/context/AuthContext'
+import { conCarga } from '../../../shared/services/cargaGlobal'
 
 export default function EjerciciosPage() {
   const [tab, setTab] = useState<'catalogo' | 'mis'>('catalogo')

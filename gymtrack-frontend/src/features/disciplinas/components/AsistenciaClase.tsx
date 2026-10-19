@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { asistenciaDisciplina, type AsistenciaClase as Datos, type Sesion } from '../services/disciplinaService'
 import { DIAS_CORTO } from '../utils/disciplinaUtils'
+import { Cargando } from '../../../shared/components/ui'
 
 const fechaCorta = (iso: string) => { const [, m, d] = iso.split('-'); return `${Number(d)}/${Number(m)}` }
 
@@ -57,7 +58,7 @@ export default function AsistenciaClase({ disciplinaId }: { disciplinaId: number
   }, [disciplinaId, semanas])
 
   if (error) return <div className="gt-alert gt-alert-error">No se pudo cargar la asistencia.</div>
-  if (!datos || datos.para !== semanas) return <p className="gt-text-muted">Cargando asistencia…</p>
+  if (!datos || datos.para !== semanas) return <Cargando texto="Cargando asistencia…" />
   const { d } = datos
   // Las clases de antes de que hubiera inscriptos no aportan nada
   const sesiones = d.sesiones.filter(s => s.esperados > 0 || s.estado === 'PROXIMA')

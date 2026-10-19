@@ -4,6 +4,7 @@ import Modal from '../../../shared/components/Modal'
 import { obtenerAsignaciones } from '../services/rutinaService'
 import type { Asignacion, Rutina } from '../types/Rutina'
 import { linkEditarRutina } from '../utils/rutinaUtils'
+import { Cargando } from '../../../shared/components/ui'
 
 /** Socios que ya pasaron el límite de semanas: con rutina personalizada o con una plantilla asignada */
 export default function ParaRenovar({ personalizadas, onCerrar }: { personalizadas: Rutina[]; onCerrar: () => void }) {
@@ -31,7 +32,7 @@ export default function ParaRenovar({ personalizadas, onCerrar }: { personalizad
         Socios que pasaron el límite de semanas con la misma rutina. Las personalizadas se renuevan cambiándoles los ejercicios;
         a quien tiene una plantilla, asignale otra (o ajustala solo para él desde la plantilla).
       </p>
-      {asignadas === null ? <p className="gt-text-muted">Cargando…</p>
+      {asignadas === null ? <Cargando />
         : filas.length === 0 ? <p className="gt-text-muted">No hay rutinas para renovar.</p>
         : (
           <ul className="gt-asignados">

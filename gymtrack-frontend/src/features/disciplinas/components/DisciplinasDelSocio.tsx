@@ -5,6 +5,7 @@ import {
   disciplinasDelSocio, listarDisciplinas, inscribirSocio, desinscribirSocio, type DisciplinaApi,
 } from '../services/disciplinaService'
 import { colorDisciplina, resumenHorarios, textoCupo } from '../utils/disciplinaUtils'
+import { Cargando, Spinner } from '../../../shared/components/ui'
 
 /**
  * Disciplinas de un socio.
@@ -48,7 +49,7 @@ export default function DisciplinasDelSocio({ socioId, editable }: { socioId: nu
     finally { setTrabajando(false) }
   }
 
-  if (!cargado) return null
+  if (!cargado) return <Cargando tarjeta texto="Cargando clases…" />
   if (!editable && mias.length === 0) return null
 
   const disponibles = todas.filter(t => !mias.some(m => m.id === t.id))
@@ -99,7 +100,7 @@ export default function DisciplinasDelSocio({ socioId, editable }: { socioId: nu
             })}
           </select>
           <button type="button" className="gt-btn gt-btn-primary" disabled={!elegida || trabajando} onClick={inscribir}>
-            {trabajando ? 'Guardando…' : 'Inscribir'}
+            {trabajando ? <><Spinner /> Guardando…</> : 'Inscribir'}
           </button>
         </div>
       )}

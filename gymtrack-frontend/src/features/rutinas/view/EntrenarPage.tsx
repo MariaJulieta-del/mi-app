@@ -10,7 +10,7 @@ import type { Rutina, Ejercicio } from '../types/Rutina'
 import MaquinasEjercicio from '../components/MaquinasEjercicio'
 import CalculadoraDiscos from '../components/CalculadoraDiscos'
 import { fechaLocalISO, formatFecha } from '../../../shared/utils/fechas'
-import { CargandoPagina } from '../../../shared/components/ui'
+import { CargandoPagina, Spinner } from '../../../shared/components/ui'
 import { pitido, prepararAudio } from '../../../shared/utils/sonido'
 import { mensajeError } from '../../../shared/utils/errores'
 import {
@@ -381,7 +381,7 @@ export default function EntrenarPage() {
           </div>
           {error && <div className="gt-alert gt-alert-error" style={{ marginTop: 10 }}>{error}</div>}
           <button type="button" className="gt-btn gt-btn-primary gt-entreno-btn-grande" disabled={enviando} onClick={terminar}>
-            {enviando ? 'Guardando…' : 'Listo'}
+            {enviando ? <><Spinner /> Guardando…</> : 'Listo'}
           </button>
         </div>
       </div>
@@ -440,7 +440,7 @@ export default function EntrenarPage() {
       <div className="gt-entreno-nav">
         <button type="button" className="gt-btn gt-btn-secondary" disabled={paso === 0 || guardando} onClick={() => irA(paso - 1)} aria-label="Anterior">←</button>
         <button type="button" className="gt-btn gt-btn-primary gt-entreno-btn-grande" disabled={guardando} onClick={() => irA(paso + 1)}>
-          {guardando ? 'Guardando…' : ultimoPaso ? 'Terminar ✓' : esCalor && !pasos[paso + 1]?.[0]?.esCalentamiento ? 'Empezar la rutina →' : 'Siguiente →'}
+          {guardando ? <><Spinner /> Guardando…</> : ultimoPaso ? 'Terminar ✓' : esCalor && !pasos[paso + 1]?.[0]?.esCalentamiento ? 'Empezar la rutina →' : 'Siguiente →'}
         </button>
       </div>
 

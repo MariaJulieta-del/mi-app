@@ -7,6 +7,7 @@ import { formatFecha } from '../../../shared/utils/fechas'
 import { OBJETIVO_CONFIG } from '../../rutinas/utils/rutinaUtils'
 import { cancelarPedido, miPedido, pedidoAbierto, pedirRutina, type PedidoRutina } from '../../rutinas/services/pedidosService'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
+import { Spinner } from '../../../shared/components/ui'
 
 const MAX = 500
 
@@ -99,7 +100,7 @@ export default function PedidoRutinaSocio() {
               <textarea id="ped-msj" className="gt-input" rows={3} maxLength={MAX} value={mensaje} onChange={e => setMensaje(e.target.value)}
                 placeholder="Ej: me molesta la rodilla, quiero enfocarme en piernas, entreno a la mañana…" />
               <span className="gt-hint">{mensaje.length}/{MAX}</span>
-              <button type="submit" className="gt-btn gt-btn-primary" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar pedido'}</button>
+              <button type="submit" className="gt-btn gt-btn-primary" disabled={enviando}>{enviando ? <><Spinner /> Enviando…</> : 'Enviar pedido'}</button>
             </form>
           )}
         </>

@@ -6,6 +6,7 @@ import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
 import type { LoginResponse } from '../../../shared/types/Auth'
 import CampoClave from '../../../shared/components/CampoClave'
+import { Spinner } from '../../../shared/components/ui'
 
 function Requisito({ ok, texto }: { ok: boolean; texto: string }) {
   return <li style={{ color: ok ? 'var(--green-text)' : 'var(--text-muted)' }}>{ok ? '✓' : '○'} {texto}</li>
@@ -78,7 +79,7 @@ export default function MiCuentaPage() {
           <Requisito ok={coinciden} texto="Las dos contraseñas nuevas coinciden" />
         </ul>
         <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando || !actual || !cumpleLargo || !cumpleMezcla || !coinciden}>
-          {guardando ? 'Guardando…' : 'Cambiar contraseña'}
+          {guardando ? <><Spinner /> Guardando…</> : 'Cambiar contraseña'}
         </button>
       </form>
 

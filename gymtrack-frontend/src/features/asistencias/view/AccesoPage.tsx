@@ -4,6 +4,7 @@ import { PasesMeter } from '../../membresias/components/MembresiaResumen'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { SEMAFORO } from '../utils/semaforo'
 import IconoAcceso from '../components/IconoAcceso'
+import { Spinner } from '../../../shared/components/ui'
 
 
 export default function AccesoPage() {
@@ -27,7 +28,7 @@ export default function AccesoPage() {
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" disabled={a.loading}
               style={{ width: '100%', justifyContent: 'center', fontSize: 15, padding: '10px 0' }}>
-              {a.loading ? 'Verificando...' : 'Registrar ingreso'}
+              {a.loading ? <><Spinner /> Verificando…</> : 'Registrar ingreso'}
             </button>
           </form>
 

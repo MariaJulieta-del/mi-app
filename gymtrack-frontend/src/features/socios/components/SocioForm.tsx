@@ -3,6 +3,7 @@ import { edadDe, fechaLocalISO } from '../../../shared/utils/fechas'
 import { useSocioForm, FORMAS, type AltaFormValida } from '../hooks/useSocioForm'
 import { textoPases } from '../../membresias/types/Tarifa'
 import Modal from '../../../shared/components/Modal'
+import { Cargando, Spinner } from '../../../shared/components/ui'
 
 interface Props {
   onGuardar: (socio: Socio) => void
@@ -49,7 +50,7 @@ const SocioForm = (props: Props) => {
       <Modal titulo="Editar socio" onCerrar={s.onCancelar} ancho={640}
         pie={<>
           <button type="button" className="gt-btn gt-btn-secondary" onClick={s.onCancelar}>Cancelar</button>
-          <button type="submit" form="form-socio-editar" className="gt-btn gt-btn-primary" disabled={props.guardando}>{props.guardando ? 'Guardando…' : 'Guardar cambios'}</button>
+          <button type="submit" form="form-socio-editar" className="gt-btn gt-btn-primary" disabled={props.guardando}>{props.guardando ? <><Spinner /> Guardando…</> : 'Guardar cambios'}</button>
         </>}>
         <form id="form-socio-editar" onSubmit={s.handleSubmit} noValidate>
           <div className="gt-form-grid">
@@ -105,7 +106,7 @@ const SocioForm = (props: Props) => {
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={s.onCancelar}>Cancelar</button>
         <button type="submit" form="form-socio-alta" className="gt-btn gt-btn-primary" disabled={props.guardando}>
-          {props.guardando ? 'Registrando…' : 'Registrar y cobrar'}
+          {props.guardando ? <><Spinner /> Registrando…</> : 'Registrar y cobrar'}
         </button>
       </>}>
       <form id="form-socio-alta" onSubmit={s.handleSubmit} noValidate>
@@ -160,7 +161,7 @@ const SocioForm = (props: Props) => {
             Plan de membresía
           </p>
           {s.loadingTarifas ? (
-            <p className="gt-text-sm gt-text-muted">Cargando planes…</p>
+            <Cargando texto="Cargando planes…" />
           ) : s.tarifas.length === 0 ? (
             <p className="gt-text-sm gt-texto-error">No hay planes activos. Creá uno en Membresías.</p>
           ) : (

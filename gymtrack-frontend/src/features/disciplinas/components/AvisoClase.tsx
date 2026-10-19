@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { mensajeError } from '../../../shared/utils/errores'
 import { avisarDisciplina, type DisciplinaApi } from '../services/disciplinaService'
+import { Spinner } from '../../../shared/components/ui'
 
 /** Mensajes rápidos: el profe los toca y ajusta el texto */
 function plantillas(nombre: string) {
@@ -61,7 +62,7 @@ export default function AvisoClase({ disciplina }: { disciplina: DisciplinaApi }
         <label className="gt-label" htmlFor="aviso-mensaje">Mensaje</label>
         <textarea id="aviso-mensaje" className="gt-textarea" rows={4} maxLength={600} value={mensaje} onChange={e => setMensaje(e.target.value)} />
       </div>
-      <button type="submit" className="gt-btn gt-btn-primary" disabled={enviando}>{enviando ? 'Enviando…' : `Enviar a ${alumnos} ${alumnos === 1 ? 'alumno' : 'alumnos'}`}</button>
+      <button type="submit" className="gt-btn gt-btn-primary" disabled={enviando}>{enviando ? <><Spinner /> Enviando…</> : `Enviar a ${alumnos} ${alumnos === 1 ? 'alumno' : 'alumnos'}`}</button>
     </form>
   )
 }

@@ -3,6 +3,7 @@ import { ClipboardList, PartyPopper, Pencil } from 'lucide-react'
 import { useAsignarRutina } from '../hooks/useAsignarRutina'
 import RutinaCard from '../components/RutinaCard'
 import { TREN_CONFIG, OBJETIVO_CONFIG, DIFICULTAD_CONFIG } from '../utils/rutinaUtils'
+import { Cargando, Spinner } from '../../../shared/components/ui'
 
 const PASOS = ['Socio', '¿Cómo la armás?', 'Elegir plantilla', 'Listo']
 
@@ -143,7 +144,7 @@ export default function AsignarRutinaPage() {
                 )}
               </div>
 
-              {a.cargandoPlantillas ? <p className="gt-text-muted">Cargando plantillas…</p>
+              {a.cargandoPlantillas ? <Cargando texto="Cargando plantillas…" />
                 : a.plantillas.length === 0 ? (
                   <div className="gt-empty">
                     <p>Todavía no hay plantillas.</p>
@@ -179,7 +180,7 @@ export default function AsignarRutinaPage() {
                   )}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
                     <button type="button" className="gt-btn gt-btn-primary" onClick={a.asignar} disabled={a.asignando}>
-                      {a.asignando ? 'Asignando…' : `Asignar a ${a.socio.nombre}`}
+                      {a.asignando ? <><Spinner /> Asignando…</> : `Asignar a ${a.socio.nombre}`}
                     </button>
                     <button type="button" className="gt-btn gt-btn-secondary" onClick={a.ajustar} disabled={a.asignando}
                       title="Se copia como rutina personalizada para cambiarle ejercicios o pesos">

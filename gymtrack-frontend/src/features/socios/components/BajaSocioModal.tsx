@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Modal from '../../../shared/components/Modal'
 import { MOTIVOS_BAJA } from '../utils/motivosBaja'
+import { Spinner } from '../../../shared/components/ui'
 
 /** Pide el motivo antes de dar de baja a un socio (para después ver por qué se van) */
 export default function BajaSocioModal({ nombre, onConfirmar, onCerrar }: {
@@ -22,7 +23,7 @@ export default function BajaSocioModal({ nombre, onConfirmar, onCerrar }: {
       pie={<>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cancelar</button>
         <button type="button" className="gt-btn gt-btn-danger" disabled={!motivo || guardando} onClick={confirmar}>
-          {guardando ? 'Guardando…' : 'Dar de baja'}
+          {guardando ? <><Spinner /> Guardando…</> : 'Dar de baja'}
         </button>
       </>}>
       <p className="gt-text-muted gt-text-sm" style={{ marginTop: 0 }}>

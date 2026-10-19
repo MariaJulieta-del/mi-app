@@ -3,6 +3,7 @@ import { Dumbbell, Search } from 'lucide-react'
 import type { Ejercicio } from '../../services/ejercicioService'
 import { crearEjercicio } from '../../services/ejercicioService'
 import { EXERCISES_CATALOG, CATALOG_BODY_PARTS, type CatalogExercise } from '../../assets/exercisesCatalog'
+import { Spinner } from '../../../../shared/components/ui'
 
 interface Props {
   ejercicios: Ejercicio[]
@@ -214,7 +215,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                     disabled={cargando || yaGuardado}
                     onClick={ev => { ev.stopPropagation(); if (!yaGuardado) guardarDeCatalogo(ex) }}
                   >
-                    {cargando ? 'Guardando…' : yaGuardado ? '✓ En mis ejercicios' : '+ Guardar en mis ejercicios'}
+                    {cargando ? <><Spinner /> Guardando…</> : yaGuardado ? '✓ En mis ejercicios' : '+ Guardar en mis ejercicios'}
                   </button>
                 </div>
               </div>

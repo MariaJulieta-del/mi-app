@@ -5,7 +5,7 @@ import {
 import { NAME_TO_STATIC_IMG } from '../../ejercicios/assets/imagenesEjercicios'
 import { useRutinaForm, TRENES, DIAS, type EjItem } from '../hooks/useRutinaForm'
 import { DIFICULTAD_CONFIG, OBJETIVO_CONFIG } from '../utils/rutinaUtils'
-import { EmptyState, IconButton, Segmentado } from '../../../shared/components/ui'
+import { Cargando, EmptyState, IconButton, Segmentado, Spinner } from '../../../shared/components/ui'
 
 const DIA_CORTO: Record<string, string> = {
   Lunes: 'Lun', Martes: 'Mar', Miércoles: 'Mié', Jueves: 'Jue', Viernes: 'Vie', Sábado: 'Sáb', Domingo: 'Dom',
@@ -81,7 +81,7 @@ export default function RutinaForm() {
     return Array.from(new Set(f.catalogo.flatMap(e => e.grupos ?? []))).sort()
   }, [f.gruposSeleccionados, f.hayFullBody, f.catalogo])
 
-  const textoGuardar = f.guardando ? (f.progreso ?? 'Guardando…')
+  const textoGuardar = f.guardando ? (f.progreso ?? <><Spinner /> Guardando…</>)
     : f.esEdicion ? 'Guardar cambios'
     : f.esAdmin && f.sinSocio ? 'Crear plantilla'
     : f.socioSel ? `Asignar a ${f.socioSel.nombre}`
@@ -174,7 +174,7 @@ export default function RutinaForm() {
                   </label>
                   {usarBase && (
                     <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => f.setMostrarPicker(v => !v)} disabled={f.cargandoBase}>
-                      <LayoutTemplate size={14} aria-hidden /> {f.cargandoBase ? 'Cargando…' : f.rutinaBaseNombre ? `Desde: ${f.rutinaBaseNombre}` : 'Partir de una plantilla'}
+                      <LayoutTemplate size={14} aria-hidden /> {f.cargandoBase ? <><Spinner /> Cargando…</> : f.rutinaBaseNombre ? `Desde: ${f.rutinaBaseNombre}` : 'Partir de una plantilla'}
                     </button>
                   )}
                   {f.rutinaBaseNombre && <button type="button" className="gt-btn-link" onClick={f.limpiarBase}>Empezar de cero</button>}
@@ -288,7 +288,7 @@ export default function RutinaForm() {
         </section>
 
         {/* ── Armado ── */}
-        {f.cargandoRutina ? <div className="gt-card"><p className="gt-text-muted" style={{ margin: 0 }}>Cargando ejercicios…</p></div> : (
+        {f.cargandoRutina ? <Cargando tarjeta texto="Cargando ejercicios…" /> : (
           <div className="gt-builder">
             <section className="gt-card gt-builder-main">
               <div className="gt-card-cabecera">

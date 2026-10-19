@@ -1,4 +1,5 @@
 import { useMembresiasForm } from '../hooks/useMembresiasForm'
+import { Spinner } from '../../../shared/components/ui'
 
 export default function MembresiasForm() {
   const f = useMembresiasForm()
@@ -51,7 +52,7 @@ export default function MembresiasForm() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button type="submit" className="gt-btn gt-btn-primary" disabled={f.guardando}>{f.guardando ? 'Guardando...' : 'Crear Plan'}</button>
+            <button type="submit" className="gt-btn gt-btn-primary" disabled={f.guardando}>{f.guardando ? <><Spinner /> Guardando…</> : 'Crear Plan'}</button>
             <button type="button" className="gt-btn gt-btn-secondary" onClick={() => f.navigate('/membresias')}>Cancelar</button>
           </div>
         </form>

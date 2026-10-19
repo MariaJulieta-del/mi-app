@@ -9,6 +9,7 @@ import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
 import { formatFecha } from '../../../shared/utils/fechas'
 import { linkEditarRutina } from '../utils/rutinaUtils'
+import { Cargando } from '../../../shared/components/ui'
 
 /** Socios que tienen asignada una plantilla: cuánto hace que la hacen, ajustarla para uno o quitársela */
 export default function AsignadosPlantilla({ plantilla, onCerrar, onCambio }: {
@@ -60,7 +61,7 @@ export default function AsignadosPlantilla({ plantilla, onCerrar, onCambio }: {
       <p className="gt-text-muted gt-text-sm" style={{ marginTop: 0 }}>
         La hacen tal cual: si cambiás la plantilla, les llegan los cambios. "Ajustar" la copia como rutina propia del socio.
       </p>
-      {lista === null ? <p className="gt-text-muted">Cargando…</p>
+      {lista === null ? <Cargando texto="Cargando socios…" />
         : lista.length === 0 ? <p className="gt-text-muted">Ningún socio la tiene asignada.</p>
         : (
           <ul className="gt-asignados">

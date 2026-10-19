@@ -3,7 +3,7 @@ import { CircleAlert, CircleCheck, DatabaseBackup, Download } from 'lucide-react
 import axiosInstance from '../../../shared/services/axiosInstance'
 import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
-import { IconButton, Pill } from '../../../shared/components/ui'
+import { Cargando, IconButton, Pill, Spinner } from '../../../shared/components/ui'
 
 interface Copia {
   id: number; fecha: string; archivo: string | null; destino: string; tamano: number | null; tablas: number | null; filas: number | null
@@ -29,14 +29,15 @@ function hace(iso: string, ahora: number) {
 export default function CopiasSeguridad() {
   const toast = useToast()
   const [e, setE] = useState<Estado | null>(null)
+  const [fallo, setFallo] = useState(false)
   const [haciendo, setHaciendo] = useState(false)
   const [bajando, setBajando] = useState<number | null>(null)
   /** Momento en que se cargó el estado (para calcular "hace cuánto") */
   const [ahora, setAhora] = useState(0)
 
-  const cargar = () => axiosInstance.get<Estado>(API).then(r => { setE(r.data); setAhora(Date.now()) }).catch(() => {})
+  const cargar = () => axiosInstance.get<Estado>(API).then(r => { setE(r.data); setAhora(Date.now()) }).catch(() => setFallo(true))
   useEffect(() => { cargar() }, [])
-  if (!e) return null
+  if (!e) return fallo ? null : <Cargando tarjeta texto="Cargando copias de seguridad…" />
 
   const ultimaOk = e.copias.find(c => c.estado === 'OK')
   const ultima = e.copias[0]
@@ -75,7 +76,7 @@ export default function CopiasSeguridad() {
       <div className="gt-card-cabecera">
         <p className="gt-card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><DatabaseBackup size={16} aria-hidden /> Copias de seguridad</p>
         <button type="button" className="gt-btn gt-btn-secondary" disabled={haciendo} onClick={hacerAhora}>
-          {haciendo ? 'Haciendo la copia…' : 'Hacer una copia ahora'}
+          {haciendo ? <><Spinner /> Haciendo la copia…</> : 'Hacer una copia ahora'}
         </button>
       </div>
 

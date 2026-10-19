@@ -1,5 +1,5 @@
 import { useFichaMedica } from '../hooks/useFichaMedica'
-import { CargandoPagina } from '../../../shared/components/ui'
+import { CargandoPagina, Spinner } from '../../../shared/components/ui'
 
 export default function FichaMedicaPage() {
   const f = useFichaMedica()
@@ -34,7 +34,7 @@ export default function FichaMedicaPage() {
               placeholder="Ej: Lesión en rodilla derecha (2023), evitar sentadillas con peso. Objetivo: ganar masa muscular. Entrena lunes, miércoles y viernes..." />
           </div>
           <button type="submit" className="gt-btn gt-btn-primary" disabled={f.guardando}>
-            {f.guardando ? 'Guardando...' : 'Guardar observaciones'}
+            {f.guardando ? <><Spinner /> Guardando…</> : 'Guardar observaciones'}
           </button>
         </form>
       </div>

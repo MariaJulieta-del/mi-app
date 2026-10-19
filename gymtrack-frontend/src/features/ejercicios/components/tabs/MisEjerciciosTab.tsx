@@ -2,6 +2,7 @@ import type { Ejercicio } from '../../services/ejercicioService'
 import { Dumbbell } from 'lucide-react'
 import type { Maquina } from '../../../maquinas/services/maquinaService'
 import { GRUPOS_CATEGORIAS } from '../../services/ejercicioService'
+import { Spinner } from '../../../../shared/components/ui'
 
 interface Props {
   filtrados: Ejercicio[]
@@ -133,7 +134,7 @@ export default function MisEjerciciosTab({
                     </div>
                   ) : (
                     <button type="button" className="gt-subir-imagen" onClick={() => imgRef.current?.click()} disabled={subiendoImg}>
-                      {subiendoImg ? 'Procesando…' : 'Subir imagen o GIF'}
+                      {subiendoImg ? <><Spinner /> Procesando…</> : 'Subir imagen o GIF'}
                     </button>
                   )}
                   <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImagen} />
@@ -192,7 +193,7 @@ export default function MisEjerciciosTab({
 
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando}>
-                {guardando ? 'Guardando…' : editandoId ? 'Actualizar' : 'Crear ejercicio'}
+                {guardando ? <><Spinner /> Guardando…</> : editandoId ? 'Actualizar' : 'Crear ejercicio'}
               </button>
               <button type="button" className="gt-btn gt-btn-secondary" onClick={cancelar}>Cancelar</button>
             </div>

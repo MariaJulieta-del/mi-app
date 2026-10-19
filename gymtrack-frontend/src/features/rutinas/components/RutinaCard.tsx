@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { Rutina, Ejercicio } from '../types/Rutina'
 import { obtenerEjercicios } from '../services/rutinaService'
 import { TREN_CONFIG, TREN_DEFAULT, DIFICULTAD_CONFIG, OBJETIVO_CONFIG, DIAS_ORDER, etiquetaDia, esPlantilla } from '../utils/rutinaUtils'
+import { Cargando } from '../../../shared/components/ui'
 
 /** "3 socios · 1 para renovar" */
 function textoAsignados(r: Rutina) {
@@ -126,7 +127,7 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
 
       {abierta && (
         <div className="gt-rutina-preview">
-          {cargando ? <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>Cargando ejercicios…</p>
+          {cargando ? <Cargando texto="Cargando ejercicios…" />
             : principales.length === 0 ? <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>Todavía no tiene ejercicios.</p>
             : dias.map(n => (
               <div key={n} style={{ marginBottom: 8 }}>

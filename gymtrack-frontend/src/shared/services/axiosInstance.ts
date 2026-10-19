@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { avisarCarga } from './cargaGlobal'
 
 /**
  * URL del backend.
@@ -27,10 +28,20 @@ axiosInstance.interceptors.request.use(
  },
  (error) => Promise.reject(error)
 )
+// ── Pedidos en curso (para la barra de carga de arriba) ──────────────────
+// Las consultas que se repiten solas cada pocos segundos no la muestran.
+const SIN_BARRA = /\/(pedidos-rutina\/cantidad|asistencias\/qr-actual|kiosco\/|asistencias\/hoy|salud)/
+const cuenta = (config?: { url?: string }) => !SIN_BARRA.test(config?.url ?? '')
+
+axiosInstance.interceptors.request.use(config => {
+ if (cuenta(config)) avisarCarga(1)
+ return config
+})
 // ── Response: manejar 401 (token expirado o inválido) ────────────────────
 axiosInstance.interceptors.response.use(
- (response) => response,
+ (response) => { if (cuenta(response.config)) avisarCarga(-1); return response },
  (error) => {
+ if (cuenta(error.config)) avisarCarga(-1)
  if (error.response?.status === 401) {
    localStorage.removeItem('gt_token')
    localStorage.removeItem('gt_user')

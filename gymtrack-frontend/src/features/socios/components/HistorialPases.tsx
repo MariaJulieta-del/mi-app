@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Ban, CalendarX, LogIn, Repeat, Ticket } from 'lucide-react'
 import axiosInstance from '../../../shared/services/axiosInstance'
 import { fechaLocalISO, formatFecha } from '../../../shared/utils/fechas'
+import { Cargando } from '../../../shared/components/ui'
 
 interface Movimiento { fecha: string; hora: string | null; tipo: 'INGRESO' | 'FALTAZO' | 'DENEGADO'; detalle: string; gastaPase: boolean }
 interface Ciclo { inicio: string; fin: string; usados: number; total: number | null }
@@ -27,7 +28,8 @@ const ICONO = {
  * y cómo le fue en los meses anteriores.
  */
 export default function HistorialPases({ socioId, esSocio }: { socioId: number | string; esSocio: boolean }) {
-  const [h, setH] = useState<Historial | null>(null)
+  // undefined = todavía cargando · null = no se pudo cargar
+  const [h, setH] = useState<Historial | null | undefined>(undefined)
   const [mostrar, setMostrar] = useState(POR_TANDA)
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function HistorialPases({ socioId, esSocio }: { socioId: number |
       .then(r => setH(r.data)).catch(() => setH(null))
   }, [socioId])
 
+  if (h === undefined) return <Cargando tarjeta texto="Cargando pases…" />
   if (!h || (!h.tieneMembresia && h.movimientos.length === 0)) return null
   const a = h.actual
   const le = esSocio ? 'Te' : 'Le'

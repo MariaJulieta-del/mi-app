@@ -11,6 +11,7 @@ import CupoMeter from './CupoMeter'
 import AsistenciaClase from './AsistenciaClase'
 import ReservasClase from './ReservasClase'
 import AvisoClase from './AvisoClase'
+import { Spinner } from '../../../shared/components/ui'
 
 type Pestana = 'alumnos' | 'reservas' | 'asistencia' | 'aviso'
 
@@ -128,7 +129,7 @@ export default function AlumnosModal({ disciplina, onCambio, onEditar, onCerrar 
         {sinVigencia > 0 && (
           <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={trabajando === 'liberar'} onClick={liberar}
             title="Quita a los dados de baja y a los que no tienen la membresía vigente">
-            {trabajando === 'liberar' ? 'Liberando…' : `Liberar ${sinVigencia} ${sinVigencia === 1 ? 'cupo' : 'cupos'} sin membresía`}
+            {trabajando === 'liberar' ? <><Spinner /> Liberando…</> : `Liberar ${sinVigencia} ${sinVigencia === 1 ? 'cupo' : 'cupos'} sin membresía`}
           </button>
         )}
       </div>

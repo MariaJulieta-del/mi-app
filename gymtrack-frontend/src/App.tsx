@@ -15,43 +15,45 @@ import CommandPalette from './shared/components/CommandPalette'
 import ConfirmModal from './shared/components/ConfirmModal'
 import LoginPage from './features/auth/view/LoginPage'
 import ProtectedRoute from './shared/components/ProtectedRoute'
-import { CargandoPagina } from './shared/components/ui'
+import { Cargando, CargandoPagina } from './shared/components/ui'
+import BarraCarga from './shared/components/BarraCarga'
+import { conCarga } from './shared/services/cargaGlobal'
 
 // Páginas con carga diferida: cada módulo se descarga recién al navegar a él
-const SociosPage         = lazy(() => import('./features/socios/view/SociosPage'))
-const RutinasList        = lazy(() => import('./features/rutinas/components/RutinasList'))
-const RutinaForm         = lazy(() => import('./features/rutinas/components/RutinaForm'))
-const RutinasDetail      = lazy(() => import('./features/rutinas/components/RutinasDetail'))
-const AsignarRutinaPage  = lazy(() => import('./features/rutinas/view/AsignarRutinaPage'))
-const MembresiasList     = lazy(() => import('./features/membresias/components/MembresiasList'))
-const MembresiasForm     = lazy(() => import('./features/membresias/components/MembresiasForm'))
-const MembresiasDetail   = lazy(() => import('./features/membresias/components/MembresiasDetail'))
-const PagosList          = lazy(() => import('./features/pagos/components/PagosList'))
-const PagosForm          = lazy(() => import('./features/pagos/components/PagosForm'))
-const DashboardPage      = lazy(() => import('./features/dashboard/view/DashboardPage'))
-const AccesoPage         = lazy(() => import('./features/asistencias/view/AccesoPage'))
-const EntrenarPage       = lazy(() => import('./features/rutinas/view/EntrenarPage'))
-const AuditoriaPage      = lazy(() => import('./features/auditoria/view/AuditoriaPage'))
-const HoyPage            = lazy(() => import('./features/seguimiento/view/HoyPage'))
-const KioscoPage         = lazy(() => import('./features/asistencias/view/KioscoPage'))
-const QrIngresoPage      = lazy(() => import('./features/asistencias/view/QrIngresoPage'))
-const EscanearIngresoPage = lazy(() => import('./features/asistencias/view/EscanearIngresoPage'))
-const DisciplinasPage    = lazy(() => import('./features/disciplinas/view/DisciplinasPage'))
-const NotificacionesPage = lazy(() => import('./features/notificaciones/view/NotificacionesPage'))
-const ReportesPage       = lazy(() => import('./features/reportes/view/ReportesPage'))
-const FichaMedicaPage    = lazy(() => import('./features/socios/view/FichaMedicaPage'))
-const SocioPerfilPage    = lazy(() => import('./features/socios/view/SocioPerfilPage'))
-const EjerciciosPage     = lazy(() => import('./features/ejercicios/view/EjerciciosPage'))
-const MaquinasPage       = lazy(() => import('./features/maquinas/view/MaquinasPage'))
-const ProfesoresPage     = lazy(() => import('./features/profesores/view/ProfesoresPage'))
-const MiCuentaPage       = lazy(() => import('./features/cuenta/view/MiCuentaPage'))
-const ConfiguracionPage  = lazy(() => import('./features/cuenta/view/ConfiguracionPage'))
-const SocioInicioPage    = lazy(() => import('./features/socioapp/view/SocioInicioPage'))
-const SocioRutinaPage    = lazy(() => import('./features/socioapp/view/SocioRutinaPage'))
-const SocioClasesPage    = lazy(() => import('./features/socioapp/view/SocioClasesPage'))
-const SocioProgresoPage  = lazy(() => import('./features/socioapp/view/SocioProgresoPage'))
-const SocioCuentaPage    = lazy(() => import('./features/socioapp/view/SocioCuentaPage'))
-const SocioPlantillasPage = lazy(() => import('./features/socioapp/view/SocioPlantillasPage'))
+const SociosPage         = lazy(conCarga(() => import('./features/socios/view/SociosPage')))
+const RutinasList        = lazy(conCarga(() => import('./features/rutinas/components/RutinasList')))
+const RutinaForm         = lazy(conCarga(() => import('./features/rutinas/components/RutinaForm')))
+const RutinasDetail      = lazy(conCarga(() => import('./features/rutinas/components/RutinasDetail')))
+const AsignarRutinaPage  = lazy(conCarga(() => import('./features/rutinas/view/AsignarRutinaPage')))
+const MembresiasList     = lazy(conCarga(() => import('./features/membresias/components/MembresiasList')))
+const MembresiasForm     = lazy(conCarga(() => import('./features/membresias/components/MembresiasForm')))
+const MembresiasDetail   = lazy(conCarga(() => import('./features/membresias/components/MembresiasDetail')))
+const PagosList          = lazy(conCarga(() => import('./features/pagos/components/PagosList')))
+const PagosForm          = lazy(conCarga(() => import('./features/pagos/components/PagosForm')))
+const DashboardPage      = lazy(conCarga(() => import('./features/dashboard/view/DashboardPage')))
+const AccesoPage         = lazy(conCarga(() => import('./features/asistencias/view/AccesoPage')))
+const EntrenarPage       = lazy(conCarga(() => import('./features/rutinas/view/EntrenarPage')))
+const AuditoriaPage      = lazy(conCarga(() => import('./features/auditoria/view/AuditoriaPage')))
+const HoyPage            = lazy(conCarga(() => import('./features/seguimiento/view/HoyPage')))
+const KioscoPage         = lazy(conCarga(() => import('./features/asistencias/view/KioscoPage')))
+const QrIngresoPage      = lazy(conCarga(() => import('./features/asistencias/view/QrIngresoPage')))
+const EscanearIngresoPage = lazy(conCarga(() => import('./features/asistencias/view/EscanearIngresoPage')))
+const DisciplinasPage    = lazy(conCarga(() => import('./features/disciplinas/view/DisciplinasPage')))
+const NotificacionesPage = lazy(conCarga(() => import('./features/notificaciones/view/NotificacionesPage')))
+const ReportesPage       = lazy(conCarga(() => import('./features/reportes/view/ReportesPage')))
+const FichaMedicaPage    = lazy(conCarga(() => import('./features/socios/view/FichaMedicaPage')))
+const SocioPerfilPage    = lazy(conCarga(() => import('./features/socios/view/SocioPerfilPage')))
+const EjerciciosPage     = lazy(conCarga(() => import('./features/ejercicios/view/EjerciciosPage')))
+const MaquinasPage       = lazy(conCarga(() => import('./features/maquinas/view/MaquinasPage')))
+const ProfesoresPage     = lazy(conCarga(() => import('./features/profesores/view/ProfesoresPage')))
+const MiCuentaPage       = lazy(conCarga(() => import('./features/cuenta/view/MiCuentaPage')))
+const ConfiguracionPage  = lazy(conCarga(() => import('./features/cuenta/view/ConfiguracionPage')))
+const SocioInicioPage    = lazy(conCarga(() => import('./features/socioapp/view/SocioInicioPage')))
+const SocioRutinaPage    = lazy(conCarga(() => import('./features/socioapp/view/SocioRutinaPage')))
+const SocioClasesPage    = lazy(conCarga(() => import('./features/socioapp/view/SocioClasesPage')))
+const SocioProgresoPage  = lazy(conCarga(() => import('./features/socioapp/view/SocioProgresoPage')))
+const SocioCuentaPage    = lazy(conCarga(() => import('./features/socioapp/view/SocioCuentaPage')))
+const SocioPlantillasPage = lazy(conCarga(() => import('./features/socioapp/view/SocioPlantillasPage')))
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
 type Rol = 'ADMIN' | 'PROFESOR'
@@ -311,10 +313,11 @@ function AppLayout() {
 export default function App() {
   return (
     <ToastProvider>
+      <BarraCarga />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         {/* Pantalla fija de recepción: usa su propio token, no la sesión de un usuario */}
-        <Route path="/kiosco" element={<LimiteErrores completa><Suspense fallback={null}><KioscoPage /></Suspense></LimiteErrores>} />
+        <Route path="/kiosco" element={<LimiteErrores completa><Suspense fallback={<Cargando />}><KioscoPage /></Suspense></LimiteErrores>} />
         <Route
           path="/*"
           element={

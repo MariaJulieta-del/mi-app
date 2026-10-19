@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ImagePlus, RotateCcw, Trash2 } from 'lucide-react'
 import axiosInstance from '../../../shared/services/axiosInstance'
-import { PageHeader } from '../../../shared/components/ui'
+import { PageHeader, Spinner } from '../../../shared/components/ui'
 import RecordatoriosCuota from '../components/RecordatoriosCuota'
 import CopiasSeguridad from '../components/CopiasSeguridad'
 import { useMarca, type Marca } from '../../../shared/context/MarcaContext'
@@ -51,7 +51,7 @@ function DuracionRutinas() {
           onChange={e => setSemanas(Number(e.target.value))} />
         <span>semanas</span>
         <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando || semanas === guardadas || semanas < 2 || semanas > 26}>
-          {guardando ? 'Guardando…' : 'Guardar'}
+          {guardando ? <><Spinner /> Guardando…</> : 'Guardar'}
         </button>
       </div>
       <span className="gt-hint">Entre 2 y 26 semanas. Lo habitual es entre 4 y 8.</span>
@@ -163,7 +163,7 @@ export default function ConfiguracionPage() {
           </div>
 
           <button type="submit" className="gt-btn gt-btn-primary" disabled={guardando || !form.nombre.trim()}>
-            {guardando ? 'Guardando…' : 'Guardar'}
+            {guardando ? <><Spinner /> Guardando…</> : 'Guardar'}
           </button>
         </form>
 

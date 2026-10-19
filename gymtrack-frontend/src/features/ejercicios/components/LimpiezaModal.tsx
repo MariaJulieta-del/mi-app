@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Modal from '../../../shared/components/Modal'
 import { mensajeError } from '../../../shared/utils/errores'
 import { vistaLimpieza, limpiarEjercicios, type VistaLimpieza } from '../services/ejercicioService'
+import { Spinner } from '../../../shared/components/ui'
 
 /**
  * Limpieza del catálogo propio: borra los ejercicios desactivados que ninguna rutina usa.
@@ -29,7 +30,7 @@ export default function LimpiezaModal({ onListo, onCerrar }: { onListo: (borrado
         <button type="button" className="gt-btn gt-btn-secondary" onClick={onCerrar}>Cerrar</button>
         {n > 0 && (confirmar ? (
           <button type="button" className="gt-btn gt-btn-danger" disabled={borrando} onClick={borrar}>
-            {borrando ? 'Borrando…' : `Sí, borrar ${n} definitivamente`}
+            {borrando ? <><Spinner /> Borrando…</> : `Sí, borrar ${n} definitivamente`}
           </button>
         ) : (
           <button type="button" className="gt-btn gt-btn-primary" onClick={() => setConfirmar(true)}>Borrar {n} ejercicios</button>

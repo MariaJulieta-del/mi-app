@@ -7,7 +7,7 @@ import type { CategoriaEgreso, Egreso } from '../types/Egreso'
 import { CATEGORIAS_GASTO, METODOS, pesos, textoDiferencia, totalArqueo } from '../utils/dinero'
 import ArqueoBilletes from './ArqueoBilletes'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
-import { IconButton, Pill, Skeleton } from '../../../shared/components/ui'
+import { IconButton, Pill, Skeleton, Spinner } from '../../../shared/components/ui'
 import { useToast } from '../../../shared/hooks/useToast'
 import { mensajeError } from '../../../shared/utils/errores'
 import { fechaLocalISO, formatFecha } from '../../../shared/utils/fechas'
@@ -280,7 +280,7 @@ export default function CajaDelDia({ fechaInicial, onVerPagos }: { fechaInicial?
                   </div>
                   <button type="button" className="gt-btn gt-btn-primary" style={{ width: '100%' }}
                     disabled={cerrando || faltaNota || dejaInvalido} onClick={() => setConfirmar(true)}>
-                    <Lock size={16} aria-hidden /> {cerrando ? 'Cerrando…' : `Cerrar caja ${fecha === hoy ? 'de hoy' : `del ${formatFecha(fecha)}`}`}
+                    <Lock size={16} aria-hidden /> {cerrando ? <><Spinner /> Cerrando…</> : `Cerrar caja ${fecha === hoy ? 'de hoy' : `del ${formatFecha(fecha)}`}`}
                   </button>
                 </div>
               </div>

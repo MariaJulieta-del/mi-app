@@ -8,7 +8,7 @@ import MotivosBaja from '../components/MotivosBaja'
 import IndicadoresDueno, { CohortesRetencion } from '../components/IndicadoresDueno'
 import PublicoGimnasio from '../components/PublicoGimnasio'
 import FuenteDatos from '../components/FuenteDatos'
-import { PageHeader, Segmentado } from '../../../shared/components/ui'
+import { Cargando, PageHeader, Segmentado } from '../../../shared/components/ui'
 
 type Seccion = 'dinero' | 'retencion' | 'asistencia' | 'publico'
 const SECCIONES: { valor: Seccion; texto: string; icono: LucideIcon; descripcion: string }[] = [
@@ -47,25 +47,27 @@ export default function ReportesPage() {
               <div className="gt-card-cabecera">
                 <p className="gt-card-title" style={{ margin: 0 }}>Ingresos por mes</p>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span className="gt-numero-destacado">{fmtARS(d.totalIngresos)}</span>
+                  {!d.loadingI && <span className="gt-numero-destacado">{fmtARS(d.totalIngresos)}</span>}
                   <select className="gt-select" style={{ width: 'auto' }} value={d.meses} onChange={e => d.setMeses(Number(e.target.value))} aria-label="Período">
                     {[3, 6, 9, 12].map(m => <option key={m} value={m}>{m} meses</option>)}
                   </select>
                 </div>
               </div>
               {d.errorI && <div className="gt-alert gt-alert-error">{d.errorI}</div>}
-              {d.loadingI ? <p className="gt-text-muted">Cargando…</p> : <BarChart data={d.ingresos} />}
+              {d.loadingI ? <Cargando /> : <BarChart data={d.ingresos} />}
             </div>
             <PlanesVendidos />
           </div>
 
           <div className="gt-card" style={{ marginBottom: 20 }}>
             <p className="gt-card-title" style={{ marginTop: 0 }}>Caja de los últimos {d.meses} meses</p>
-            <div className="gt-indicadores gt-indicadores-3">
-              <div><strong style={{ color: 'var(--green-text)' }}>{fmtARS(d.totalIngresos)}</strong><span>ingresos por pagos</span></div>
-              <div><strong style={{ color: 'var(--red)' }}>{fmtARS(d.totalGastosMantenimiento)}</strong><span>gastos en máquinas</span></div>
-              <div><strong style={{ color: balanceNeto >= 0 ? 'var(--green-text)' : 'var(--red)' }}>{fmtARS(balanceNeto)}</strong><span>balance neto</span></div>
-            </div>
+            {d.loadingI ? <Cargando /> : (
+              <div className="gt-indicadores gt-indicadores-3">
+                <div><strong style={{ color: 'var(--green-text)' }}>{fmtARS(d.totalIngresos)}</strong><span>ingresos por pagos</span></div>
+                <div><strong style={{ color: 'var(--red)' }}>{fmtARS(d.totalGastosMantenimiento)}</strong><span>gastos en máquinas</span></div>
+                <div><strong style={{ color: balanceNeto >= 0 ? 'var(--green-text)' : 'var(--red)' }}>{fmtARS(balanceNeto)}</strong><span>balance neto</span></div>
+              </div>
+            )}
             {d.gastosPorMaquina.length > 0 && (
               <>
                 <p className="gt-subtitulo" style={{ marginTop: 16 }}>Gasto por máquina</p>
@@ -150,7 +152,7 @@ export default function ReportesPage() {
               </div>
             </div>
             {d.errorA && <div className="gt-alert gt-alert-error">{d.errorA}</div>}
-            {d.loadingA ? <p className="gt-text-muted">Cargando…</p> : (
+            {d.loadingA ? <Cargando /> : (
               <>
                 <p className="gt-text-sm gt-text-muted" style={{ margin: '0 0 10px' }}>
                   <strong className="gt-numero-destacado">{d.totalAsistencias.toLocaleString('es-AR')}</strong> ingresos

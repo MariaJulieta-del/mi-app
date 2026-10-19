@@ -4,6 +4,7 @@ import axiosInstance from '../../../shared/services/axiosInstance'
 import FuenteDatos from './FuenteDatos'
 import { celdaPct } from '../utils/celdas'
 import { useGlobo } from '../../../shared/hooks/useGlobo'
+import { Cargando } from '../../../shared/components/ui'
 
 interface Indicadores {
   ingresoMensualRecurrente: number
@@ -24,14 +25,16 @@ const mesCorto = (ym: string) => { const [y, m] = ym.split('-'); return `${MESES
 
 
 function useIndicadores() {
-  const [d, setD] = useState<Indicadores | null>(null)
-  useEffect(() => { axiosInstance.get<Indicadores>('/api/v1/reportes/indicadores').then(r => setD(r.data)).catch(() => {}) }, [])
+  // undefined = todavía cargando · null = no se pudo cargar
+  const [d, setD] = useState<Indicadores | null | undefined>(undefined)
+  useEffect(() => { axiosInstance.get<Indicadores>('/api/v1/reportes/indicadores').then(r => setD(r.data)).catch(() => setD(null)) }, [])
   return d
 }
 
 /** Los cuatro números del negocio: lo que entra por mes, cuánto se va, cuánto deja un socio y la antigüedad */
 export default function IndicadoresDueno() {
   const d = useIndicadores()
+  if (d === undefined) return <Cargando tarjeta texto="Cargando indicadores…" />
   if (!d) return null
 
   return (
@@ -75,6 +78,7 @@ export function CohortesRetencion() {
   const globo = useGlobo()
   const [ret, setRet] = useState<ResumenRetencion | null>(null)
   useEffect(() => { axiosInstance.get<ResumenRetencion>('/api/v1/retencion/resumen').then(r => setRet(r.data)).catch(() => {}) }, [])
+  if (d === undefined) return <Cargando tarjeta texto="Cargando indicadores…" />
   if (!d) return null
 
   return (
