@@ -38,7 +38,10 @@ public class ReglasRutina {
     }
 
     public static long semanas(Rutina r, LocalDate hoy) {
-        LocalDateTime i = inicio(r);
-        return i == null ? 0 : ChronoUnit.WEEKS.between(i.toLocalDate(), hoy);
+        return semanas(inicio(r), hoy);
+    }
+
+    public static long semanas(LocalDateTime inicio, LocalDate hoy) {
+        return inicio == null ? 0 : ChronoUnit.WEEKS.between(inicio.toLocalDate(), hoy);
     }
 }

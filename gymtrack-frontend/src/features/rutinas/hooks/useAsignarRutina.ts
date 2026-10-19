@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NIVEL_A_DIFICULTAD } from '../utils/rutinaUtils'
+import { NIVEL_A_DIFICULTAD, linkEditarRutina } from '../utils/rutinaUtils'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { Rutina } from '../types/Rutina'
 import type { Socio } from '../../socios/types/Socio'
-import { obtenerRutinasGenerales, clonarRutina, obtenerRutinas } from '../services/rutinaService'
+import { obtenerRutinasGenerales, asignarPlantilla, personalizarPlantilla, obtenerRutinas } from '../services/rutinaService'
 import { obtenerPorId } from '../../socios/services/socioService'
 import { useBuscarSocios } from '../../../shared/hooks/useBuscarSocios'
 import { obtenerFicha } from '../../socios/services/fichaService'
@@ -14,6 +14,7 @@ export type Modo = 'plantilla' | 'personalizada'
 /**
  * Asistente para que el profesor asigne una rutina a un socio:
  *   1. Socio  →  2. ¿Plantilla o personalizada?  →  3. Elegir plantilla y asignar  →  listo
+ * La plantilla se asigna tal cual (no se copia); "Copiar y ajustar" la copia como rutina propia del socio.
  * Acepta ?socioId=… y/o ?plantillaId=… para saltear pasos.
  */
 export function useAsignarRutina() {
@@ -100,17 +101,37 @@ export function useAsignarRutina() {
     setModo(m)
   }
 
+  const mensaje = (e: unknown, def: string) => (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? def
+
+  /** Se la asigna tal cual: queda en la lista de socios de la plantilla */
   const asignar = async () => {
     if (!socio?.id || !plantillaSel?.id) return
     setAsignando(true); setError(null)
     try {
-      const nueva = await clonarRutina(plantillaSel.id, socio.id, nombre.trim() || undefined)
+      const nueva = await asignarPlantilla(plantillaSel.id, socio.id)
       setAsignada(nueva)
       toast.success('Rutina asignada', `${nueva.nombre} → ${socio.nombre} ${socio.apellido}`)
     } catch (e: unknown) {
-      setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'No se pudo asignar la rutina')
+      setError(mensaje(e, 'No se pudo asignar la rutina'))
     } finally { setAsignando(false) }
   }
+
+  /** Copia la plantilla como rutina propia del socio y abre el editor para ajustarla */
+  const ajustar = async () => {
+    if (!socio?.id || !plantillaSel?.id) return
+    setAsignando(true); setError(null)
+    try {
+      const nueva = await personalizarPlantilla(plantillaSel.id, socio.id, nombre.trim() || undefined)
+      toast.success('Copia lista para ajustar', `${nueva.nombre} → ${socio.nombre} ${socio.apellido}`)
+      navigate(linkEditarRutina(nueva, true))
+    } catch (e: unknown) {
+      setError(mensaje(e, 'No se pudo copiar la rutina'))
+      setAsignando(false)
+    }
+  }
+
+  /** El socio ya tiene asignada la plantilla elegida */
+  const yaLaTiene = !!plantillaSel && rutinasDelSocio.some(r => r.asignada && r.id === plantillaSel.id)
 
   const reiniciar = () => { setAsignada(null); setPlantillaSel(null); setModo(null) }
 
@@ -123,6 +144,6 @@ export function useAsignarRutina() {
     plantillas, cargandoPlantillas, plantillasFiltradas, busqueda, setBusqueda, filtroTren, setFiltroTren, filtroObjetivo, setFiltroObjetivo,
     nivelRecomendado, soloSuNivel, setSoloSuNivel,
     plantillaSel, setPlantillaSel: elegirPlantilla, nombre, setNombre,
-    asignar, asignando, error, setError, asignada, reiniciar,
+    asignar, ajustar, yaLaTiene, asignando, error, setError, asignada, reiniciar,
   }
 }

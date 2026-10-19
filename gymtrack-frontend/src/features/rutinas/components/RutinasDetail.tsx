@@ -79,6 +79,13 @@ export default function RutinasDetail() {
         </div>
       )}
 
+      {rutina.asignada && !d.esSocio && (
+        <div className="gt-alert gt-alert-info" style={{ marginBottom: 16 }}>
+          {rutina.socioNombre} tiene esta plantilla asignada tal cual. Si la editás, cambia para todos los socios que la tienen;
+          para cambiarla solo para {rutina.socioNombre?.split(' ')[0] ?? 'este socio'}, usá "Ajustar" en su perfil.
+        </div>
+      )}
+
       {/* Info chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
         {(rutina.trenes ?? []).map(tid => {

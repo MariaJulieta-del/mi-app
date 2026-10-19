@@ -59,11 +59,13 @@ check((await req('GET', '/socio-app/rutinas/plantillas')).status === 401, 'sin s
 
 r = await req('POST', `/socio-app/rutinas/plantillas/${visible}/elegir`, { token: ana.token })
 check(r.status === 200 && r.data.socioId === ana.id && r.data.elegidaPorSocio === true && r.data.cantidadEjercicios === 2, 'el socio se elige una plantilla (con sus ejercicios)', JSON.stringify(r.data))
-const copiaAna = r.data?.id
+check(r.data?.id === visible && r.data?.asignada === true, 'no se copia: le queda asignada la misma plantilla', JSON.stringify(r.data))
 check((await req('POST', `/socio-app/rutinas/plantillas/${visible}/elegir`, { token: ana.token })).status === 400, 'no puede elegir dos veces la misma')
 check((await req('POST', `/socio-app/rutinas/plantillas/${oculta}/elegir`, { token: ana.token })).status === 404, 'no puede elegir una oculta')
-check((await req('POST', `/socio-app/rutinas/plantillas/${copiaAna}/elegir`, { token: beto.token })).status === 404, 'no puede copiarse la rutina de otro socio')
-check((await req('GET', `/rutinas/${copiaAna}`, { token: beto.token })).status === 404, 'otro socio no ve la rutina elegida')
+// Una rutina personalizada de Ana: Beto no la puede elegir ni ver
+const deAna = (await req('POST', '/rutinas', { token: admin, headers: { 'X-Socio-Id': ana.id }, body: { nombre: 'Solo de Ana ' + suf } })).data?.id
+check((await req('POST', `/socio-app/rutinas/plantillas/${deAna}/elegir`, { token: beto.token })).status === 404, 'no puede copiarse la rutina de otro socio')
+check((await req('GET', `/rutinas/${deAna}`, { token: beto.token })).status === 404, 'otro socio no ve la rutina personalizada de otro')
 // Límite semanal: 3 por semana
 const extra = []
 for (let i = 0; i < 3; i++) {

@@ -36,6 +36,7 @@ public class SeguimientoService {
 
     private final AsistenciaRepository        asistenciaRepo;
     private final RutinaRepository            rutinaRepo;
+    private final RutinasDelSocio             rutinasDelSocio;
     private final FichaMedicaRepository       fichaRepo;
     private final MembresiaRepository         membresiaRepo;
     private final ProgresoEjercicioRepository progresoRepo;
@@ -104,10 +105,8 @@ public class SeguimientoService {
     }
 
     private RutinaResumen rutinaActual(Long socioId, LocalDate hoy) {
-        return rutinaRepo.findBySocioId(socioId).stream()
-                .filter(r -> ReglasRutina.inicio(r) != null)
-                .max(Comparator.comparing(ReglasRutina::inicio))
-                .map(r -> new RutinaResumen(r.getId(), r.getNombre(), ReglasRutina.semanas(r, hoy)))
+        return rutinasDelSocio.actual(socioId)
+                .map(x -> new RutinaResumen(x.rutina().getId(), x.rutina().getNombre(), ReglasRutina.semanas(x.inicio(), hoy)))
                 .orElse(null);
     }
 

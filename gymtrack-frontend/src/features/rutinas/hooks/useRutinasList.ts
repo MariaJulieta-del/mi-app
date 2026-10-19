@@ -26,8 +26,10 @@ export function useRutinasList() {
   const [filtroDificultad, setFiltroDificultad] = useState('')
   const [filtroObjetivo, setFiltroObjetivo] = useState('')
   const [busqueda, setBusqueda] = useState('')
-  /** Solo las rutinas de socios que ya pasaron el límite de semanas */
-  const [soloRenovar, setSoloRenovar] = useState(false)
+  /** Ventana con las rutinas para renovar (personalizadas y plantillas asignadas) */
+  const [verRenovar, setVerRenovar] = useState(false)
+  /** Plantilla cuyos socios asignados se están mirando */
+  const [verAsignados, setVerAsignados] = useState<Rutina | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
   const [confirmarEliminar, setConfirmarEliminar] = useState<Rutina | null>(null)
@@ -36,6 +38,7 @@ export function useRutinasList() {
   const cargar = () => {
     const pedido = esStaff
       ? Promise.all([obtenerTodasRutinas(), obtenerRutinasGenerales()]).then(([todas, generales]) => {
+          // "De socios": solo las personalizadas (las plantillas asignadas se ven en cada plantilla)
           setAsignadas(todas.filter(r => !esPlantilla(r)))
           setPlantillas(generales)
         })
@@ -59,10 +62,14 @@ export function useRutinasList() {
       if (esPlantilla(r)) setPlantillas(p => p.filter(x => x.id !== r.id))
       else setAsignadas(p => p.filter(x => x.id !== r.id))
       toast.success('Rutina eliminada', r.nombre)
-    } catch {
-      toast.error('Error', 'No se pudo eliminar la rutina')
+    } catch (e) {
+      toast.error('No se pudo eliminar', mensajeError(e, 'Probá de nuevo'))
     }
   }
+
+  /** La lista de socios de una plantilla cambió (se quitó alguno) */
+  const actualizarAsignados = (plantillaId: number, cantidad: number, paraRenovar: number) =>
+    setPlantillas(p => p.map(x => (x.id === plantillaId ? { ...x, cantidadAsignados: cantidad, asignadosParaRenovar: paraRenovar } : x)))
 
   /** Copia una rutina de un socio como plantilla reutilizable */
   const guardarComoPlantilla = async (r: Rutina) => {
@@ -97,24 +104,26 @@ export function useRutinasList() {
     .filter(r => !filtroTren || (r.trenes ?? []).includes(filtroTren))
     .filter(r => !filtroDificultad || r.dificultad === filtroDificultad)
     .filter(r => !filtroObjetivo || r.objetivo === filtroObjetivo)
-    .filter(r => !soloRenovar || tab !== 'asignadas' || !!r.paraRenovar)
     .filter(r => {
       if (!busqueda.trim()) return true
       const q = busqueda.toLowerCase()
       return r.nombre.toLowerCase().includes(q) || (r.descripcion ?? '').toLowerCase().includes(q) || (r.socioNombre ?? '').toLowerCase().includes(q)
     }),
-    [listaBase, filtroTren, filtroDificultad, filtroObjetivo, busqueda, soloRenovar, tab],
+    [listaBase, filtroTren, filtroDificultad, filtroObjetivo, busqueda],
   )
 
-  const hayFiltros = !!(filtroTren || filtroDificultad || filtroObjetivo || busqueda.trim() || soloRenovar)
+  const hayFiltros = !!(filtroTren || filtroDificultad || filtroObjetivo || busqueda.trim())
+  /** Personalizadas vencidas + socios con una plantilla asignada vencida */
   const paraRenovar = asignadas.filter(r => r.paraRenovar).length
-  const resetFiltros = () => { setFiltroTren(''); setFiltroDificultad(''); setFiltroObjetivo(''); setBusqueda(''); setSoloRenovar(false) }
+    + plantillas.reduce((n, p) => n + (p.asignadosParaRenovar ?? 0), 0)
+  const resetFiltros = () => { setFiltroTren(''); setFiltroDificultad(''); setFiltroObjetivo(''); setBusqueda('') }
   const cambiarTab = (t: Tab) => { setTab(t); resetFiltros() }
 
   return {
     esStaff, tab, cambiarTab, asignadas, plantillas,
     filtroTren, setFiltroTren, filtroDificultad, setFiltroDificultad, filtroObjetivo, setFiltroObjetivo, busqueda, setBusqueda,
-    error, setError, cargando, lista, hayFiltros, resetFiltros, soloRenovar, setSoloRenovar, paraRenovar,
+    error, setError, cargando, lista, hayFiltros, resetFiltros, paraRenovar, verRenovar, setVerRenovar,
+    verAsignados, setVerAsignados, actualizarAsignados,
     confirmarEliminar, setConfirmarEliminar, confirmarEliminarRutina,
     guardarComoPlantilla, guardandoPlantillaId, alternarVisible, cambiandoVisible,
   }

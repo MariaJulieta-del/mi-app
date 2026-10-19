@@ -130,6 +130,55 @@ public class RutinaController {
     }
 
     // ──────────────────────────────────────────────
+    // ASIGNACIÓN DE PLANTILLAS (sin copiarlas)
+    // ──────────────────────────────────────────────
+
+    /** POST /api/v1/rutinas/{id}/asignar — { socioId } le asigna la plantilla al socio */
+    @PostMapping("/{id}/asignar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public RutinaResponseDTO asignar(@PathVariable Long id, @RequestBody java.util.Map<String, Object> body) {
+        return rutinaService.asignarPlantilla(id, socioDe(body));
+    }
+
+    /** DELETE /api/v1/rutinas/{id}/asignaciones/{socioId} — le saca la plantilla al socio */
+    @DeleteMapping("/{id}/asignaciones/{socioId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public ResponseEntity<Void> quitarAsignacion(@PathVariable Long id, @PathVariable Long socioId) {
+        rutinaService.quitarAsignacion(id, socioId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** POST /api/v1/rutinas/{id}/personalizar — { socioId, nombre? } copia la plantilla como rutina propia del socio */
+    @PostMapping("/{id}/personalizar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public RutinaResponseDTO personalizar(@PathVariable Long id, @RequestBody java.util.Map<String, Object> body) {
+        String nombre = body.get("nombre") == null ? null : body.get("nombre").toString().trim();
+        if (nombre != null && nombre.length() > 50) throw new IllegalArgumentException("El nombre no puede superar los 50 caracteres");
+        return rutinaService.personalizar(id, socioDe(body), nombre);
+    }
+
+    /** GET /api/v1/rutinas/{id}/asignados — socios que tienen asignada la plantilla */
+    @GetMapping("/{id}/asignados")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public List<com.example.gymtrack_backend.dto.AsignacionDTO> asignados(@PathVariable Long id) {
+        return rutinaService.asignadosDe(id);
+    }
+
+    /** GET /api/v1/rutinas/asignaciones — todas las plantillas asignadas (socios activos) */
+    @GetMapping("/asignaciones")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESOR')")
+    public List<com.example.gymtrack_backend.dto.AsignacionDTO> asignaciones() {
+        return rutinaService.asignaciones();
+    }
+
+    private static Long socioDe(java.util.Map<String, Object> body) {
+        Object s = body == null ? null : body.get("socioId");
+        if (s == null) throw new IllegalArgumentException("Falta el socio");
+        try { return Long.valueOf(s.toString()); }
+        catch (NumberFormatException e) { throw new IllegalArgumentException("Socio inválido"); }
+    }
+
+    // ──────────────────────────────────────────────
     // EJERCICIOS
     // ──────────────────────────────────────────────
 

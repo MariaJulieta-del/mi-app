@@ -2529,3 +2529,11 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-socio-plantilla-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
 .gt-pedidos-hoy .gt-reporte-fila { text-decoration: none; color: inherit; }
 .gt-socio-clase-botones { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+/* Plantillas asignadas: chip que abre la lista de socios y la lista */
+.gt-chip-boton { border: 1px solid var(--accent-border); background: var(--accent-light); color: var(--accent); cursor: pointer; font-family: inherit; }
+.gt-chip-boton:hover { filter: brightness(.97); }
+.gt-asignados { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.gt-asignados li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.gt-asignados li:last-child { border-bottom: none; }
+.gt-asignados-acciones { display: flex; gap: 6px; flex-wrap: wrap; }

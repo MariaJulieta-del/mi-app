@@ -1,5 +1,5 @@
 import axiosInstance from '../../../shared/services/axiosInstance'
-import type { Rutina, RutinaRequestDTO, Ejercicio, EjercicioRequestDTO } from '../types/Rutina'
+import type { Asignacion, Rutina, RutinaRequestDTO, Ejercicio, EjercicioRequestDTO } from '../types/Rutina'
 const API = '/api/v1/rutinas'
 const headers = (socioId: number | null) =>
   socioId != null ? { 'X-Socio-Id': socioId } : {}
@@ -41,6 +41,20 @@ export const clonarRutina = async (
   const res = await axiosInstance.post(`${API}/${rutinaId}/clonar`, { socioId: socioId ?? null, nombre: nombre ?? null })
   return res.data
 }
+// ── Plantillas asignadas (sin copiarlas) ──────────────────────────────────
+/** Le asigna la plantilla al socio tal cual: si cambia la plantilla, le llegan los cambios */
+export const asignarPlantilla = async (plantillaId: number, socioId: number): Promise<Rutina> =>
+  (await axiosInstance.post(`${API}/${plantillaId}/asignar`, { socioId })).data
+export const quitarAsignacion = async (plantillaId: number, socioId: number): Promise<void> => {
+  await axiosInstance.delete(`${API}/${plantillaId}/asignaciones/${socioId}`)
+}
+/** Copia la plantilla como rutina propia del socio para ajustarla (deja de estar asignada) */
+export const personalizarPlantilla = async (plantillaId: number, socioId: number, nombre?: string): Promise<Rutina> =>
+  (await axiosInstance.post(`${API}/${plantillaId}/personalizar`, { socioId, nombre: nombre ?? null })).data
+export const obtenerAsignados = async (plantillaId: number): Promise<Asignacion[]> =>
+  (await axiosInstance.get(`${API}/${plantillaId}/asignados`)).data
+export const obtenerAsignaciones = async (): Promise<Asignacion[]> =>
+  (await axiosInstance.get(`${API}/asignaciones`)).data
 // ── Ejercicios ────────────────────────────────────────────────────────────
 export const obtenerEjercicios = async (rutinaId: number, socioId: number | null): Promise<Ejercicio[]> => {
  const res = await axiosInstance.get(`${API}/${rutinaId}/ejercicios`, { headers: headers(socioId) })

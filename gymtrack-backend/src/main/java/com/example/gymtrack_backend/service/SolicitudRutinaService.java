@@ -29,6 +29,7 @@ public class SolicitudRutinaService {
     private final SocioRepository socioRepo;
     private final NotificacionRepository notificacionRepo;
     private final RutinaRepository rutinaRepo;
+    private final RutinasDelSocio rutinasDelSocio;
 
     public record Pedido(Long id, Long socioId, String socio, String telefono, String objetivo, Integer diasSemana, String mensaje,
                          String estado, LocalDateTime creada, String tomadaPor, LocalDateTime resuelta, String resueltaPor,
@@ -121,10 +122,7 @@ public class SolicitudRutinaService {
         s.setEstado(SolicitudRutina.HECHA);
         s.setResuelta(LocalDateTime.now());
         s.setResueltaPor(usuario());
-        rutinaRepo.findBySocioId(s.getSocio().getId()).stream()
-                .filter(r -> r.getFechaCreacion() != null)
-                .max(java.util.Comparator.comparing(ReglasRutina::inicio))
-                .ifPresent(r -> s.setRutinaId(r.getId()));
+        rutinasDelSocio.actual(s.getSocio().getId()).ifPresent(r -> s.setRutinaId(r.rutina().getId()));
         avisar(s.getSocio(), "Tu rutina está lista", "Tu profe ya te armó la rutina que pediste. Mirala en \"Rutina\".");
         return dto(s);
     }
@@ -132,7 +130,13 @@ public class SolicitudRutinaService {
     /** Lo llama RutinaService cuando el staff le crea o asigna una rutina al socio */
     @Transactional
     public void resolverConRutina(Rutina rutina) {
-        repo.abiertaDe(rutina.getSocio().getId()).ifPresent(s -> {
+        resolverCon(rutina.getSocio(), rutina);
+    }
+
+    /** Lo mismo cuando se le asigna una plantilla (la rutina es la plantilla) */
+    @Transactional
+    public void resolverCon(Socio socio, Rutina rutina) {
+        repo.abiertaDe(socio.getId()).ifPresent(s -> {
             s.setEstado(SolicitudRutina.HECHA);
             s.setResuelta(LocalDateTime.now());
             s.setResueltaPor(usuario());
@@ -176,8 +180,7 @@ public class SolicitudRutinaService {
     private Pedido dto(SolicitudRutina s) {
         Socio so = s.getSocio();
         String nombreRutina = s.getRutinaId() == null ? null : rutinaRepo.findById(s.getRutinaId()).map(Rutina::getNombre).orElse(null);
-        Rutina actual = rutinaRepo.findBySocioId(so.getId()).stream().filter(r -> ReglasRutina.inicio(r) != null)
-                .max(java.util.Comparator.comparing(ReglasRutina::inicio)).orElse(null);
+        Rutina actual = rutinasDelSocio.actual(so.getId()).map(RutinasDelSocio.RutinaDeSocio::rutina).orElse(null);
         return new Pedido(s.getId(), so.getId(), so.getNombre() + " " + so.getApellido(), so.getTelefono(), s.getObjetivo(), s.getDiasSemana(),
                 s.getMensaje(), s.getEstado(), s.getCreada(), s.getTomadaPor(), s.getResuelta(), s.getResueltaPor(),
                 s.getRutinaId(), nombreRutina, s.getMotivo(), actual == null ? null : actual.getId(), actual == null ? null : actual.getNombre());

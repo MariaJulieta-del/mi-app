@@ -4,6 +4,13 @@ import type { Rutina, Ejercicio } from '../types/Rutina'
 import { obtenerEjercicios } from '../services/rutinaService'
 import { TREN_CONFIG, TREN_DEFAULT, DIFICULTAD_CONFIG, OBJETIVO_CONFIG, DIAS_ORDER, etiquetaDia, esPlantilla } from '../utils/rutinaUtils'
 
+/** "3 socios · 1 para renovar" */
+function textoAsignados(r: Rutina) {
+  const n = r.cantidadAsignados ?? 0
+  const renovar = r.asignadosParaRenovar ?? 0
+  return `${n} ${n === 1 ? 'socio' : 'socios'}${renovar > 0 ? ` · ${renovar} para renovar` : ''}`
+}
+
 const DIA_CORTO: Record<string, string> = {
   Lunes: 'L', Martes: 'M', Miércoles: 'X', Jueves: 'J', Viernes: 'V', Sábado: 'S', Domingo: 'D',
 }
@@ -19,13 +26,15 @@ interface Props {
   mostrarSocio?: boolean
   /** Toda la tarjeta abre el detalle */
   href?: string
+  /** Plantillas: abre la lista de socios que la tienen asignada */
+  onVerAsignados?: () => void
 }
 
 /**
  * Tarjeta de rutina/plantilla: trenes, dificultad, días, cantidad de ejercicios
  * y una vista previa desplegable de los ejercicios organizados por día.
  */
-export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccionar, mostrarSocio, href }: Props) {
+export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccionar, mostrarSocio, href, onVerAsignados }: Props) {
   const [abierta, setAbierta] = useState(false)
   const [ejercicios, setEjercicios] = useState<Ejercicio[] | null>(null)
   const [cargando, setCargando] = useState(false)
@@ -68,6 +77,16 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
             rutina.paraRenovar
               ? <span className="gt-chip gt-chip-renovar" title={`Lleva ${rutina.semanasActual} semanas con estos ejercicios (el límite es ${rutina.semanasMax})`}>Renovar · {rutina.semanasActual} sem.</span>
               : <span className="gt-chip gt-chip-semana" title={`Se renueva a las ${rutina.semanasMax} semanas`}>Semana {(rutina.semanasActual ?? 0) + 1} de {rutina.semanasMax}</span>
+          )}
+          {esPlantilla(rutina) && (rutina.cantidadAsignados ?? 0) > 0 && (onVerAsignados
+            ? <button type="button" className="gt-chip gt-chip-boton" onClick={onVerAsignados} title="Ver los socios que la tienen asignada">
+                {textoAsignados(rutina)}
+              </button>
+            : <span className="gt-chip gt-chip-semana">{textoAsignados(rutina)}</span>
+          )}
+          {rutina.asignada && (
+            <span className="gt-chip" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+              title="Plantilla asignada tal cual: si cambia la plantilla, le llegan los cambios">Plantilla</span>
           )}
           {esPlantilla(rutina) && rutina.visibleSocios === false && (
             <span className="gt-chip gt-chip-semana" title="Los socios no la ven en su app">Oculta para socios</span>

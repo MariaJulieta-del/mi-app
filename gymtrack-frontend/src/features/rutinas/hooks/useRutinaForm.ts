@@ -70,6 +70,8 @@ export function useRutinaForm() {
 
   // ── Socio (admin) ──
   const [sinSocio, setSinSocio] = useState(esGeneral || !esAdmin)
+  /** Plantilla asignada a socios: los cambios les llegan a todos (-1 = asignada, sin saber a cuántos) */
+  const [usanPlantilla, setUsanPlantilla] = useState(0)
   const [busquedaSocio, setBusquedaSocio] = useState('')
   const [socioSel, setSocioSel] = useState<Socio | null>(null)
   const [mostrarBuscador, setMostrarBuscador] = useState(false)
@@ -124,8 +126,10 @@ export function useRutinaForm() {
         setDificultad(r.dificultad ?? '')
         setObjetivo(r.objetivo ?? '')
         setNotasProfe(r.notasProfe ?? '')
-        setDuenio({ id: r.socioId ?? null, nombre: r.socioNombre ?? null })
-        setSinSocio(r.socioId == null)
+        // Una plantilla asignada se edita como plantilla (cambia para todos los que la tienen)
+        setDuenio(r.asignada ? { id: null, nombre: null } : { id: r.socioId ?? null, nombre: r.socioNombre ?? null })
+        setSinSocio(r.socioId == null || !!r.asignada)
+        setUsanPlantilla(r.asignada ? -1 : r.socioId == null ? r.cantidadAsignados ?? 0 : 0)
         setEjercicios(ejs.filter(e => !e.esCalentamiento).map(e => ({
           id: e.id,
           catId: e.ejercicioCatalogoId,
@@ -372,7 +376,7 @@ export function useRutinaForm() {
 
   return {
     // Config
-    esAdmin, esEdicion, esGeneral, socioIdParam,
+    esAdmin, esEdicion, esGeneral, socioIdParam, usanPlantilla,
     navigate,
     // Form fields
     nombre, setNombre,

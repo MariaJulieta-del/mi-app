@@ -49,7 +49,7 @@ export default function PedidoRutinaSocio() {
   const enCurso = pedidoAbierto(pedido)
 
   return (
-    <section className="gt-card gt-socio-bloque gt-socio-pedido">
+    <section className="gt-card gt-socio-bloque gt-socio-pedido" id="otra-rutina">
       <div className="gt-socio-bloque-cab"><h3>¿Querés otra rutina?</h3></div>
 
       {enCurso && pedido ? (

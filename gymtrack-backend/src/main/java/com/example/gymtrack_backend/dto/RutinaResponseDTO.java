@@ -51,4 +51,16 @@ public class RutinaResponseDTO {
 
     /** Cantidad de días distintos (Día 1, Día 2…) que tiene la rutina */
     private int cantidadDias;
+
+    /**
+     * Plantilla asignada al socio (no es una copia). En ese caso socioId/socioNombre son del socio,
+     * fechaCreacion es la fecha de asignación y las semanas se cuentan desde ahí.
+     */
+    private boolean asignada;
+
+    /** Plantillas: a cuántos socios activos está asignada */
+    private long cantidadAsignados;
+
+    /** Plantillas: cuántos de esos socios ya pasaron el límite de semanas */
+    private long asignadosParaRenovar;
 }

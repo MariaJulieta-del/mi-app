@@ -21,6 +21,7 @@ public class ProgresoController {
 
     private final ProgresoEjercicioRepository progresoRepo;
     private final RutinaEjercicioRepository   rutinaEjercicioRepo;
+    private final com.example.gymtrack_backend.service.RutinasDelSocio rutinasDelSocio;
     private final SocioRepository             socioRepo;
     private final com.example.gymtrack_backend.security.AccesoSocio acceso;
 
@@ -39,8 +40,7 @@ public class ProgresoController {
         RutinaEjercicio re = rutinaEjercicioRepo.findById(reId)
                 .orElseThrow(() -> new RuntimeException("Ejercicio no encontrado"));
         // El ejercicio tiene que ser de una rutina de ese socio
-        Socio duenio = re.getRutina() != null ? re.getRutina().getSocio() : null;
-        if (duenio == null || !duenio.getId().equals(socioId)) {
+        if (!rutinasDelSocio.puedeUsar(socioId, re.getRutina())) {
             return ResponseEntity.status(403).body(Map.of("error", "Ese ejercicio no pertenece a una rutina del socio"));
         }
 

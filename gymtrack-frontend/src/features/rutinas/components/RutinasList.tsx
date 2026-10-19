@@ -5,6 +5,8 @@ import { usePedidosRutina } from '../../../shared/context/PedidosRutinaContext'
 import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { useRutinasList } from '../hooks/useRutinasList'
 import RutinaCard from './RutinaCard'
+import AsignadosPlantilla from './AsignadosPlantilla'
+import ParaRenovar from './ParaRenovar'
 import { TREN_CONFIG, DIFICULTAD_CONFIG, OBJETIVO_CONFIG, linkRutina, linkEditarRutina } from '../utils/rutinaUtils'
 import { EmptyState, PageHeader, Segmentado, SkeletonTarjetas } from '../../../shared/components/ui'
 
@@ -38,8 +40,7 @@ export default function RutinasList() {
             { valor: 'pedidos', texto: 'Pedidos', icono: Inbox, cuenta: pedidos || undefined },
           ]} />
           {r.paraRenovar > 0 && (
-            <button type="button" className={`gt-renovar-filtro${r.soloRenovar ? ' activo' : ''}`} aria-pressed={r.soloRenovar && r.tab === 'asignadas'}
-              onClick={() => { if (r.tab !== 'asignadas') r.cambiarTab('asignadas'); r.setSoloRenovar(!(r.soloRenovar && r.tab === 'asignadas')) }}>
+            <button type="button" className="gt-renovar-filtro" onClick={() => r.setVerRenovar(true)}>
               {r.paraRenovar} para renovar
             </button>
           )}
@@ -76,8 +77,9 @@ export default function RutinasList() {
       ) : r.lista.length === 0 ? (
         <div className="gt-card">
           <EmptyState icono={ClipboardList}
-            titulo={r.soloRenovar && r.tab === 'asignadas' && r.lista.length === 0 && !r.busqueda.trim() ? 'Ninguna rutina para renovar' : r.hayFiltros ? 'Ninguna rutina coincide' : r.tab === 'plantillas' ? 'Todavía no hay plantillas' : 'Todavía no hay rutinas asignadas'}
-            texto={r.hayFiltros ? 'Probá con otros filtros.' : r.tab === 'plantillas' ? 'Armá una vez y asignala a todos los socios que quieras.' : undefined}
+            titulo={r.hayFiltros ? 'Ninguna rutina coincide' : r.tab === 'plantillas' ? 'Todavía no hay plantillas' : 'Todavía no hay rutinas personalizadas'}
+            texto={r.hayFiltros ? 'Probá con otros filtros.' : r.tab === 'plantillas' ? 'Armá una vez y asignala a todos los socios que quieras.'
+              : 'Acá aparecen las rutinas armadas o ajustadas para un socio. Las plantillas asignadas se ven en cada plantilla.'}
             accion={r.esStaff && !r.hayFiltros && (
               <Link to={r.tab === 'plantillas' ? '/rutinas/nueva?general=true' : '/rutinas/asignar'} className="gt-btn gt-btn-primary">
                 {r.tab === 'plantillas' ? 'Crear la primera plantilla' : 'Asignar una rutina'}
@@ -88,6 +90,7 @@ export default function RutinasList() {
         <div className="gt-rutina-grid">
           {r.lista.map(rutina => (
             <RutinaCard key={rutina.id} rutina={rutina} mostrarSocio={r.esStaff} href={linkRutina(rutina, r.esStaff)}
+              onVerAsignados={r.esStaff && r.tab === 'plantillas' ? () => r.setVerAsignados(rutina) : undefined}
               acciones={
                 <>
                   {r.esStaff && r.tab === 'plantillas' && (
@@ -125,13 +128,20 @@ export default function RutinasList() {
         title={r.tab === 'plantillas' ? 'Eliminar plantilla' : 'Eliminar rutina'}
         message={r.confirmarEliminar
           ? r.tab === 'plantillas'
-            ? `¿Eliminar la plantilla "${r.confirmarEliminar.nombre}"? Las rutinas que ya asignaste a socios no se borran.`
+            ? (r.confirmarEliminar.cantidadAsignados ?? 0) > 0
+              ? `"${r.confirmarEliminar.nombre}" la tienen asignada ${r.confirmarEliminar.cantidadAsignados} socios. Para eliminarla, primero quitásela desde la lista de socios de la plantilla.`
+              : `¿Eliminar la plantilla "${r.confirmarEliminar.nombre}"? Las rutinas personalizadas que se copiaron de ella no se borran.`
             : `¿Eliminar "${r.confirmarEliminar.nombre}" de ${r.confirmarEliminar.socioNombre ?? 'este socio'}? Se pierden sus ejercicios y el progreso.`
           : ''}
         confirmLabel="Eliminar" danger
         onConfirm={r.confirmarEliminarRutina}
         onCancel={() => r.setConfirmarEliminar(null)}
       />
+      {r.verAsignados && (
+        <AsignadosPlantilla plantilla={r.verAsignados} onCerrar={() => r.setVerAsignados(null)}
+          onCambio={(n, renovar) => r.actualizarAsignados(r.verAsignados!.id!, n, renovar)} />
+      )}
+      {r.verRenovar && <ParaRenovar personalizadas={r.asignadas} onCerrar={() => r.setVerRenovar(false)} />}
     </>
   )
 }

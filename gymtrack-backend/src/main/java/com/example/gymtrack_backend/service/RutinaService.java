@@ -5,9 +5,11 @@ import com.example.gymtrack_backend.dto.EjercicioResponseDTO;
 import com.example.gymtrack_backend.dto.EjercicioUpdateDTO;
 import com.example.gymtrack_backend.dto.RutinaRequestDTO;
 import com.example.gymtrack_backend.dto.RutinaResponseDTO;
+import com.example.gymtrack_backend.dto.AsignacionDTO;
 import com.example.gymtrack_backend.entities.Ejercicio;
 import com.example.gymtrack_backend.entities.Rutina;
 import com.example.gymtrack_backend.entities.RutinaEjercicio;
+import com.example.gymtrack_backend.entities.RutinaAsignacion;
 import com.example.gymtrack_backend.entities.Socio;
 import com.example.gymtrack_backend.repository.EjercicioRepository;
 import com.example.gymtrack_backend.repository.ProgresoEjercicioRepository;
@@ -55,6 +57,12 @@ public class RutinaService {
     @Autowired
     @org.springframework.context.annotation.Lazy
     private SolicitudRutinaService solicitudes;
+
+    @Autowired
+    private com.example.gymtrack_backend.repository.RutinaAsignacionRepository asignacionRepo;
+
+    @Autowired
+    private RutinasDelSocio rutinasDelSocio;
 
     /** Cuántas plantillas puede elegirse un socio por semana (para que no llene su cuenta de rutinas) */
     public static final int ELEGIDAS_POR_SEMANA = 3;
@@ -106,19 +114,30 @@ public class RutinaService {
         return mapearAResponseDTO(guardada);
     }
 
-    /** Devuelve las rutinas generales (sin socio asignado). Solo para ADMIN. */
+    /** Devuelve las plantillas (sin socio), con cuántos socios la tienen asignada. Solo staff. */
+    @Transactional(readOnly = true)
     public List<RutinaResponseDTO> listarGenerales() {
+        int max = reglas.semanasMax();
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        java.util.Map<Long, List<RutinaAsignacion>> porPlantilla = asignacionRepo.deSociosActivos()
+            .stream().collect(Collectors.groupingBy(a -> a.getRutina().getId()));
         return rutinaRepository.findBySocioIsNull()
             .stream()
-            .map(this::mapearAResponseDTO)
+            .map(r -> {
+                RutinaResponseDTO d = mapearAResponseDTO(r);
+                List<RutinaAsignacion> as = porPlantilla.getOrDefault(r.getId(), List.of());
+                d.setCantidadAsignados(as.size());
+                d.setAsignadosParaRenovar(as.stream().filter(a -> ReglasRutina.semanas(RutinasDelSocio.inicio(a), hoy) >= max).count());
+                return d;
+            })
             .collect(Collectors.toList());
     }
 
-    /** Devuelve las rutinas de un socio (para rol SOCIO o EMPLEADO con filtro). */
+    /** Rutinas de un socio: las personalizadas y las plantillas que tiene asignadas */
+    @Transactional(readOnly = true)
     public List<RutinaResponseDTO> obtenerRutinas(Long socioId) {
-        return rutinaRepository.findBySocioId(socioId)
-            .stream()
-            .map(this::mapearAResponseDTO)
+        return rutinasDelSocio.de(socioId).stream()
+            .map(x -> x.asignada() ? mapearAsignacion(x.asignacion()) : mapearAResponseDTO(x.rutina()))
             .collect(Collectors.toList());
     }
 
@@ -133,7 +152,15 @@ public class RutinaService {
     @Transactional(readOnly = true)
     public RutinaResponseDTO obtenerRutina(Long rutinaId, Long socioId) {
         Rutina rutina = findRutina(rutinaId, socioId);
-        return mapearAResponseDTO(rutina);
+        // Una plantilla vista "como rutina del socio": con sus semanas desde que se la asignaron
+        if (socioId != null && rutina.getSocio() == null) {
+            var asignacion = asignacionRepo.findByRutinaIdAndSocioId(rutinaId, socioId);
+            if (asignacion.isPresent()) return mapearAsignacion(asignacion.get());
+        }
+        RutinaResponseDTO dto = mapearAResponseDTO(rutina);
+        // En el editor de una plantilla se avisa a cuántos socios les llegan los cambios
+        if (rutina.getSocio() == null && acceso.esStaff()) dto.setCantidadAsignados(asignacionRepo.dePlantilla(rutinaId).size());
+        return dto;
     }
 
     @Transactional
@@ -160,6 +187,13 @@ public class RutinaService {
     @Transactional
     public void eliminarRutina(Long rutinaId, Long socioId) {
         Rutina rutina = findRutina(rutinaId, socioId);
+        if (rutina.getSocio() == null) {
+            long usan = asignacionRepo.dePlantilla(rutinaId).size();
+            if (usan > 0) {
+                throw new IllegalStateException("La tienen asignada " + usan + (usan == 1 ? " socio" : " socios")
+                    + ". Quitásela o asignales otra antes de eliminarla.");
+            }
+        }
         // 1. Borrar progreso de todos los ejercicios de esta rutina
         progresoEjercicioRepository.deleteByRutinaId(rutinaId);
         // 2. Borrar todos los ejercicios de la rutina
@@ -464,27 +498,144 @@ public class RutinaService {
      */
     @Transactional
     public RutinaResponseDTO elegirPlantilla(Long socioId, Long plantillaId) {
-        Rutina plantilla = plantillaVisible(plantillaId);
+        plantillaVisible(plantillaId);
         if (rutinaEjercicioRepository.countByRutinaId(plantillaId) == 0) {
             throw new IllegalArgumentException("Esa plantilla todavía no tiene ejercicios");
         }
-        long recientes = rutinaRepository.findBySocioId(socioId).stream()
-            .filter(r -> Boolean.TRUE.equals(r.getElegidaPorSocio()) && r.getFechaCreacion() != null
-                && r.getFechaCreacion().isAfter(java.time.LocalDateTime.now().minusDays(7)))
+        java.time.LocalDateTime haceUnaSemana = java.time.LocalDateTime.now().minusDays(7);
+        long recientes = asignacionRepo.deSocio(socioId).stream()
+            .filter(a -> Boolean.TRUE.equals(a.getElegidaPorSocio()) && a.getFechaAsignacion().isAfter(haceUnaSemana))
+            .count()
+            // las que se copiaban antes de que existieran las asignaciones
+            + rutinaRepository.findBySocioId(socioId).stream()
+            .filter(r -> Boolean.TRUE.equals(r.getElegidaPorSocio()) && r.getFechaCreacion() != null && r.getFechaCreacion().isAfter(haceUnaSemana))
             .count();
         if (recientes >= ELEGIDAS_POR_SEMANA) {
             throw new IllegalStateException("Ya elegiste " + ELEGIDAS_POR_SEMANA + " plantillas esta semana. Si ninguna te sirve, pedile una personalizada a tu profe.");
         }
-        boolean yaLaTiene = rutinaRepository.findBySocioId(socioId).stream()
-            .anyMatch(r -> plantillaId.equals(r.getPlantillaOrigenId()));
+        boolean yaLaTiene = asignacionRepo.existsByRutinaIdAndSocioId(plantillaId, socioId)
+            || rutinaRepository.findBySocioId(socioId).stream().anyMatch(r -> plantillaId.equals(r.getPlantillaOrigenId()));
         if (yaLaTiene) throw new IllegalStateException("Ya tenés esta rutina en tu lista");
+        return mapearAsignacion(crearAsignacion(plantillaId, socioId, true));
+    }
 
-        RutinaResponseDTO copia = clonarRutina(plantillaId, socioId, plantilla.getNombre());
+    // ──────────────────────────────────────────────
+    // ASIGNACIÓN DE PLANTILLAS (sin copiarlas)
+    // ──────────────────────────────────────────────
+
+    /**
+     * Le asigna una plantilla a un socio. No se copia: el socio la hace tal cual y la plantilla
+     * sabe a quiénes está asignada. Si ya la tenía, vuelve a empezar a contar las semanas.
+     */
+    @Transactional
+    public RutinaResponseDTO asignarPlantilla(Long plantillaId, Long socioId) {
+        Rutina plantilla = plantilla(plantillaId);
+        if (rutinaEjercicioRepository.findByRutinaIdOrderByOrden(plantillaId).stream().allMatch(RutinaEjercicio::isEsCalentamiento)) {
+            throw new IllegalArgumentException("La plantilla no tiene ejercicios todavía: agregale alguno antes de asignarla");
+        }
+        RutinaAsignacion a = asignacionRepo.findByRutinaIdAndSocioId(plantillaId, socioId).orElse(null);
+        if (a != null) {
+            a.setFechaAsignacion(java.time.LocalDateTime.now());
+            a.setAsignadaPor(usuario());
+            a.setElegidaPorSocio(false);
+            a = asignacionRepo.save(a);
+        } else {
+            a = crearAsignacion(plantillaId, socioId, false);
+        }
+        if (acceso.esStaff()) solicitudes.resolverCon(a.getSocio(), plantilla);
+        return mapearAsignacion(a);
+    }
+
+    /** Le saca la plantilla al socio (no borra la plantilla ni el progreso que registró) */
+    @Transactional
+    public void quitarAsignacion(Long plantillaId, Long socioId) {
+        RutinaAsignacion a = asignacionRepo.findByRutinaIdAndSocioId(plantillaId, socioId)
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Ese socio no tiene asignada esta plantilla"));
+        asignacionRepo.delete(a);
+    }
+
+    /**
+     * Para ajustarle la plantilla a un socio: se copia como rutina personalizada suya
+     * y deja de estar vinculada a la plantilla.
+     */
+    @Transactional
+    public RutinaResponseDTO personalizar(Long plantillaId, Long socioId, String nombre) {
+        Rutina plantilla = plantilla(plantillaId);
+        RutinaResponseDTO copia = clonarRutina(plantillaId, socioId,
+            nombre != null && !nombre.isBlank() ? nombre.trim() : plantilla.getNombre());
         Rutina nueva = rutinaRepository.findById(copia.getId()).orElseThrow();
-        nueva.setElegidaPorSocio(true);
         nueva.setPlantillaOrigenId(plantillaId);
-        nueva.setFechaRenovacion(java.time.LocalDateTime.now());
+        asignacionRepo.findByRutinaIdAndSocioId(plantillaId, socioId).ifPresent(asignacionRepo::delete);
         return mapearAResponseDTO(rutinaRepository.save(nueva));
+    }
+
+    /** Socios que tienen asignada una plantilla */
+    @Transactional(readOnly = true)
+    public List<AsignacionDTO> asignadosDe(Long plantillaId) {
+        plantilla(plantillaId);
+        return asignacionRepo.dePlantilla(plantillaId).stream().map(this::asignacionDTO).toList();
+    }
+
+    /** Todas las asignaciones de socios activos (para ver qué rutinas hay que renovar) */
+    @Transactional(readOnly = true)
+    public List<AsignacionDTO> asignaciones() {
+        return asignacionRepo.deSociosActivos().stream().map(this::asignacionDTO)
+            .sorted(java.util.Comparator.comparingLong(AsignacionDTO::semanas).reversed())
+            .toList();
+    }
+
+    private RutinaAsignacion crearAsignacion(Long plantillaId, Long socioId, boolean elegidaPorSocio) {
+        Socio socio = socioRepository.findById(socioId)
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Socio no encontrado con id: " + socioId));
+        if (!Boolean.TRUE.equals(socio.getActivo())) throw new IllegalStateException("El socio está dado de baja");
+        RutinaAsignacion a = new RutinaAsignacion();
+        a.setRutina(rutinaRepository.getReferenceById(plantillaId));
+        a.setSocio(socio);
+        a.setFechaAsignacion(java.time.LocalDateTime.now());
+        a.setAsignadaPor(elegidaPorSocio ? "socio" : usuario());
+        a.setElegidaPorSocio(elegidaPorSocio);
+        return asignacionRepo.save(a);
+    }
+
+    private Rutina plantilla(Long plantillaId) {
+        Rutina r = rutinaRepository.findById(plantillaId)
+            .orElseThrow(() -> new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Plantilla no encontrada"));
+        if (r.getSocio() != null) throw new IllegalArgumentException("Esa rutina es de un socio, no es una plantilla");
+        return r;
+    }
+
+    private AsignacionDTO asignacionDTO(RutinaAsignacion a) {
+        int max = reglas.semanasMax();
+        java.time.LocalDateTime desde = RutinasDelSocio.inicio(a);
+        long semanas = ReglasRutina.semanas(desde, java.time.LocalDate.now());
+        Socio s = a.getSocio();
+        return new AsignacionDTO(a.getRutina().getId(), a.getRutina().getNombre(),
+            s.getId(), s.getNombre() + " " + s.getApellido(), a.getFechaAsignacion(), desde, semanas, max, semanas >= max,
+            Boolean.TRUE.equals(a.getElegidaPorSocio()), a.getAsignadaPor());
+    }
+
+    /** Una plantilla vista como rutina del socio que la tiene asignada */
+    private RutinaResponseDTO mapearAsignacion(RutinaAsignacion a) {
+        RutinaResponseDTO dto = mapearAResponseDTO(a.getRutina());
+        Socio s = a.getSocio();
+        java.time.LocalDateTime desde = RutinasDelSocio.inicio(a);
+        long semanas = ReglasRutina.semanas(desde, java.time.LocalDate.now());
+        dto.setAsignada(true);
+        dto.setSocioId(s.getId());
+        dto.setSocioNombre(s.getNombre() + " " + s.getApellido());
+        dto.setFechaCreacion(a.getFechaAsignacion());
+        dto.setFechaRenovacion(desde);
+        dto.setSemanasActual(semanas);
+        dto.setParaRenovar(semanas >= dto.getSemanasMax());
+        dto.setElegidaPorSocio(a.getElegidaPorSocio());
+        dto.setVisibleSocios(null);
+        return dto;
+    }
+
+    private static String usuario() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String u = auth == null ? "sistema" : auth.getName();
+        return u.length() > 50 ? u.substring(0, 50) : u;
     }
 
     private Rutina plantillaVisible(Long plantillaId) {
@@ -518,7 +669,8 @@ public class RutinaService {
             if (socioRutina != null && !socioRutina.getId().equals(socioId)) {
                 throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada");
             }
-            if (socioRutina == null && !Boolean.TRUE.equals(rutina.getVisibleSocios()) && !acceso.esStaff()) {
+            if (socioRutina == null && !Boolean.TRUE.equals(rutina.getVisibleSocios()) && !acceso.esStaff()
+                    && !asignacionRepo.existsByRutinaIdAndSocioId(rutinaId, socioId)) {
                 throw new com.example.gymtrack_backend.web.RecursoNoEncontradoException("Rutina no encontrada");
             }
         }

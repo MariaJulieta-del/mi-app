@@ -4,7 +4,8 @@ import { useAuth } from '../../../shared/context/AuthContext'
 import { useToast } from '../../../shared/hooks/useToast'
 import { obtenerPorId } from '../services/socioService'
 import { obtenerPorSocio, cambiarEstado } from '../../membresias/services/membresiaService'
-import { obtenerRutinas, obtenerEjercicios, eliminarRutina } from '../../rutinas/services/rutinaService'
+import { obtenerRutinas, obtenerEjercicios, eliminarRutina, quitarAsignacion, personalizarPlantilla } from '../../rutinas/services/rutinaService'
+import { linkEditarRutina } from '../../rutinas/utils/rutinaUtils'
 import { guardarProgreso } from '../../rutinas/services/progresoService'
 import { listarMaquinas, type Maquina } from '../../maquinas/services/maquinaService'
 import { obtenerFicha } from '../services/fichaService'
@@ -121,9 +122,12 @@ export function useSocioPerfil() {
 
   const handleEliminarRutina = async (rutinaId: number) => {
     setEliminandoRutinaId(rutinaId)
+    const asignada = rutinas.find(r => r.id === rutinaId)?.asignada
     try {
-      await eliminarRutina(rutinaId, id)
-      toast.success('Rutina eliminada', 'La rutina fue eliminada correctamente')
+      // Una plantilla asignada no se borra: se le quita al socio
+      if (asignada) await quitarAsignacion(rutinaId, id)
+      else await eliminarRutina(rutinaId, id)
+      toast.success(asignada ? 'Plantilla quitada' : 'Rutina eliminada', asignada ? 'La plantilla sigue disponible para otros socios' : 'La rutina fue eliminada correctamente')
       await cargar()
     } catch (e) {
       setError(mensajeError(e, 'No se pudo eliminar la rutina'))
@@ -138,6 +142,19 @@ export function useSocioPerfil() {
     })
   }
 
+  /** Copia la plantilla asignada como rutina propia del socio y abre el editor */
+  const ajustarPlantilla = async (r: Rutina) => {
+    if (!r.id) return
+    setEliminandoRutinaId(r.id)
+    try {
+      const nueva = await personalizarPlantilla(r.id, id)
+      navigate(linkEditarRutina(nueva, true))
+    } catch (e) {
+      setError(mensajeError(e, 'No se pudo copiar la rutina'))
+      setEliminandoRutinaId(null)
+    }
+  }
+
   return {
     id, socio, membresia, rutinas, maquinas, observacionesMedicas,
     ejerciciosPorRutina, cargandoEjs, cargando, error, setError,
@@ -145,7 +162,7 @@ export function useSocioPerfil() {
     // Membresía
     confirmarCancelar, setConfirmarCancelar, handleCancelarMembresia,
     // Rutinas
-    confirmarEliminarRutinaId, setConfirmarEliminarRutinaId, eliminandoRutinaId, handleEliminarRutina,
+    confirmarEliminarRutinaId, setConfirmarEliminarRutinaId, eliminandoRutinaId, handleEliminarRutina, ajustarPlantilla,
     // Mi semana
     diaSeleccionado, setDiaSeleccionado, expandedEjs, toggleExpandedEj,
     progresoHoy, setProgresoHoy, guardandoProgreso, handleGuardarProgreso,

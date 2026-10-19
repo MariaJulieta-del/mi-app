@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ClipboardList, PartyPopper, Pencil } from 'lucide-react'
 import { useAsignarRutina } from '../hooks/useAsignarRutina'
 import RutinaCard from '../components/RutinaCard'
-import { TREN_CONFIG, OBJETIVO_CONFIG, DIFICULTAD_CONFIG, linkRutina } from '../utils/rutinaUtils'
+import { TREN_CONFIG, OBJETIVO_CONFIG, DIFICULTAD_CONFIG } from '../utils/rutinaUtils'
 
 const PASOS = ['Socio', '¿Cómo la armás?', 'Elegir plantilla', 'Listo']
 
@@ -42,11 +42,12 @@ export default function AsignarRutinaPage() {
           <p style={{ margin: '0 0 8px', color: 'var(--accent)' }}><PartyPopper size={44} aria-hidden /></p>
           <h2 style={{ margin: '0 0 6px', color: 'var(--text-primary)' }}>¡Rutina asignada!</h2>
           <p className="gt-text-muted" style={{ margin: '0 0 20px' }}>
-            <strong>{a.asignada.nombre}</strong> ya figura en el perfil de {a.socio.nombre} {a.socio.apellido}.
-            Es una copia: podés ajustarla sin tocar la plantilla original.
+            <strong>{a.asignada.nombre}</strong> ya figura en el perfil de {a.socio.nombre} {a.socio.apellido} y en su app.
+            No es una copia: queda en la lista de socios de la plantilla y, si la cambiás, le llegan los cambios.
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to={linkRutina(a.asignada, true)} className="gt-btn gt-btn-primary">Ajustar ejercicios / pesos</Link>
+            <button type="button" className="gt-btn gt-btn-secondary" onClick={a.ajustar} disabled={a.asignando}
+              title="Se copia como rutina personalizada solo para este socio">Ajustar solo para {a.socio.nombre}</button>
             <Link to={`/socios/${a.socio.id}/perfil`} className="gt-btn gt-btn-secondary">Ir al perfil del socio</Link>
             <button className="gt-btn gt-btn-secondary" onClick={a.reiniciar}>Asignar otra</button>
           </div>
@@ -99,7 +100,7 @@ export default function AsignarRutinaPage() {
                   <p className="gt-choice-icon"><ClipboardList size={28} aria-hidden /></p>
                   <p className="gt-choice-title">Usar una plantilla</p>
                   <p className="gt-choice-desc">
-                    Lo más rápido. Elegís una rutina modelo ({a.plantillas.length} disponibles), se copia al socio y después la ajustás si hace falta.
+                    Lo más rápido. Elegís una rutina modelo ({a.plantillas.length} disponibles), se le asigna tal cual y, si hace falta, la copiás para ajustarla solo para él.
                   </p>
                 </button>
                 <button type="button" className="gt-choice" onClick={() => a.elegirModo('personalizada')}>
@@ -166,12 +167,25 @@ export default function AsignarRutinaPage() {
 
               {a.plantillaSel && (
                 <div style={{ marginTop: 18, padding: 16, borderRadius: 10, background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
-                  <label className="gt-label" htmlFor="asignarrutinap-campo-1">Nombre de la rutina para {a.socio.nombre}</label>
-                  <input id="asignarrutinap-campo-1" className="gt-input" style={{ maxWidth: 420 }} value={a.nombre} onChange={e => a.setNombre(e.target.value)} />
-                  <p className="gt-hint">Se crea una copia de "{a.plantillaSel.nombre}" para este socio. La plantilla original no cambia.</p>
-                  <button className="gt-btn gt-btn-primary" style={{ marginTop: 12 }} onClick={a.asignar} disabled={a.asignando || !a.nombre.trim()}>
-                    {a.asignando ? 'Asignando…' : `Asignar a ${a.socio.nombre}`}
-                  </button>
+                  <p style={{ margin: '0 0 4px', fontWeight: 700, color: 'var(--text-primary)' }}>"{a.plantillaSel.nombre}" para {a.socio.nombre}</p>
+                  <p className="gt-hint" style={{ margin: 0 }}>
+                    Se le asigna tal cual, sin hacer una copia: aparece en la lista de socios de la plantilla y, si cambiás la plantilla, le llegan los cambios.
+                    Si necesitás cambiarle ejercicios o pesos solo a él, usá "Copiar y ajustar".
+                  </p>
+                  {a.yaLaTiene && (
+                    <div className="gt-alert gt-alert-info" style={{ margin: '10px 0 0' }}>
+                      Ya la tiene asignada: si la asignás de nuevo, las semanas se vuelven a contar desde hoy.
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+                    <button type="button" className="gt-btn gt-btn-primary" onClick={a.asignar} disabled={a.asignando}>
+                      {a.asignando ? 'Asignando…' : `Asignar a ${a.socio.nombre}`}
+                    </button>
+                    <button type="button" className="gt-btn gt-btn-secondary" onClick={a.ajustar} disabled={a.asignando}
+                      title="Se copia como rutina personalizada para cambiarle ejercicios o pesos">
+                      Copiar y ajustar para {a.socio.nombre}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

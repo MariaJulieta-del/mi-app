@@ -40,6 +40,7 @@ public class RetencionService {
     private final AsistenciaRepository asistenciaRepo;
     private final ReglasRutina reglas;
     private final RutinaRepository rutinaRepo;
+    private final RutinasDelSocio rutinasDelSocio;
     private final BajaSocioRepository bajaRepo;
     private final AccionRetencionRepository accionRepo;
     private final NotificacionRepository notificacionRepo;
@@ -123,12 +124,11 @@ public class RetencionService {
 
             // ── Rutina ──
             if (!vino.isEmpty() && ChronoUnit.DAYS.between(vino.last(), hoy) <= 14) {
-                Rutina actual = rutinaRepo.findBySocioId(s.getId()).stream().filter(r -> ReglasRutina.inicio(r) != null)
-                        .max(Comparator.comparing(ReglasRutina::inicio)).orElse(null);
+                var actual = rutinasDelSocio.actual(s.getId()).orElse(null);
                 if (actual == null) {
                     tarea(s, "SIN_RUTINA", 30, "¡Hola " + nombre + "! Vimos que todavía no tenés una rutina armada en la app. Pasá por el salón y el profe te arma una a tu medida.", cuenta);
                 } else {
-                    long semanas = ReglasRutina.semanas(actual, hoy);
+                    long semanas = ReglasRutina.semanas(actual.inicio(), hoy);
                     if (semanas >= reglas.semanasMax()) {
                         tarea(s, "RUTINA_VIEJA", 30, "¡Hola " + nombre + "! Hace " + semanas + " semanas que hacés la misma rutina: es un buen momento para renovarla y seguir progresando. ¿Cuándo venís así la armamos?", cuenta);
                     }

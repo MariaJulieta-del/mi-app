@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Camera, ClipboardList, Pencil, Trash2 } from 'lucide-react'
+import { Camera, ClipboardList, Pencil, Trash2, UserMinus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { useToast } from '../../../shared/hooks/useToast'
@@ -165,7 +165,7 @@ export default function SocioPerfilPage() {
             <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-choice gt-sin-subrayado">
               <p className="gt-choice-icon"><ClipboardList size={28} aria-hidden /></p>
               <p className="gt-choice-title">Asignar una plantilla</p>
-              <p className="gt-choice-desc">Elegí una rutina modelo y se copia a {socio.nombre}.</p>
+              <p className="gt-choice-desc">Elegí una rutina modelo y se le asigna a {socio.nombre}.</p>
             </Link>
             <Link to={`/rutinas/nueva?socioId=${id}`} className="gt-choice gt-sin-subrayado">
               <p className="gt-choice-icon"><Pencil size={28} aria-hidden /></p>
@@ -178,8 +178,11 @@ export default function SocioPerfilPage() {
         <>
         {!esSocio && rutinas.filter(r => r.paraRenovar).map(r => (
           <div key={r.id} className="gt-alert gt-alert-warning gt-renovar-aviso" role="note">
-            <span><strong>{r.nombre}</strong> lleva {r.semanasActual} semanas con los mismos ejercicios (el gimnasio las renueva cada {r.semanasMax}). Cambiale los ejercicios para que siga progresando.</span>
-            <Link to={linkEditarRutina(r, true)} className="gt-btn gt-btn-secondary gt-btn-sm">Renovar</Link>
+            <span><strong>{r.nombre}</strong> lleva {r.semanasActual} semanas con los mismos ejercicios (el gimnasio las renueva cada {r.semanasMax}).
+              {r.asignada ? ' Asignale otra plantilla o una rutina a medida para que siga progresando.' : ' Cambiale los ejercicios para que siga progresando.'}</span>
+            {r.asignada
+              ? <Link to={`/rutinas/asignar?socioId=${id}`} className="gt-btn gt-btn-secondary gt-btn-sm">Asignar otra</Link>
+              : <Link to={linkEditarRutina(r, true)} className="gt-btn gt-btn-secondary gt-btn-sm">Renovar</Link>}
           </div>
         ))}
         <div className="gt-rutina-grid gt-mb-20">
@@ -187,10 +190,16 @@ export default function SocioPerfilPage() {
             <RutinaCard key={r.id} rutina={r} acciones={
               <>
                 <Link to={`/rutinas/${r.id}?socioId=${id}`}>Abrir</Link>
-                {!esSocio && <Link to={linkEditarRutina(r, true)}>Editar</Link>}
+                {!esSocio && (r.asignada
+                  ? <button type="button" disabled={p.eliminandoRutinaId === r.id} onClick={() => p.ajustarPlantilla(r)}
+                      title="Copiarla como rutina propia para cambiarle ejercicios o pesos">Ajustar</button>
+                  : <Link to={linkEditarRutina(r, true)}>Editar</Link>)}
                 {!esSocio && (
                   <button type="button" className="peligro" disabled={p.eliminandoRutinaId === r.id}
-                    onClick={() => p.setConfirmarEliminarRutinaId(r.id!)} aria-label={`Eliminar ${r.nombre}`}><Trash2 size={15} aria-hidden /></button>
+                    onClick={() => p.setConfirmarEliminarRutinaId(r.id!)}
+                    aria-label={r.asignada ? `Quitarle ${r.nombre}` : `Eliminar ${r.nombre}`} title={r.asignada ? 'Quitar plantilla' : 'Eliminar'}>
+                    {r.asignada ? <UserMinus size={15} aria-hidden /> : <Trash2 size={15} aria-hidden />}
+                  </button>
                 )}
               </>
             } />
@@ -222,9 +231,11 @@ export default function SocioPerfilPage() {
 
       <ConfirmModal
         open={p.confirmarEliminarRutinaId !== null}
-        title="Eliminar rutina"
-        message="¿Eliminar esta rutina? Se borran sus ejercicios y el progreso registrado."
-        confirmLabel="Sí, eliminar" cancelLabel="Cancelar" danger
+        title={rutinas.find(r => r.id === p.confirmarEliminarRutinaId)?.asignada ? 'Quitar plantilla' : 'Eliminar rutina'}
+        message={rutinas.find(r => r.id === p.confirmarEliminarRutinaId)?.asignada
+          ? `¿Quitarle esta plantilla a ${socio.nombre}? La plantilla sigue disponible para otros socios y el progreso no se borra.`
+          : '¿Eliminar esta rutina? Se borran sus ejercicios y el progreso registrado.'}
+        confirmLabel={rutinas.find(r => r.id === p.confirmarEliminarRutinaId)?.asignada ? 'Quitar' : 'Sí, eliminar'} cancelLabel="Cancelar" danger
         onConfirm={() => p.confirmarEliminarRutinaId !== null && p.handleEliminarRutina(p.confirmarEliminarRutinaId)}
         onCancel={() => p.setConfirmarEliminarRutinaId(null)}
       />

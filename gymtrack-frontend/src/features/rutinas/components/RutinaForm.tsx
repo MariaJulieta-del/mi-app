@@ -103,6 +103,13 @@ export default function RutinaForm() {
         </div>
       </div>
 
+      {f.usanPlantilla !== 0 && (
+        <div className="gt-alert gt-alert-warning" style={{ marginBottom: 16 }}>
+          Esta plantilla la tienen asignada {f.usanPlantilla > 0 ? `${f.usanPlantilla} ${f.usanPlantilla === 1 ? 'socio' : 'socios'}` : 'socios'}:
+          los cambios les llegan a todos. Para cambiarla solo para uno, usá "Ajustar" en su perfil o en la lista de socios de la plantilla.
+        </div>
+      )}
+
       {f.error && (
         <div className="gt-alert gt-alert-error" style={{ marginBottom: 16 }}>
           {f.error}

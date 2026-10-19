@@ -30,6 +30,31 @@ export interface Rutina {
   visibleSocios?: boolean
   /** La eligió el propio socio desde las plantillas */
   elegidaPorSocio?: boolean
+  /**
+   * Plantilla asignada al socio (no es una copia): socioId/socioNombre son del socio y las semanas
+   * se cuentan desde que se la asignaron. Para ajustarla solo para él, se personaliza.
+   */
+  asignada?: boolean
+  /** Plantillas: a cuántos socios está asignada */
+  cantidadAsignados?: number
+  /** Plantillas: cuántos de esos socios ya tienen que renovarla */
+  asignadosParaRenovar?: number
+}
+
+/** Un socio que tiene asignada una plantilla */
+export interface Asignacion {
+  plantillaId: number
+  plantillaNombre: string
+  socioId: number
+  socioNombre: string
+  fechaAsignacion: string
+  /** Desde cuándo la hace tal como está (asignación o último cambio de la plantilla) */
+  desde: string
+  semanas: number
+  semanasMax: number
+  paraRenovar: boolean
+  elegidaPorSocio: boolean
+  asignadaPor?: string | null
 }
 // DTO para crear o actualizar una rutina
 export interface RutinaRequestDTO {

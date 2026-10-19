@@ -30,6 +30,7 @@ public class SesionController {
     private final SesionEntrenamientoRepository sesionRepo;
     private final SocioRepository socioRepo;
     private final RutinaRepository rutinaRepo;
+    private final com.example.gymtrack_backend.service.RutinasDelSocio rutinasDelSocio;
     private final AccesoSocio acceso;
 
     public record Sesion(Long id, Long socioId, String socioNombre, String telefono, Long rutinaId, String rutinaNombre,
@@ -64,8 +65,8 @@ public class SesionController {
         s.setSocio(socio);
         if (body.get("rutinaId") != null) {
             Rutina r = rutinaRepo.findById(Long.valueOf(body.get("rutinaId").toString())).orElse(null);
-            // Solo rutinas del propio socio
-            if (r != null && r.getSocio() != null && r.getSocio().getId().equals(socioId)) {
+            // Solo rutinas del propio socio (suyas o plantillas que tiene asignadas)
+            if (rutinasDelSocio.puedeUsar(socioId, r)) {
                 s.setRutina(r);
                 s.setRutinaNombre(r.getNombre());
             }

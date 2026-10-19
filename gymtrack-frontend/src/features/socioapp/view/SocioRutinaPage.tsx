@@ -123,6 +123,12 @@ function AntiguedadRutina({ semanas, max, desde, renovar }: { semanas: number; m
           {renovar ? 'Ya es momento de cambiarla: pedile a tu profe que te la renueve para seguir progresando.'
             : faltan != null ? (faltan <= 1 ? 'Esta es la última semana: después toca renovarla.' : `Te quedan ${faltan} semanas antes de renovarla.`) : ''}
         </span>
+        {renovar && (
+          <a href="#otra-rutina" className="gt-btn gt-btn-primary gt-btn-sm" style={{ marginTop: 8, alignSelf: 'flex-start' }}
+            onClick={e => { e.preventDefault(); document.getElementById('otra-rutina')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+            Pedir una rutina nueva
+          </a>
+        )}
         {max != null && (
           <div className="gt-socio-antiguedad-barra" role="img" aria-label={`Semana ${Math.min(actual, max)} de ${max}`}>
             <div style={{ width: `${pct}%` }} />
