@@ -121,10 +121,12 @@ public class RutinaService {
         java.time.LocalDate hoy = java.time.LocalDate.now();
         java.util.Map<Long, List<RutinaAsignacion>> porPlantilla = asignacionRepo.deSociosActivos()
             .stream().collect(Collectors.groupingBy(a -> a.getRutina().getId()));
-        return rutinaRepository.findBySocioIsNull()
+        List<Rutina> plantillas = rutinaRepository.findBySocioIsNull();
+        java.util.Map<Long, Conteo> cs = conteos(plantillas.stream().map(Rutina::getId).toList());
+        return plantillas
             .stream()
             .map(r -> {
-                RutinaResponseDTO d = mapearAResponseDTO(r);
+                RutinaResponseDTO d = mapearAResponseDTO(r, cs.get(r.getId()));
                 List<RutinaAsignacion> as = porPlantilla.getOrDefault(r.getId(), List.of());
                 d.setCantidadAsignados(as.size());
                 d.setAsignadosParaRenovar(as.stream().filter(a -> ReglasRutina.semanas(RutinasDelSocio.inicio(a), hoy) >= max).count());
@@ -136,16 +138,20 @@ public class RutinaService {
     /** Rutinas de un socio: las personalizadas y las plantillas que tiene asignadas */
     @Transactional(readOnly = true)
     public List<RutinaResponseDTO> obtenerRutinas(Long socioId) {
-        return rutinasDelSocio.de(socioId).stream()
-            .map(x -> x.asignada() ? mapearAsignacion(x.asignacion()) : mapearAResponseDTO(x.rutina()))
+        List<RutinasDelSocio.RutinaDeSocio> lista = rutinasDelSocio.de(socioId);
+        java.util.Map<Long, Conteo> cs = conteos(lista.stream().map(x -> x.rutina().getId()).toList());
+        return lista.stream()
+            .map(x -> x.asignada() ? mapearAsignacion(x.asignacion(), cs.get(x.rutina().getId())) : mapearAResponseDTO(x.rutina(), cs.get(x.rutina().getId())))
             .collect(Collectors.toList());
     }
 
     /** Devuelve TODAS las rutinas del sistema (para rol ADMIN). */
     public List<RutinaResponseDTO> listarTodas() {
-        return rutinaRepository.findAll()
+        List<Rutina> todas = rutinaRepository.findAll();
+        java.util.Map<Long, Conteo> cs = conteos(todas.stream().map(Rutina::getId).toList());
+        return todas
             .stream()
-            .map(this::mapearAResponseDTO)
+            .map(r -> mapearAResponseDTO(r, cs.get(r.getId())))
             .collect(Collectors.toList());
     }
 
@@ -475,9 +481,11 @@ public class RutinaService {
     /** Plantillas que el socio puede ver: generales, visibles y con al menos un ejercicio */
     @Transactional(readOnly = true)
     public List<RutinaResponseDTO> plantillasParaSocios() {
-        return rutinaRepository.findBySocioIsNull().stream()
-            .filter(r -> Boolean.TRUE.equals(r.getVisibleSocios()))
-            .map(this::mapearAResponseDTO)
+        List<Rutina> visibles = rutinaRepository.findBySocioIsNull().stream()
+            .filter(r -> Boolean.TRUE.equals(r.getVisibleSocios())).toList();
+        java.util.Map<Long, Conteo> cs = conteos(visibles.stream().map(Rutina::getId).toList());
+        return visibles.stream()
+            .map(r -> mapearAResponseDTO(r, cs.get(r.getId())))
             .filter(d -> d.getCantidadEjercicios() > 0)
             .map(d -> { d.setNotasProfe(null); return d; })   // las notas internas no salen
             .sorted(java.util.Comparator.comparing(RutinaResponseDTO::getNombre, String.CASE_INSENSITIVE_ORDER))
@@ -616,7 +624,11 @@ public class RutinaService {
 
     /** Una plantilla vista como rutina del socio que la tiene asignada */
     private RutinaResponseDTO mapearAsignacion(RutinaAsignacion a) {
-        RutinaResponseDTO dto = mapearAResponseDTO(a.getRutina());
+        return mapearAsignacion(a, conteos(List.of(a.getRutina().getId())).get(a.getRutina().getId()));
+    }
+
+    private RutinaResponseDTO mapearAsignacion(RutinaAsignacion a, Conteo conteo) {
+        RutinaResponseDTO dto = mapearAResponseDTO(a.getRutina(), conteo);
         Socio s = a.getSocio();
         java.time.LocalDateTime desde = RutinasDelSocio.inicio(a);
         long semanas = ReglasRutina.semanas(desde, java.time.LocalDate.now());
@@ -677,7 +689,24 @@ public class RutinaService {
         return rutina;
     }
 
+    /** Ejercicios (sin la entrada en calor) y días distintos de una rutina */
+    private record Conteo(int ejercicios, int dias) {}
+
+    /** Conteos de varias rutinas en una sola consulta */
+    private java.util.Map<Long, Conteo> conteos(java.util.Collection<Long> ids) {
+        java.util.Map<Long, Conteo> m = new java.util.HashMap<>();
+        if (ids.isEmpty()) return m;
+        for (Object[] f : rutinaEjercicioRepository.resumenPorRutina(ids)) {
+            m.put((Long) f[0], new Conteo(((Number) f[1]).intValue(), ((Number) f[2]).intValue()));
+        }
+        return m;
+    }
+
     private RutinaResponseDTO mapearAResponseDTO(Rutina rutina) {
+        return mapearAResponseDTO(rutina, conteos(List.of(rutina.getId())).get(rutina.getId()));
+    }
+
+    private RutinaResponseDTO mapearAResponseDTO(Rutina rutina, Conteo conteo) {
         RutinaResponseDTO dto = new RutinaResponseDTO();
         dto.setId(rutina.getId());
         dto.setNombre(rutina.getNombre());
@@ -703,10 +732,8 @@ public class RutinaService {
         dto.setElegidaPorSocio(rutina.getElegidaPorSocio());
 
         // Resumen para tarjetas/previews (sin contar la entrada en calor)
-        List<RutinaEjercicio> ejercicios = rutinaEjercicioRepository.findByRutinaIdOrderByOrden(rutina.getId());
-        dto.setCantidadEjercicios((int) ejercicios.stream().filter(e -> !e.isEsCalentamiento()).count());
-        dto.setCantidadDias((int) ejercicios.stream().filter(e -> !e.isEsCalentamiento())
-                .map(e -> e.getDia() != null ? e.getDia() : 1).distinct().count());
+        dto.setCantidadEjercicios(conteo == null ? 0 : conteo.ejercicios());
+        dto.setCantidadDias(conteo == null ? 0 : conteo.dias());
         return dto;
     }
 

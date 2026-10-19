@@ -6,4 +6,7 @@ import java.util.Optional;
 
 public interface FichaMedicaRepository extends JpaRepository<FichaMedica, Long> {
     Optional<FichaMedica> findBySocioId(Long socioId);
+
+    /** Fichas de varios socios en una sola consulta */
+    java.util.List<FichaMedica> findBySocioIdIn(java.util.Collection<Long> socioIds);
 }

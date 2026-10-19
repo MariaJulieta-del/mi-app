@@ -36,6 +36,7 @@ public class AuthController {
     // ── Login staff (admin y profesor: un solo formulario, el rol lo decide el backend) ──
     private final com.example.gymtrack_backend.repository.TokenRevocadoRepository revocados;
     private final com.example.gymtrack_backend.security.JwtUtil jwtUtil;
+    private final com.example.gymtrack_backend.security.SesionesCache sesiones;
 
     /** Cerrar sesión: el token deja de valer en el servidor (aunque alguien lo haya copiado) */
     @PostMapping("/logout")
@@ -50,6 +51,7 @@ public class AuthController {
                     t.setJti(jti);
                     t.setExpira(jwtUtil.extractExpiration(token).toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
                     revocados.save(t);
+                    sesiones.cerrado(jti);
                 }
             } catch (RuntimeException ignorado) { /* token vencido o inválido: no hay nada que cerrar */ }
         }

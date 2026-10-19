@@ -12,6 +12,7 @@ import java.util.List;
 
 @Data
 @Entity
+@EntityListeners(com.example.gymtrack_backend.security.SesionesCache.Oyente.class)
 @Table(name = "usuarios")
 public class Usuario implements UserDetails {
 

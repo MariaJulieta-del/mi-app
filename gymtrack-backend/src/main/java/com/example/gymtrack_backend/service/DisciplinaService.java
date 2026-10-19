@@ -51,11 +51,12 @@ public class DisciplinaService {
         List<Disciplina> lista = soloActivas ? repo.findByActivaTrue() : repo.findAll();
         Set<Long> delSocio = socioIdConsulta == null ? Set.of() : new HashSet<>(
                 inscripcionRepo.findConDisciplinaBySocioId(socioIdConsulta).stream().map(i -> i.getDisciplina().getId()).toList());
+        Contexto ctx = contexto(lista, conInscriptos);
         return lista.stream()
                 .sorted(Comparator.comparing((Disciplina d) -> !Boolean.TRUE.equals(d.getActiva()))
                         .thenComparing(d -> d.getNombre().toLowerCase()))
                 .map(d -> {
-                    DisciplinaResponseDTO dto = toDTO(d, conInscriptos);
+                    DisciplinaResponseDTO dto = toDTO(d, conInscriptos, ctx);
                     if (socioIdConsulta != null) dto.setInscripto(delSocio.contains(d.getId()));
                     if (usuarioActual != null) dto.setEsMia(d.getProfesor() != null && usuarioActual.equals(d.getProfesor().getUsername()));
                     return dto;
@@ -401,7 +402,32 @@ public class DisciplinaService {
         return (int) (repo.count() % 8) + 1;
     }
 
+    /** Cupos, inscriptos y membresías de varias disciplinas, buscados de una sola vez */
+    private record Contexto(Map<Long, Long> ocupados, Map<Long, List<InscripcionDisciplina>> inscriptos,
+                            Map<Long, com.example.gymtrack_backend.entities.Membresia> membresias) {}
+
+    private Contexto contexto(List<Disciplina> disciplinas, boolean conInscriptos) {
+        List<Long> ids = disciplinas.stream().map(Disciplina::getId).toList();
+        Map<Long, Long> ocupados = new HashMap<>();
+        Map<Long, List<InscripcionDisciplina>> inscriptos = new HashMap<>();
+        Map<Long, com.example.gymtrack_backend.entities.Membresia> membresias = new HashMap<>();
+        if (ids.isEmpty()) return new Contexto(ocupados, inscriptos, membresias);
+        for (Object[] f : inscripcionRepo.contarActivosPorDisciplina(ids)) ocupados.put((Long) f[0], ((Number) f[1]).longValue());
+        if (conInscriptos) {
+            List<InscripcionDisciplina> todas = inscripcionRepo.findConSocioByDisciplinaIdIn(ids);
+            for (InscripcionDisciplina i : todas) inscriptos.computeIfAbsent(i.getDisciplina().getId(), k -> new ArrayList<>()).add(i);
+            Set<Long> socios = new HashSet<>();
+            todas.forEach(i -> socios.add(i.getSocio().getId()));
+            if (!socios.isEmpty()) membresiaRepo.findBySocioIdIn(socios).forEach(m -> membresias.putIfAbsent(m.getSocio().getId(), m));
+        }
+        return new Contexto(ocupados, inscriptos, membresias);
+    }
+
     private DisciplinaResponseDTO toDTO(Disciplina d, boolean conInscriptos) {
+        return toDTO(d, conInscriptos, contexto(List.of(d), conInscriptos));
+    }
+
+    private DisciplinaResponseDTO toDTO(Disciplina d, boolean conInscriptos, Contexto ctx) {
         DisciplinaResponseDTO dto = new DisciplinaResponseDTO();
         dto.setId(d.getId());
         dto.setNombre(d.getNombre());
@@ -415,17 +441,19 @@ public class DisciplinaService {
                 .sorted(Comparator.comparing((Disciplina.Horario x) -> DIAS.indexOf(x.getDia())).thenComparing(Disciplina.Horario::getHoraInicio))
                 .map(h -> { HorarioDTO x = new HorarioDTO(); x.setDia(h.getDia()); x.setHoraInicio(h.getHoraInicio()); x.setHoraFin(h.getHoraFin()); return x; })
                 .toList());
-        long ocupados = inscripcionRepo.contarActivos(d.getId());
+        long ocupados = ctx.ocupados().getOrDefault(d.getId(), 0L);
         dto.setTotalInscritos((int) ocupados);
         dto.setCuposDisponibles(d.getCupoMaximo() != null ? (int) Math.max(0, d.getCupoMaximo() - ocupados) : null);
         if (conInscriptos) {
-            dto.setInscriptos(inscripcionRepo.findConSocioByDisciplinaId(d.getId()).stream().map(i -> {
+            LocalDate hoy = LocalDate.now();
+            dto.setInscriptos(ctx.inscriptos().getOrDefault(d.getId(), List.of()).stream().map(i -> {
                 DisciplinaResponseDTO.Inscripto x = new DisciplinaResponseDTO.Inscripto();
                 Socio s = i.getSocio();
                 x.setSocioId(s.getId());
                 x.setNombre(s.getNombre() + " " + s.getApellido());
                 x.setActivo(Boolean.TRUE.equals(s.getActivo()));
-                x.setMembresiaVigente(membresiaVigente(s.getId()));
+                var m = ctx.membresias().get(s.getId());
+                x.setMembresiaVigente(m != null && membresiaService.estaVigente(m, hoy));
                 x.setFechaAlta(i.getFechaAlta());
                 return x;
             }).toList());

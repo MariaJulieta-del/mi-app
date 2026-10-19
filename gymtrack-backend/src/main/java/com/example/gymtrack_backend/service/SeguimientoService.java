@@ -63,13 +63,22 @@ public class SeguimientoService {
                 .sorted(Comparator.comparing(Asistencia::getHora))
                 .forEach(a -> porSocio.putIfAbsent(a.getSocio().getId(), a));
 
+        // Membresías, fichas y rutinas de todos los que vinieron, de una sola vez (no una consulta por socio)
+        Set<Long> ids = porSocio.keySet();
+        Map<Long, Membresia> membresias = new HashMap<>();
+        Map<Long, FichaMedica> fichas = new HashMap<>();
+        if (!ids.isEmpty()) {
+            membresiaRepo.findBySocioIdIn(ids).forEach(m -> membresias.putIfAbsent(m.getSocio().getId(), m));
+            fichaRepo.findBySocioIdIn(ids).forEach(f -> fichas.putIfAbsent(f.getSocio().getId(), f));
+        }
+        Map<Long, RutinasDelSocio.RutinaDeSocio> rutinas = rutinasDelSocio.actuales(ids);
         List<SocioHoy> entrenando = porSocio.values().stream()
                 .sorted(Comparator.comparing(Asistencia::getHora).reversed())
                 .map(a -> {
                     Socio s = a.getSocio();
-                    Membresia m = membresiaRepo.findBySocioId(s.getId()).orElse(null);
+                    Membresia m = membresias.get(s.getId());
                     return new SocioHoy(s.getId(), nombreDe(s), a.getHora(),
-                            alertaMedica(s.getId()), rutinaActual(s.getId(), hoy),
+                            alertaMedica(fichas.get(s.getId())), resumen(rutinas.get(s.getId()), hoy),
                             m != null ? ChronoUnit.DAYS.between(hoy, m.getFechaVencimiento()) : null);
                 })
                 .toList();
@@ -89,9 +98,10 @@ public class SeguimientoService {
             socios.putIfAbsent(a.getSocio().getId(), a.getSocio());
         }
         List<SocioARenovar> lista = new ArrayList<>();
+        Map<Long, RutinasDelSocio.RutinaDeSocio> rutinas = rutinasDelSocio.actuales(ultimaVisita.keySet());
         for (var e : ultimaVisita.entrySet()) {
             Socio s = socios.get(e.getKey());
-            RutinaResumen r = rutinaActual(s.getId(), hoy);
+            RutinaResumen r = resumen(rutinas.get(s.getId()), hoy);
             if (r == null) {
                 lista.add(new SocioARenovar(s.getId(), nombreDe(s), "SIN_RUTINA", null, e.getValue()));
             } else if (r.semanas() >= semanasMax) {
@@ -104,14 +114,11 @@ public class SeguimientoService {
         return lista;
     }
 
-    private RutinaResumen rutinaActual(Long socioId, LocalDate hoy) {
-        return rutinasDelSocio.actual(socioId)
-                .map(x -> new RutinaResumen(x.rutina().getId(), x.rutina().getNombre(), ReglasRutina.semanas(x.inicio(), hoy)))
-                .orElse(null);
+    private static RutinaResumen resumen(RutinasDelSocio.RutinaDeSocio x, LocalDate hoy) {
+        return x == null ? null : new RutinaResumen(x.rutina().getId(), x.rutina().getNombre(), ReglasRutina.semanas(x.inicio(), hoy));
     }
 
-    private String alertaMedica(Long socioId) {
-        FichaMedica f = fichaRepo.findBySocioId(socioId).orElse(null);
+    private static String alertaMedica(FichaMedica f) {
         if (f == null) return null;
         String txt = unir(f.getLesiones(), f.getObservacionesMedicas());
         return txt.isBlank() ? null : txt;

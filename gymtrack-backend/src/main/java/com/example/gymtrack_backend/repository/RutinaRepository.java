@@ -19,6 +19,9 @@ public interface RutinaRepository extends JpaRepository<Rutina, Long> {
      */
     List<Rutina> findBySocioId(Long socioId);
 
+    /** Rutinas de varios socios en una sola consulta */
+    List<Rutina> findBySocioIdIn(java.util.Collection<Long> socioIds);
+
     /**
      * Busca una rutina por su ID y valida que pertenezca al socio indicado.
      * Útil para verificar propietario antes de editar o eliminar.

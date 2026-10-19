@@ -17,6 +17,13 @@ public interface MembresiaRepository extends JpaRepository<Membresia, Long> {
     /** La membresía del socio (cada socio tiene una sola) */
     Optional<Membresia> findBySocioId(Long socioId);
 
+    /** Membresías de varios socios en una sola consulta */
+    List<Membresia> findBySocioIdIn(java.util.Collection<Long> socioIds);
+
+    /** Por plan: cuántas membresías hay (usado) y cuántas activas, en una sola consulta */
+    @Query("SELECT m.tipoMembresia, COUNT(m), SUM(CASE WHEN m.estadoMembresia = com.example.gymtrack_backend.entities.enums.EstadoMembresia.ACTIVA THEN 1 ELSE 0 END) FROM Membresia m GROUP BY m.tipoMembresia")
+    List<Object[]> resumenPorPlan();
+
     /** Membresías de un socio filtradas por estado */
     List<Membresia> findBySocioIdAndEstadoMembresia(Long socioId, EstadoMembresia estado);
 

@@ -23,6 +23,10 @@ public interface RutinaAsignacionRepository extends JpaRepository<RutinaAsignaci
     @Query("select a from RutinaAsignacion a join fetch a.socio s join fetch a.rutina where s.activo = true")
     List<RutinaAsignacion> deSociosActivos();
 
+    /** Plantillas asignadas a varios socios en una sola consulta */
+    @Query("select a from RutinaAsignacion a join fetch a.rutina where a.socio.id in :socioIds")
+    List<RutinaAsignacion> deSocios(java.util.Collection<Long> socioIds);
+
     Optional<RutinaAsignacion> findByRutinaIdAndSocioId(Long rutinaId, Long socioId);
 
     boolean existsByRutinaIdAndSocioId(Long rutinaId, Long socioId);

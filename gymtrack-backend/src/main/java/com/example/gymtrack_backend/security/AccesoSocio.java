@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AccesoSocio {
 
-    private final UsuarioRepository usuarioRepository;
+    private final SesionesCache sesiones;
 
     public boolean esStaff() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -34,8 +34,9 @@ public class AccesoSocio {
         if (esStaff()) return null;
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) throw new AccessDeniedException("No autenticado");
-        return usuarioRepository.findSocioIdByUsername(auth.getName())
-                .orElseThrow(() -> new AccessDeniedException("El usuario no está vinculado a un socio"));
+        Long socioId = sesiones.datos(auth.getName()).map(SesionesCache.Datos::socioId).orElse(null);
+        if (socioId == null) throw new AccessDeniedException("El usuario no está vinculado a un socio");
+        return socioId;
     }
 
     /** true si quien llama es staff o es ese mismo socio */

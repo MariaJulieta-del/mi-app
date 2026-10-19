@@ -16,6 +16,14 @@ public interface InscripcionDisciplinaRepository extends JpaRepository<Inscripci
     @Query("select i from InscripcionDisciplina i join fetch i.disciplina where i.socio.id = :socioId")
     List<InscripcionDisciplina> findConDisciplinaBySocioId(@Param("socioId") Long socioId);
 
+    /** Inscriptos de varias disciplinas en una sola consulta */
+    @Query("select i from InscripcionDisciplina i join fetch i.socio s where i.disciplina.id in :ids order by s.apellido, s.nombre")
+    List<InscripcionDisciplina> findConSocioByDisciplinaIdIn(@Param("ids") java.util.Collection<Long> ids);
+
+    /** Cupos ocupados de varias disciplinas: [disciplinaId, cantidad] (solo socios activos) */
+    @Query("select i.disciplina.id, count(i) from InscripcionDisciplina i where i.disciplina.id in :ids and i.socio.activo = true group by i.disciplina.id")
+    List<Object[]> contarActivosPorDisciplina(@Param("ids") java.util.Collection<Long> ids);
+
     /** Cupos ocupados: solo cuentan los socios activos */
     @Query("select count(i) from InscripcionDisciplina i where i.disciplina.id = :disciplinaId and i.socio.activo = true")
     long contarActivos(@Param("disciplinaId") Long disciplinaId);

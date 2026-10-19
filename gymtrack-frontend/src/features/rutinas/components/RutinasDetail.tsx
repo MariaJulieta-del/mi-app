@@ -8,6 +8,8 @@ import ConfirmModal from '../../../shared/components/ConfirmModal'
 import { etiquetaDia } from '../utils/rutinaUtils'
 import { useRutinasDetail, TREN_CONFIG, DIAS_ORDER, resolverImgEstatica } from '../hooks/useRutinasDetail'
 import { CargandoPagina, Spinner } from '../../../shared/components/ui'
+import ListaAsignados from './ListaAsignados'
+import type { Rutina } from '../types/Rutina'
 
 export default function RutinasDetail() {
   const d = useRutinasDetail()
@@ -108,6 +110,9 @@ export default function RutinasDetail() {
           {ejercicios.length} ejercicio{ejercicios.length !== 1 ? 's' : ''}
         </span>
       </div>
+
+      {/* Plantilla: a qué socios está asignada */}
+      {rutina.socioId == null && d.esAdmin && <SociosDePlantilla plantilla={rutina} />}
 
       {/* Entrada en calor */}
       {calentamiento.length > 0 && (
@@ -459,6 +464,19 @@ export default function RutinasDetail() {
         onConfirm={() => { const ejId = d.confirmarQuitarId!; d.setConfirmarQuitarId(null); d.handleEliminar(ejId) }}
         onCancel={() => d.setConfirmarQuitarId(null)}
       />
+    </div>
+  )
+}
+
+/** En la pantalla de una plantilla: la lista de socios que la tienen asignada */
+function SociosDePlantilla({ plantilla }: { plantilla: Rutina }) {
+  const [cantidad, setCantidad] = useState<number | null>(null)
+  return (
+    <div className="gt-card gt-mb-20">
+      <p className="gt-card-title" style={{ marginTop: 0 }}>
+        Socios con esta plantilla{cantidad != null && <span className="gt-text-muted gt-peso-normal"> ({cantidad})</span>}
+      </p>
+      <ListaAsignados plantilla={plantilla} onCambio={n => setCantidad(n)} />
     </div>
   )
 }

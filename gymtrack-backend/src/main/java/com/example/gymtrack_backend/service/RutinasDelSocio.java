@@ -36,6 +36,24 @@ public class RutinasDelSocio {
         return out;
     }
 
+    /** La rutina actual de cada uno de varios socios, con dos consultas en total */
+    public java.util.Map<Long, RutinaDeSocio> actuales(java.util.Collection<Long> socioIds) {
+        java.util.Map<Long, RutinaDeSocio> out = new java.util.HashMap<>();
+        if (socioIds.isEmpty()) return out;
+        for (Rutina r : rutinaRepo.findBySocioIdIn(socioIds)) {
+            quedarseConLaUltima(out, r.getSocio().getId(), new RutinaDeSocio(r, null, ReglasRutina.inicio(r)));
+        }
+        for (RutinaAsignacion a : asignacionRepo.deSocios(socioIds)) {
+            quedarseConLaUltima(out, a.getSocio().getId(), new RutinaDeSocio(a.getRutina(), a, inicio(a)));
+        }
+        return out;
+    }
+
+    private static void quedarseConLaUltima(java.util.Map<Long, RutinaDeSocio> m, Long socioId, RutinaDeSocio x) {
+        if (x.inicio() == null) return;
+        m.merge(socioId, x, (viejo, nuevo) -> nuevo.inicio().isAfter(viejo.inicio()) ? nuevo : viejo);
+    }
+
     /** La rutina que hace ahora: la que recibió (o le cambiaron) más recientemente */
     public Optional<RutinaDeSocio> actual(Long socioId) {
         return de(socioId).stream().filter(x -> x.inicio() != null).max(Comparator.comparing(RutinaDeSocio::inicio));

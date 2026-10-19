@@ -9,6 +9,7 @@ import { Cargando } from '../../../shared/components/ui'
 function textoAsignados(r: Rutina) {
   const n = r.cantidadAsignados ?? 0
   const renovar = r.asignadosParaRenovar ?? 0
+  if (n === 0) return 'Sin socios asignados'
   return `${n} ${n === 1 ? 'socio' : 'socios'}${renovar > 0 ? ` · ${renovar} para renovar` : ''}`
 }
 
@@ -79,7 +80,7 @@ export default function RutinaCard({ rutina, acciones, seleccionada, onSeleccion
               ? <span className="gt-chip gt-chip-renovar" title={`Lleva ${rutina.semanasActual} semanas con estos ejercicios (el límite es ${rutina.semanasMax})`}>Renovar · {rutina.semanasActual} sem.</span>
               : <span className="gt-chip gt-chip-semana" title={`Se renueva a las ${rutina.semanasMax} semanas`}>Semana {(rutina.semanasActual ?? 0) + 1} de {rutina.semanasMax}</span>
           )}
-          {esPlantilla(rutina) && (rutina.cantidadAsignados ?? 0) > 0 && (onVerAsignados
+          {esPlantilla(rutina) && ((rutina.cantidadAsignados ?? 0) > 0 || onVerAsignados) && (onVerAsignados && (rutina.cantidadAsignados ?? 0) > 0
             ? <button type="button" className="gt-chip gt-chip-boton" onClick={onVerAsignados} title="Ver los socios que la tienen asignada">
                 {textoAsignados(rutina)}
               </button>

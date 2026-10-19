@@ -15,6 +15,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findBySocioId(Long socioId);
     List<Usuario> findByRol(Rol rol);
 
+    /** El usuario con su socio (si tiene) en una sola consulta: lo usa la validación de cada pedido */
+    @Query("select u from Usuario u left join fetch u.socio where u.username = :username")
+    Optional<Usuario> findConSocioByUsername(@Param("username") String username);
+
     /** ID del socio vinculado al usuario (null si es staff) — sin cargar la entidad completa */
     @Query("select s.id from Usuario u join u.socio s where u.username = :username")
     Optional<Long> findSocioIdByUsername(@Param("username") String username);

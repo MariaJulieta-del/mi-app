@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Data
 @Entity
+@EntityListeners(com.example.gymtrack_backend.security.SesionesCache.Oyente.class)
 @Table(name = "socios")
 public class Socio {
 

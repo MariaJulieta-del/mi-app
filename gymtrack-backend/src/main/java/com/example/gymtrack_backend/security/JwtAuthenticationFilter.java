@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final UsuarioRepository  usuarioRepository;
     private final com.example.gymtrack_backend.kiosco.DispositivoKioscoRepository kioscoRepository;
-    private final com.example.gymtrack_backend.repository.TokenRevocadoRepository revocados;
+    private final SesionesCache sesiones;
 
     @Override
     protected void doFilterInternal(
@@ -73,7 +73,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Sesión cerrada con "Salir": el token ya no vale
         try {
             String jti = jwtUtil.extractId(jwt);
-            if (jti != null && revocados.existsById(jti)) {
+            if (jti != null && sesiones.revocado(jti)) {
                 rechazar(response, "La sesión se cerró. Volvé a ingresar.");
                 return;
             }
@@ -94,19 +94,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 4. Si hay username y el contexto no tiene autenticación previa
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails;
-            try {
-                userDetails = userDetailsService.loadUserByUsername(username);
-            } catch (UsernameNotFoundException ex) {
+            // Usuario y socio desde la memoria de sesiones (no se va a la base en cada pedido)
+            var datos = sesiones.datos(username).orElse(null);
+            if (datos == null) {
                 rechazar(response, "La cuenta ya no existe");
                 return;
             }
+            UserDetails userDetails = datos.usuario();
 
             // Una cuenta desactivada (profesor dado de baja) o un socio dado de baja pierde
             // el acceso en el momento, aunque su token todavía no haya vencido
             boolean esSocio = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SOCIO"));
             if (!userDetails.isEnabled()
-                    || (esSocio && !usuarioRepository.findSocioActivoByUsername(username).orElse(false))) {
+                    || (esSocio && !datos.socioActivo())) {
                 rechazar(response, "Tu cuenta está deshabilitada");
                 return;
             }

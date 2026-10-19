@@ -23,8 +23,17 @@ public class TarifaMembresiaService {
 
     /** Lista todos los planes con conteo de socios activos */
     public List<TarifaMembresiaResponseDTO> listarTodas() {
+        // [plan, membresías, activas] de todos los planes en una sola consulta
+        java.util.Map<String, Object[]> resumen = new java.util.HashMap<>();
+        for (Object[] f : membresiaRepository.resumenPorPlan()) resumen.put((String) f[0], f);
         return repository.findAll().stream()
-                .map(this::toDTO)
+                .map(t -> {
+                    TarifaMembresiaResponseDTO dto = toDTO(t, false);
+                    Object[] f = resumen.get(t.getTipo());
+                    dto.setSociosActivos(f == null || f[2] == null ? 0L : ((Number) f[2]).longValue());
+                    dto.setUsado(f != null && ((Number) f[1]).longValue() > 0);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -97,6 +106,10 @@ public class TarifaMembresiaService {
     }
 
     private TarifaMembresiaResponseDTO toDTO(TarifaMembresia t) {
+        return toDTO(t, true);
+    }
+
+    private TarifaMembresiaResponseDTO toDTO(TarifaMembresia t, boolean conConteos) {
         TarifaMembresiaResponseDTO dto = new TarifaMembresiaResponseDTO();
         dto.setTipo(t.getTipo());
         dto.setNombre(t.getNombre() != null ? t.getNombre() : t.getTipo());
@@ -105,9 +118,11 @@ public class TarifaMembresiaService {
         dto.setPasesMensuales(t.getPasesMensuales());
         dto.setDescripcion(t.getDescripcion());
         dto.setIncluye(t.getIncluye());
-        dto.setSociosActivos(membresiaRepository.countActivosByTipo(t.getTipo()));
         dto.setActivo(!Boolean.FALSE.equals(t.getActivo()));
-        dto.setUsado(membresiaRepository.existsByTipoMembresia(t.getTipo()));
+        if (conConteos) {
+            dto.setSociosActivos(membresiaRepository.countActivosByTipo(t.getTipo()));
+            dto.setUsado(membresiaRepository.existsByTipoMembresia(t.getTipo()));
+        }
         return dto;
     }
 }
