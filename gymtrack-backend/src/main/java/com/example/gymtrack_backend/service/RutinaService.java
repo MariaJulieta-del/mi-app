@@ -537,6 +537,7 @@ public class RutinaService {
      */
     @Transactional
     public RutinaResponseDTO asignarPlantilla(Long plantillaId, Long socioId) {
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(socioId);
         Rutina plantilla = plantilla(plantillaId);
         if (rutinaEjercicioRepository.findByRutinaIdOrderByOrden(plantillaId).stream().allMatch(RutinaEjercicio::isEsCalentamiento)) {
             throw new IllegalArgumentException("La plantilla no tiene ejercicios todavía: agregale alguno antes de asignarla");

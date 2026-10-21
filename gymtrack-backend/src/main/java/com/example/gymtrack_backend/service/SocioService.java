@@ -106,7 +106,9 @@ public class SocioService {
         socio.setGenero(normalizarGenero(socio.getGenero()));
         validarNacimiento(socio.getFechaNacimiento());
         socio.setActivo(true);
-        return socioRepository.save(socio);
+        Socio guardado = socioRepository.save(socio);
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(guardado.getId());
+        return guardado;
     }
 
     // Actualizar socio
@@ -211,6 +213,7 @@ public class SocioService {
         socio.setActivo(true);
         socio.setEstado("ACTIVO");
         Socio socioGuardado = socioRepository.save(socio);
+        com.example.gymtrack_backend.auditoria.AuditoriaInterceptor.socio(socioGuardado.getId());
 
         AltaSocioResponseDTO resp = new AltaSocioResponseDTO();
         resp.setSocioId(socioGuardado.getId());
