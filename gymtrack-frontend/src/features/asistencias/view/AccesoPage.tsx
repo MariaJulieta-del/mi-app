@@ -5,9 +5,11 @@ import { formatFecha } from '../../../shared/utils/fechas'
 import { SEMAFORO } from '../utils/semaforo'
 import IconoAcceso from '../components/IconoAcceso'
 import { Spinner } from '../../../shared/components/ui'
+import { useNombrePlan } from '../../../shared/hooks/useNombrePlan'
 
 
 export default function AccesoPage() {
+  const nombrePlan = useNombrePlan()
   const { inputRef, ...a } = useAcceso()
 
   return (
@@ -52,7 +54,7 @@ export default function AccesoPage() {
                 {a.resultado.tipoMembresia && (
                   <div className="gt-acceso-row">
                     <span className="gt-text-muted gt-text-sm">Plan</span>
-                    <span className="gt-badge gt-badge-blue">{a.resultado.tipoMembresia}</span>
+                    <span className="gt-badge gt-badge-blue">{nombrePlan(a.resultado.tipoMembresia)}</span>
                   </div>
                 )}
                 {a.resultado.fechaVencimiento && (

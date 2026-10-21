@@ -4,6 +4,7 @@ import { useDashboard } from '../hooks/useDashboard'
 import { Eye, EyeOff } from 'lucide-react'
 import { CargandoPagina, IconButton, Spinner } from '../../../shared/components/ui'
 import { useMontosVisibles } from '../../../shared/hooks/useMontosVisibles'
+import { useNombrePlan } from '../../../shared/hooks/useNombrePlan'
 
 function BellIcon() {
   return (
@@ -14,6 +15,7 @@ function BellIcon() {
 }
 
 export default function DashboardPage() {
+  const nombrePlan = useNombrePlan()
   const d = useDashboard()
   const montos = useMontosVisibles()
 
@@ -137,7 +139,7 @@ export default function DashboardPage() {
                     <td>
                       <Link to={`/socios/${m.socioId}/perfil`} className="gt-fw-600" style={{ color: 'var(--blue-text)', textDecoration: 'none' }}>{m.socioNombreCompleto}</Link>
                     </td>
-                    <td>{m.tipoMembresia}</td>
+                    <td>{nombrePlan(m.tipoMembresia)}</td>
                     <td style={{ fontSize: 13 }}>{m.fechaVencimiento}</td>
                     <td>
                       <span className={`gt-badge ${dias === 0 ? 'gt-badge-red' : dias <= 3 ? 'gt-badge-yellow' : 'gt-badge-green'}`}>{dias === 0 ? 'Hoy' : `${dias}d`}</span>

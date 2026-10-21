@@ -39,6 +39,7 @@ public class DisciplinaService {
     private final MembresiaRepository membresiaRepo;
     private final MembresiaService membresiaService;
     private final com.example.gymtrack_backend.repository.AsistenciaRepository asistenciaRepo;
+    private final com.example.gymtrack_backend.repository.ReservaClaseRepository reservaRepo;
     /** Para pasar a confirmados a los que esperaban cuando se libera un lugar */
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.context.annotation.Lazy
@@ -81,16 +82,30 @@ public class DisciplinaService {
     public record ClaseHoy(Long disciplinaId, String nombre, Integer color, String horaInicio, String horaFin,
                            String instructor, int inscriptos, Integer cupoMaximo) {}
 
+    /** Lugares ocupados en una clase puntual: fijos que no liberaron su lugar + reservas del día (igual que la app del socio) */
+    private int ocupadosHoy(Long disciplinaId, LocalDate fecha, String hora) {
+        int ocupados = (int) inscripcionRepo.contarActivos(disciplinaId);
+        for (var r : reservaRepo.deLaClase(disciplinaId, fecha, hora)) {
+            String e = r.getEstado();
+            if (com.example.gymtrack_backend.entities.ReservaClase.LIBERADA.equals(e)) ocupados--;
+            else if (com.example.gymtrack_backend.entities.ReservaClase.CONFIRMADA.equals(e)
+                    || com.example.gymtrack_backend.entities.ReservaClase.ASISTIO.equals(e)
+                    || com.example.gymtrack_backend.entities.ReservaClase.AUSENTE.equals(e)) ocupados++;
+        }
+        return Math.max(0, ocupados);
+    }
+
     /** Clases de hoy (para la pantalla "Hoy" del profesor), ordenadas por hora */
     @Transactional(readOnly = true)
     public List<ClaseHoy> clasesDeHoy() {
-        String hoy = DIAS.get(LocalDate.now().getDayOfWeek().getValue() - 1);
+        LocalDate fecha = LocalDate.now();
+        String hoy = DIAS.get(fecha.getDayOfWeek().getValue() - 1);
         List<ClaseHoy> clases = new ArrayList<>();
         for (Disciplina d : repo.findByActivaTrue()) {
             for (Disciplina.Horario h : d.getHorarios()) {
                 if (!hoy.equals(h.getDia())) continue;
                 clases.add(new ClaseHoy(d.getId(), d.getNombre(), d.getColor(), h.getHoraInicio(), h.getHoraFin(),
-                        nombreInstructor(d), (int) inscripcionRepo.contarActivos(d.getId()), d.getCupoMaximo()));
+                        nombreInstructor(d), ocupadosHoy(d.getId(), fecha, h.getHoraInicio()), d.getCupoMaximo()));
             }
         }
         clases.sort(Comparator.comparing(ClaseHoy::horaInicio));

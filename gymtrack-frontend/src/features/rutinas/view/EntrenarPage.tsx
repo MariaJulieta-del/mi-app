@@ -1,3 +1,4 @@
+import CreditoImagenes from '../../../shared/components/CreditoImagenes'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { Calculator, Check, Expand, Feather, Flame, Link2, PartyPopper, Plus, Star, ThumbsUp, Timer, Trophy, X } from 'lucide-react'
@@ -508,11 +509,14 @@ function TarjetaEjercicio({ ej, etiqueta, esCalor, filas, ultima, sugerida, reco
   return (
     <div className="gt-card gt-entreno-ej">
       {imgUrl && (
-        <button key={imgUrl} type="button" className="gt-entreno-img-btn" onClick={() => onImagen(imgUrl)} aria-label={`Ver ${ej.nombreEjercicio} en grande`}>
-          <img src={imgUrl} alt={ej.nombreEjercicio} className="gt-entreno-img"
-            onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
-          <span className="gt-entreno-zoom"><Expand size={12} aria-hidden /> Ver en grande</span>
-        </button>
+        <>
+          <button key={imgUrl} type="button" className="gt-entreno-img-btn" onClick={() => onImagen(imgUrl)} aria-label={`Ver ${ej.nombreEjercicio} en grande`}>
+            <img src={imgUrl} alt={ej.nombreEjercicio} className="gt-entreno-img"
+              onError={e => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none' }} />
+            <span className="gt-entreno-zoom"><Expand size={12} aria-hidden /> Ver en grande</span>
+          </button>
+          <CreditoImagenes style={{ margin: '4px 0 0' }} />
+        </>
       )}
       <div style={{ padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>

@@ -1,3 +1,4 @@
+import CreditoImagenes from '../../../shared/components/CreditoImagenes'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import MaquinasEjercicio from './MaquinasEjercicio'
@@ -464,6 +465,7 @@ export default function RutinasDetail() {
         onConfirm={() => { const ejId = d.confirmarQuitarId!; d.setConfirmarQuitarId(null); d.handleEliminar(ejId) }}
         onCancel={() => d.setConfirmarQuitarId(null)}
       />
+      <CreditoImagenes />
     </div>
   )
 }

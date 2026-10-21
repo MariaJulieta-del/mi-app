@@ -7,6 +7,7 @@ import { METODOS, pesos } from '../utils/dinero'
 import { EmptyState, Pill, Resumen, Segmentado, SkeletonTarjetas } from '../../../shared/components/ui'
 import { descargarCSV } from '../../../shared/utils/csv'
 import { fechaLocalISO, formatFecha } from '../../../shared/utils/fechas'
+import { useNombrePlan } from '../../../shared/hooks/useNombrePlan'
 
 type Periodo = 'hoy' | 'semana' | 'mes' | 'todo' | 'rango'
 const PERIODOS: { valor: Periodo; texto: string }[] = [
@@ -28,6 +29,7 @@ function rangoDe(p: Periodo, desde: string, hasta: string): [string, string] {
 
 /** Todos los cobros con búsqueda, filtros rápidos, totales por medio de pago y exportación */
 export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: string | null }) {
+  const nombrePlan = useNombrePlan()
   /** Pagos cargados y para qué período (mientras llega el nuevo período se muestra 'cargando') */
   const [cargados, setCargados] = useState<{ clave: string; pagos: Pago[] } | null>(null)
   const [error, setError] = useState(false)
@@ -55,7 +57,7 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
   const q = buscar.trim().toLowerCase()
   const visibles = enPeriodo.filter(p =>
     (!metodo || p.metodoPago === metodo) &&
-    (!q || (p.socioNombre ?? '').toLowerCase().includes(q) || (p.tipoMembresia ?? '').toLowerCase().includes(q)))
+    (!q || (p.socioNombre ?? '').toLowerCase().includes(q) || nombrePlan(p.tipoMembresia).toLowerCase().includes(q)))
 
   const completados = enPeriodo.filter(p => p.estadoPago !== 'CANCELADO' && p.estadoPago !== 'PENDIENTE')
   const total = completados.reduce((s, p) => s + Number(p.monto), 0)
@@ -63,7 +65,7 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
 
   const exportar = () => descargarCSV(`pagos-${d0 || 'ultimos-12-meses'}`,
     ['Fecha', 'Hora', 'Socio', 'Plan', 'Monto', 'Medio', 'Estado', 'Observaciones'],
-    visibles.map(p => [p.fechaPago?.slice(0, 10), p.fechaPago?.slice(11, 16), p.socioNombre, p.tipoMembresia, Number(p.monto), p.metodoPago, p.estadoPago, p.observaciones]))
+    visibles.map(p => [p.fechaPago?.slice(0, 10), p.fechaPago?.slice(11, 16), p.socioNombre, nombrePlan(p.tipoMembresia), Number(p.monto), p.metodoPago, p.estadoPago, p.observaciones]))
 
   return (
     <>
@@ -110,7 +112,7 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
                     {p.observaciones && <div className="gt-text-sm gt-text-muted">{p.observaciones}</div>}
                   </td>
                   <td>
-                    {p.tipoMembresia ?? `#${p.membresiaId}`}{' '}
+                    {p.tipoMembresia ? nombrePlan(p.tipoMembresia) : `#${p.membresiaId}`}{' '}
                     {p.estadoMembresia && <Pill tono={TONO_ESTADO[p.estadoMembresia] ?? 'neutral'}>{p.estadoMembresia.toLowerCase()}</Pill>}
                   </td>
                   <td>{METODOS.find(m => m.valor === p.metodoPago)?.texto ?? p.metodoPago}</td>

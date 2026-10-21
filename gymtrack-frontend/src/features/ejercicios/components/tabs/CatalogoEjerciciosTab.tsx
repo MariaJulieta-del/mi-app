@@ -1,3 +1,4 @@
+import CreditoImagenes from '../../../../shared/components/CreditoImagenes'
 import { useState, useRef } from 'react'
 import { Dumbbell, Search } from 'lucide-react'
 import type { Ejercicio } from '../../services/ejercicioService'
@@ -236,6 +237,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
           </button>
         </div>
       )}
+      <CreditoImagenes />
     </div>
   )
 }
