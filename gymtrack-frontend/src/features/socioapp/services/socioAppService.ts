@@ -4,7 +4,7 @@ import { Dumbbell, Feather, Flame, ThumbsUp, type LucideIcon } from 'lucide-reac
 // ── Clases y reservas ──────────────────────────────────────────────────────
 
 /** Estado del socio en una clase: lugar fijo, liberado, reserva confirmada, en espera o nada */
-export type MiEstadoClase = 'FIJO' | 'LIBERADA' | 'CONFIRMADA' | 'ESPERA' | null
+export type MiEstadoClase = 'FIJO' | 'LIBERADA' | 'ASISTIO' | 'AUSENTE' | 'CONFIRMADA' | 'ESPERA' | null
 
 export interface ClaseAgenda {
   disciplinaId: number

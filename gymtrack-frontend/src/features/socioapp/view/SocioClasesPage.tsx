@@ -168,7 +168,8 @@ function TarjetaClase({ c, ocupado, puedeReservar, onReservar, onCancelar }: {
   const llena = c.disponibles !== null && c.disponibles <= 0
   const enCurso = c.estadoClase === 'EN_CURSO'
   let boton: React.ReactNode = null
-  if (!enCurso) {
+  // Si ya ingresó (o la clase pasó y no vino) no hay nada para tocar
+  if (!enCurso && c.miEstado !== 'ASISTIO' && c.miEstado !== 'AUSENTE') {
     if (c.miEstado === 'FIJO') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado} onClick={onCancelar}>No voy</button>
     else if (c.miEstado === 'LIBERADA') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado || llena} onClick={onReservar}>{llena ? 'Lugar ocupado' : 'Recuperar lugar'}</button>
     else if (c.miEstado === 'CONFIRMADA') boton = <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" disabled={ocupado} onClick={onCancelar}>Cancelar</button>

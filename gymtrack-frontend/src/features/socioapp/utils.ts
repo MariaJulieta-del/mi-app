@@ -54,4 +54,6 @@ export const ESTADO_CLASE: Record<Exclude<MiEstadoClase, null>, { texto: string;
   CONFIRMADA: { texto: 'Reservada', tono: 'ok' },
   ESPERA: { texto: 'En espera', tono: 'warn' },
   LIBERADA: { texto: 'Avisaste que no vas', tono: 'neutral' },
+  ASISTIO: { texto: 'Ya ingresaste', tono: 'ok' },
+  AUSENTE: { texto: 'No viniste', tono: 'neutral' },
 }
