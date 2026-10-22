@@ -19,6 +19,8 @@ import { Cargando, CargandoPagina } from './shared/components/ui'
 import BarraCarga from './shared/components/BarraCarga'
 import { conCarga } from './shared/services/cargaGlobal'
 import IrALaDemo from './shared/components/IrALaDemo'
+import DemoEntrada from './features/demo/DemoEntrada'
+import { ES_DEMO } from './features/demo/demo'
 
 // Páginas con carga diferida: cada módulo se descarga recién al navegar a él
 const SociosPage         = lazy(conCarga(() => import('./features/socios/view/SociosPage')))
@@ -315,10 +317,11 @@ export default function App() {
   return (
     <ToastProvider>
       <BarraCarga />
+      {ES_DEMO && <div className="gt-demo-cartel" aria-hidden>DEMO · datos de prueba</div>}
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={ES_DEMO ? <DemoEntrada /> : <LoginPage />} />
         {/* Dirección fija del QR impreso: redirige a la demo pública */}
-        <Route path="/demo" element={<IrALaDemo />} />
+        <Route path="/demo" element={ES_DEMO ? <Navigate to="/login" replace /> : <IrALaDemo />} />
         {/* Pantalla fija de recepción: usa su propio token, no la sesión de un usuario */}
         <Route path="/kiosco" element={<LimiteErrores completa><Suspense fallback={<Cargando />}><KioscoPage /></Suspense></LimiteErrores>} />
         <Route

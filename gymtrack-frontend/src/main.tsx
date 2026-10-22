@@ -6,6 +6,10 @@ import { MarcaProvider } from './shared/context/MarcaContext'
 import './index.css'
 import App from './App.tsx'
 import LimiteErrores from './shared/components/LimiteErrores'
+import './features/demo/demo.css'
+import { ES_DEMO, bloquearWhatsApp } from './features/demo/demo'
+
+if (ES_DEMO) bloquearWhatsApp()
 createRoot(document.getElementById('root')!).render(
  <StrictMode>
  <LimiteErrores completa>
