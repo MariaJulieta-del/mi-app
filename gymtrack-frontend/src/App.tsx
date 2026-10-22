@@ -18,6 +18,7 @@ import ProtectedRoute from './shared/components/ProtectedRoute'
 import { Cargando, CargandoPagina } from './shared/components/ui'
 import BarraCarga from './shared/components/BarraCarga'
 import { conCarga } from './shared/services/cargaGlobal'
+import IrALaDemo from './shared/components/IrALaDemo'
 
 // Páginas con carga diferida: cada módulo se descarga recién al navegar a él
 const SociosPage         = lazy(conCarga(() => import('./features/socios/view/SociosPage')))
@@ -316,6 +317,8 @@ export default function App() {
       <BarraCarga />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* Dirección fija del QR impreso: redirige a la demo pública */}
+        <Route path="/demo" element={<IrALaDemo />} />
         {/* Pantalla fija de recepción: usa su propio token, no la sesión de un usuario */}
         <Route path="/kiosco" element={<LimiteErrores completa><Suspense fallback={<Cargando />}><KioscoPage /></Suspense></LimiteErrores>} />
         <Route
