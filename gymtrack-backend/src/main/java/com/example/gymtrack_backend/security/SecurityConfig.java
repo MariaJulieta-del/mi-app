@@ -45,6 +45,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final com.example.gymtrack_backend.demo.DemoFiltro demoFiltro;
     private final UserDetailsService      userDetailsService;
 
     @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins}")
@@ -89,7 +90,9 @@ public class SecurityConfig {
                     .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                     .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
             .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            // Demo pública: copia de datos del visitante (no hace nada fuera del modo demo)
+            .addFilterBefore(demoFiltro, JwtAuthenticationFilter.class);
 
         return http.build();
     }

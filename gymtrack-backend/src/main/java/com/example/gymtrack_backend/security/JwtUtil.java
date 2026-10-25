@@ -61,6 +61,7 @@ public class JwtUtil {
     public String generateToken(UserDetails userDetails, String rol, long expirationMs) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("rol", rol);
+        conCopiaDemo(claims);
 
         return Jwts.builder()
                 .claims(claims)
@@ -72,13 +73,24 @@ public class JwtUtil {
                 .compact();
     }
 
+    /** Demo pública: copia de los datos de prueba del visitante (ver DemoEsquemas) */
+    public static final String CLAIM_DEMO = "demo";
+
+    /** En la demo, la sesión lleva la copia del visitante del pedido en curso; fuera de la demo no hay ninguna */
+    private static void conCopiaDemo(Map<String, Object> claims) {
+        String esquema = com.example.gymtrack_backend.demo.DemoContexto.actual();
+        if (esquema != null) claims.put(CLAIM_DEMO, esquema);
+    }
+
     /** Prefijo del "usuario" de las pantallas de recepción: kiosco:{id} */
     public static final String PREFIJO_KIOSCO = "kiosco:";
 
     /** Token de una pantalla de recepción (no corresponde a ningún usuario) */
     public String generateKioscoToken(Long dispositivoId, long expirationMs) {
+        Map<String, Object> claims = new HashMap<>(Map.of("rol", "KIOSCO"));
+        conCopiaDemo(claims);
         return Jwts.builder()
-                .claims(Map.of("rol", "KIOSCO"))
+                .claims(claims)
                 .id(java.util.UUID.randomUUID().toString())
                 .subject(PREFIJO_KIOSCO + dispositivoId)
                 .issuedAt(new Date())

@@ -29,11 +29,27 @@ public class DemoController {
     private final SocioRepository socios;
     private final JwtUtil jwtUtil;
     private final AuthService authService;
+    private final DemoEsquemas esquemas;
 
+    /**
+     * Cada visitante entra a su propia copia de los datos de prueba. Si ya tiene una (cambió de rol), la sigue usando:
+     * lo que cargó como dueño lo ve después como socio o profesor.
+     */
     @PostMapping
-    public ResponseEntity<?> entrar(@RequestBody(required = false) Map<String, String> body) {
+    public ResponseEntity<?> entrar(@RequestBody(required = false) Map<String, String> body) throws Exception {
         if (!demo.habilitada()) return ResponseEntity.notFound().build();
         String rol = body == null ? "ADMIN" : body.getOrDefault("rol", "ADMIN").toUpperCase();
+        String previa = body == null ? null : body.get("copia");
+        String esquema = DemoContexto.valido(previa) && esquemas.existe(previa) ? previa : esquemas.crear();
+        DemoContexto.usar(esquema);
+        try {
+            return entrarComo(rol);
+        } finally {
+            DemoContexto.limpiar();
+        }
+    }
+
+    private ResponseEntity<?> entrarComo(String rol) {
 
         if ("SOCIO".equals(rol)) {
             Optional<Usuario> u = socios.findByDni(demo.dniSocio()).flatMap(s -> usuarios.findBySocioId(s.getId()));

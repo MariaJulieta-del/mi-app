@@ -48,18 +48,20 @@ public class SesionesCache {
 
     public Optional<Datos> datos(String username) {
         long ahora = System.currentTimeMillis();
-        Datos d = porUsuario.get(username);
+        // En la demo pública cada visitante tiene su copia de los datos: no se mezclan en la memoria
+        String clave = com.example.gymtrack_backend.demo.DemoContexto.clave(username);
+        Datos d = porUsuario.get(clave);
         if (d != null && d.hasta() > ahora) return Optional.of(d);
         Optional<Usuario> u = usuarios.findConSocioByUsername(username);
         if (u.isEmpty()) {
-            porUsuario.remove(username);
+            porUsuario.remove(clave);
             return Optional.empty();
         }
         var socio = u.get().getSocio();
         Datos nuevo = new Datos(u.get(), socio == null ? null : socio.getId(),
                 socio != null && Boolean.TRUE.equals(socio.getActivo()), ahora + TTL_USUARIO_MS);
         if (porUsuario.size() > MAX_ENTRADAS) porUsuario.clear();
-        porUsuario.put(username, nuevo);
+        porUsuario.put(clave, nuevo);
         return Optional.of(nuevo);
     }
 

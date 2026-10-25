@@ -37,6 +37,7 @@ public class DemoReset {
     private final DemoConfig demo;
     private final DataSource dataSource;
     private final SesionesCache sesiones;
+    private final DemoEsquemas esquemas;
 
     @EventListener(ApplicationReadyEvent.class)
     public void alArrancar() {
@@ -50,6 +51,8 @@ public class DemoReset {
 
     public synchronized void recargar() {
         long t0 = System.currentTimeMillis();
+        // Las copias de los visitantes se arman a partir de estos datos: se borran y se vuelven a crear al entrar
+        esquemas.borrarTodas();
         try (Connection c = dataSource.getConnection()) {
             c.setAutoCommit(false);
             try (Statement st = c.createStatement()) {

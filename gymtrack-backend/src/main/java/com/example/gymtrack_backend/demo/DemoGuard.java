@@ -32,6 +32,9 @@ public class DemoGuard implements WebMvcConfigurer, HandlerInterceptor {
     }
 
     private static final List<Regla> BLOQUEADAS = List.of(
+            // En la demo se entra solo por /auth/demo (cada visitante con su copia): el login común no aplica
+            r("POST", "/auth/login"),
+            r("POST", "/auth/login-socio"),
             r("POST", "/auth/cambiar-password"),
             r("POST", "/auth/cambiar-pin"),
             r("POST", "/auth/register"),

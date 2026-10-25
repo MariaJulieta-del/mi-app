@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, Dumbbell, Smartphone, Loader2 } from 'lucide-react'
 import { useAuth } from '../../shared/context/AuthContext'
-import { entrarDemo, type RolDemo } from './demo'
+import { despertarServidor, entrarDemo, type RolDemo } from './demo'
 
 const OPCIONES: { rol: RolDemo; titulo: string; detalle: string; puntos: string[]; icono: typeof Building2; principal?: boolean }[] = [
   { rol: 'ADMIN', titulo: 'Entrar como dueño', detalle: 'El gimnasio completo, como lo ve quien lo maneja', icono: Building2, principal: true,
@@ -20,6 +20,8 @@ export default function DemoEntrada() {
   const [cargando, setCargando] = useState<RolDemo | null>(null)
   const [lento, setLento] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => { despertarServidor() }, [])
 
   useEffect(() => {
     if (!cargando) return
@@ -63,7 +65,7 @@ export default function DemoEntrada() {
         {cargando && lento && <p className="gt-demo-nota">Despertando el servidor de la demo… puede tardar hasta un minuto la primera vez.</p>}
         {error && <p className="gt-demo-error">{error}</p>}
 
-        <p className="gt-demo-nota">Son datos de prueba de un gimnasio inventado: tocá lo que quieras. Para cambiar de vista, cerrá sesión desde el menú y elegí otra.</p>
+        <p className="gt-demo-nota">Es un gimnasio inventado: cargá socios, cobrá y reservá lo que quieras. Lo que hagas lo ves solo vos y no cambia nada para los demás. Para cambiar de vista, cerrá sesión desde el menú y elegí otra.</p>
         <p className="gt-demo-firma">Hecho por <b>SerranaDev</b> · Tecnicatura Superior en Desarrollo de Software · ISAUI</p>
       </main>
     </div>

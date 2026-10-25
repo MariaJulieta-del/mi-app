@@ -7,9 +7,30 @@ export const ES_DEMO = import.meta.env.VITE_DEMO === 'true'
 
 export type RolDemo = 'ADMIN' | 'PROFESOR' | 'SOCIO'
 
+/** Cada visitante tiene su copia de los datos de prueba; se recuerda para seguir en la misma al cambiar de rol */
+const CLAVE_COPIA = 'gt-demo-copia'
+
+function leerCopia(): string | null {
+  try { return localStorage.getItem(CLAVE_COPIA) } catch { return null }
+}
+
+function copiaDelToken(token: string): string | null {
+  try {
+    const p = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return (JSON.parse(atob(p)) as { demo?: string }).demo ?? null
+  } catch { return null }
+}
+
 export async function entrarDemo(rol: RolDemo): Promise<LoginResponse> {
-  const res = await axios.post<LoginResponse>(`${API_URL}/api/v1/auth/demo`, { rol }, { timeout: 90000 })
+  const res = await axios.post<LoginResponse>(`${API_URL}/api/v1/auth/demo`, { rol, copia: leerCopia() }, { timeout: 90000 })
+  const copia = copiaDelToken(res.data.token)
+  try { if (copia) localStorage.setItem(CLAVE_COPIA, copia) } catch { /* sin almacenamiento */ }
   return res.data
+}
+
+/** El servidor gratis se duerme: se lo despierta apenas se abre la entrada, mientras el visitante lee las opciones */
+export function despertarServidor() {
+  fetch(`${API_URL}/api/v1/salud`, { cache: 'no-store' }).then(r => r.text()).catch(() => {})
 }
 
 /**
