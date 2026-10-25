@@ -17,4 +17,9 @@ public interface CierreCajaRepository extends JpaRepository<CierreCaja, Long> {
     Optional<CierreCaja> findFirstByFechaBeforeOrderByFechaDesc(LocalDate fecha);
 
     List<CierreCaja> findAllByOrderByFechaDesc();
+
+    /** Fechas ya cerradas de un período (una sola consulta) */
+    @org.springframework.data.jpa.repository.Query("SELECT c.fecha FROM CierreCaja c WHERE c.fecha BETWEEN :desde AND :hasta")
+    List<LocalDate> fechasCerradas(@org.springframework.data.repository.query.Param("desde") LocalDate desde,
+                                   @org.springframework.data.repository.query.Param("hasta") LocalDate hasta);
 }

@@ -20,4 +20,8 @@ public interface EgresoRepository extends JpaRepository<Egreso, Long> {
 
     @Query("SELECT COALESCE(SUM(e.monto), 0) FROM Egreso e WHERE e.fecha BETWEEN :desde AND :hasta")
     BigDecimal sumMontoByFechaBetween(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
+
+    /** Días de un período que tuvieron gastos */
+    @Query("SELECT DISTINCT e.fecha FROM Egreso e WHERE e.fecha BETWEEN :desde AND :hasta AND e.monto > 0")
+    List<LocalDate> fechasConGastos(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 }

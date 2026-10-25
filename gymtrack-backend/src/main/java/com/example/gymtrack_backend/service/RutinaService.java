@@ -712,13 +712,13 @@ public class RutinaService {
         dto.setId(rutina.getId());
         dto.setNombre(rutina.getNombre());
         dto.setDescripcion(rutina.getDescripcion());
-        dto.setTrenes(rutina.getTrenes() != null ? rutina.getTrenes() : new java.util.ArrayList<>());
+        dto.setTrenes(rutina.getTrenes() != null ? new java.util.ArrayList<>(rutina.getTrenes()) : new java.util.ArrayList<>());
         dto.setSocioId(rutina.getSocio() != null ? rutina.getSocio().getId() : null);
         dto.setSocioNombre(rutina.getSocio() != null
                 ? rutina.getSocio().getNombre() + " " + rutina.getSocio().getApellido()
                 : null);
         dto.setFechaCreacion(rutina.getFechaCreacion());
-        dto.setDiasSemana(rutina.getDiasSemana());
+        dto.setDiasSemana(rutina.getDiasSemana() != null ? new java.util.ArrayList<>(rutina.getDiasSemana()) : null);
         dto.setDificultad(rutina.getDificultad());
         dto.setObjetivo(rutina.getObjetivo());
         dto.setNotasProfe(rutina.getNotasProfe());

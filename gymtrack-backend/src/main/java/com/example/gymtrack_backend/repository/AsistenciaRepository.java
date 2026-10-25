@@ -12,8 +12,11 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
 
     List<Asistencia> findBySocioIdOrderByFechaDescHoraDesc(Long socioId);
 
+    /** Con el socio en la misma consulta: quien la usa siempre lee sus datos (evita una consulta extra) */
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "socio")
     List<Asistencia> findByFechaOrderByHoraDesc(LocalDate fecha);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "socio")
     List<Asistencia> findByFechaBetweenOrderByFechaDescHoraDesc(LocalDate desde, LocalDate hasta);
 
     @Query("SELECT COUNT(DISTINCT a.socio.id) FROM Asistencia a WHERE a.fecha = :fecha AND a.permitido = true")
