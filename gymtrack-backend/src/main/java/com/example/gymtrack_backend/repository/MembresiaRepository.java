@@ -41,6 +41,10 @@ public interface MembresiaRepository extends JpaRepository<Membresia, Long> {
     @Query("SELECT COUNT(m) FROM Membresia m WHERE m.tipoMembresia = :tipo AND m.estadoMembresia = 'ACTIVA'")
     long countActivosByTipo(@Param("tipo") String tipo);
 
+    /** (tipo, socios activos) de todos los planes en una sola consulta */
+    @Query("SELECT m.tipoMembresia, COUNT(m) FROM Membresia m WHERE m.estadoMembresia = 'ACTIVA' GROUP BY m.tipoMembresia")
+    java.util.List<Object[]> activosPorTipo();
+
     /** Todas con su socio en una sola consulta */
     @Query("select m from Membresia m join fetch m.socio")
     List<Membresia> todasConSocio();

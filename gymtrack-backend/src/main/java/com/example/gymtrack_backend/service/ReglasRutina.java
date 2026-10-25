@@ -23,10 +23,10 @@ public class ReglasRutina {
     public static final int SEMANAS_MIN = 2;
     public static final int SEMANAS_MAX = 26;
 
-    private final ConfiguracionGimnasioRepository configRepo;
+    private final Catalogo catalogo;
 
     public int semanasMax() {
-        return configRepo.findById(ConfiguracionGimnasio.ID)
+        return catalogo.config()
                 .map(ConfiguracionGimnasio::getSemanasRutina)
                 .filter(s -> s != null && s >= SEMANAS_MIN && s <= SEMANAS_MAX)
                 .orElse(SEMANAS_POR_DEFECTO);

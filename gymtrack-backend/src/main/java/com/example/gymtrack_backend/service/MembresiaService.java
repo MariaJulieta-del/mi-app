@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 public class MembresiaService {
 
     @Autowired
+    private Catalogo catalogo;
+
+    @Autowired
     private MembresiaRepository membresiaRepository;
 
     @Autowired
@@ -205,7 +208,7 @@ public class MembresiaService {
             anteriores.add(new CicloPases(c[0], c[1], usados, actual.pasesMensuales()));
             fin = c[0].minusDays(1);
         }
-        String plan = tarifaRepository.findById(m.getTipoMembresia()).map(TarifaMembresia::getNombre).orElse(m.getTipoMembresia());
+        String plan = catalogo.nombrePlan(m.getTipoMembresia());
         return new HistorialPases(true, plan, actual, porVenir, m.getFechaVencimiento(), anteriores, movs);
     }
 
@@ -308,8 +311,7 @@ public class MembresiaService {
     // ──────────────────────────────────────────────
 
     private Map<String, TarifaMembresia> planesPorTipo() {
-        return tarifaRepository.findAll().stream()
-            .collect(Collectors.toMap(TarifaMembresia::getTipo, Function.identity()));
+        return catalogo.tarifas();
     }
 
     public MembresiaResponseDTO mapearAResponseDTO(Membresia m) {

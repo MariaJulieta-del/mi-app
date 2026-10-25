@@ -28,8 +28,11 @@ export default function HoyPage() {
       clasesDeHoy().then(setClases).catch(() => {})
     }
     cargar()
-    const id = setInterval(() => { cargar(); setAhoraMin(minutosDeAhora()) }, 30000)
-    return () => clearInterval(id)
+    // Con la pestaña en segundo plano no se consulta: se actualiza apenas se vuelve a mirar
+    const refrescar = () => { if (document.visibilityState === 'visible') { cargar(); setAhoraMin(minutosDeAhora()) } }
+    const id = setInterval(refrescar, 30000)
+    document.addEventListener('visibilitychange', refrescar)
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', refrescar) }
   }, [])
 
   const f = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })

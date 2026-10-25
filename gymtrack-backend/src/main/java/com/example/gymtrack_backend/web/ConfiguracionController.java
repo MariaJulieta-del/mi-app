@@ -25,12 +25,13 @@ public class ConfiguracionController {
     private static final int LOGO_MAX = 400_000;
 
     private final ConfiguracionGimnasioRepository repo;
+    private final com.example.gymtrack_backend.service.Catalogo catalogo;
 
     public record Marca(String nombre, String logo, String colorAcento) {}
 
     @GetMapping("/marca")
     public ResponseEntity<Marca> marca() {
-        ConfiguracionGimnasio c = actual();
+        ConfiguracionGimnasio c = catalogo.config().orElseGet(this::actual);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
                 .body(new Marca(c.getNombre(), c.getLogo(), c.getColorAcento()));
