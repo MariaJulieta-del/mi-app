@@ -40,14 +40,19 @@ public class CierreCajaService {
     private static BigDecimal cero(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
 
     private Totales totales(LocalDate fecha) {
-        LocalDateTime desde = fecha.atStartOfDay();
-        LocalDateTime hasta = fecha.atTime(LocalTime.MAX);
-        return new Totales(
-                cero(pagoRepo.sumByMetodoAndFecha(MetodoPago.EFECTIVO, desde, hasta)),
-                cero(pagoRepo.sumByMetodoAndFecha(MetodoPago.TARJETA, desde, hasta)),
-                cero(pagoRepo.sumByMetodoAndFecha(MetodoPago.TRANSFERENCIA, desde, hasta)),
-                cero(egresoRepo.sumMontoByFecha(fecha)),
-                pagoRepo.countCompletadosByFecha(desde, hasta));
+        // Una consulta para los cobros (agrupados por medio de pago) y otra para los gastos
+        BigDecimal efectivo = BigDecimal.ZERO, tarjeta = BigDecimal.ZERO, transferencia = BigDecimal.ZERO;
+        long pagos = 0;
+        for (Object[] f : pagoRepo.totalesPorMetodo(fecha.atStartOfDay(), fecha.plusDays(1).atStartOfDay())) {
+            BigDecimal monto = cero((BigDecimal) f[1]);
+            pagos += ((Number) f[2]).longValue();
+            switch ((MetodoPago) f[0]) {
+                case EFECTIVO -> efectivo = monto;
+                case TARJETA -> tarjeta = monto;
+                case TRANSFERENCIA -> transferencia = monto;
+            }
+        }
+        return new Totales(efectivo, tarjeta, transferencia, cero(egresoRepo.sumMontoByFecha(fecha)), pagos);
     }
 
     /** El cambio con el que arranca el día: lo que se dejó en la caja en el último cierre anterior */
@@ -129,15 +134,15 @@ public class CierreCajaService {
 
     /** Días anteriores a hoy con movimientos (pagos o gastos) que quedaron sin cerrar */
     public List<LocalDate> pendientes() {
+        // Tres consultas para todo el período (antes eran cinco por cada día)
         LocalDate hoy = LocalDate.now();
-        List<LocalDate> dias = new ArrayList<>();
-        for (int i = DIAS_PENDIENTES; i >= 1; i--) {
-            LocalDate d = hoy.minusDays(i);
-            if (cierreRepo.existsByFecha(d)) continue;
-            Totales t = totales(d);
-            if (t.pagos() > 0 || t.egresos().signum() > 0) dias.add(d);
-        }
-        return dias;
+        LocalDate desde = hoy.minusDays(DIAS_PENDIENTES);
+        LocalDate hasta = hoy.minusDays(1);
+        java.util.Set<LocalDate> cerrados = new java.util.HashSet<>(cierreRepo.fechasCerradas(desde, hasta));
+        java.util.Set<LocalDate> conMovimientos = new java.util.TreeSet<>(egresoRepo.fechasConGastos(desde, hasta));
+        pagoRepo.fechasCompletados(desde.atStartOfDay(), hoy.atStartOfDay()).forEach(f -> conMovimientos.add(f.toLocalDate()));
+        conMovimientos.removeAll(cerrados);
+        return new ArrayList<>(conMovimientos);
     }
 
     /** Historial de todos los cierres */

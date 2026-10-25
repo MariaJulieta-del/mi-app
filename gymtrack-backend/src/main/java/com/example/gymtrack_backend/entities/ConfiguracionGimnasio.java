@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "configuracion_gimnasio")
+@jakarta.persistence.EntityListeners(com.example.gymtrack_backend.service.Catalogo.Oyente.class)
 public class ConfiguracionGimnasio {
 
     public static final long ID = 1L;

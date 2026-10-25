@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 public class TarifaMembresiaService {
 
     @Autowired
+    private Catalogo catalogo;
+
+    @Autowired
     private TarifaMembresiaRepository repository;
 
     @Autowired
@@ -26,7 +29,7 @@ public class TarifaMembresiaService {
         // [plan, membresías, activas] de todos los planes en una sola consulta
         java.util.Map<String, Object[]> resumen = new java.util.HashMap<>();
         for (Object[] f : membresiaRepository.resumenPorPlan()) resumen.put((String) f[0], f);
-        return repository.findAll().stream()
+        return catalogo.tarifas().values().stream()
                 .map(t -> {
                     TarifaMembresiaResponseDTO dto = toDTO(t, false);
                     Object[] f = resumen.get(t.getTipo());

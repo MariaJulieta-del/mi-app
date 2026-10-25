@@ -65,7 +65,8 @@ public class Rutina {
      * Trenes musculares que cubre esta rutina.
      * Ej: ["SUPERIOR", "CORE"] — múltiple selección.
      */
-    @ElementCollection(fetch = FetchType.EAGER)
+    // Se cargan solo cuando se usan (y de a muchas rutinas juntas, por default_batch_fetch_size)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "rutina_trenes", joinColumns = @JoinColumn(name = "rutina_id"))
     @Column(name = "tren")
     private List<String> trenes = new ArrayList<>();
@@ -86,7 +87,7 @@ public class Rutina {
     private String notasProfe;
 
     /** Días de la semana en que se realiza esta rutina, ej: ["LUNES", "MIÉRCOLES"] */
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "rutina_dias", joinColumns = @JoinColumn(name = "rutina_id"))
     @Column(name = "dia")
     private List<String> diasSemana = new ArrayList<>();

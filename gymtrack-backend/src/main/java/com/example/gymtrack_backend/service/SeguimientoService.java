@@ -54,7 +54,9 @@ public class SeguimientoService {
 
     public Hoy hoy() {
         LocalDate hoy = LocalDate.now();
-        List<Asistencia> deHoy = asistenciaRepo.findByFechaOrderByHoraDesc(hoy);
+        // Una sola lectura de ingresos (los últimos días, con el socio): de ahí salen los de hoy y los que vienen seguido
+        List<Asistencia> recientes = asistenciaRepo.findByFechaBetweenOrderByFechaDescHoraDesc(hoy.minusDays(DIAS_ACTIVIDAD), hoy);
+        List<Asistencia> deHoy = recientes.stream().filter(a -> hoy.equals(a.getFecha())).toList();
 
         // Un socio por fila (su primer ingreso permitido del día)
         Map<Long, Asistencia> porSocio = new LinkedHashMap<>();
@@ -71,7 +73,10 @@ public class SeguimientoService {
             membresiaRepo.findBySocioIdIn(ids).forEach(m -> membresias.putIfAbsent(m.getSocio().getId(), m));
             fichaRepo.findBySocioIdIn(ids).forEach(f -> fichas.putIfAbsent(f.getSocio().getId(), f));
         }
-        Map<Long, RutinasDelSocio.RutinaDeSocio> rutinas = rutinasDelSocio.actuales(ids);
+        // Las rutinas de los de hoy y de los que vienen seguido, en una sola búsqueda
+        Set<Long> todos = new java.util.HashSet<>(ids);
+        recientes.forEach(a -> todos.add(a.getSocio().getId()));
+        Map<Long, RutinasDelSocio.RutinaDeSocio> rutinas = rutinasDelSocio.actuales(todos);
         List<SocioHoy> entrenando = porSocio.values().stream()
                 .sorted(Comparator.comparing(Asistencia::getHora).reversed())
                 .map(a -> {
@@ -85,20 +90,20 @@ public class SeguimientoService {
 
         int denegados = (int) deHoy.stream().filter(a -> !Boolean.TRUE.equals(a.getPermitido())).count();
         int max = reglas.semanasMax();
-        return new Hoy(porSocio.size(), denegados, entrenando, aRenovar(hoy, max), max);
+        return new Hoy(porSocio.size(), denegados, entrenando, aRenovar(recientes, rutinas, hoy, max), max);
     }
 
     /** Socios que vienen seguido y no tienen rutina, o la tienen hace mucho */
-    private List<SocioARenovar> aRenovar(LocalDate hoy, int semanasMax) {
+    private List<SocioARenovar> aRenovar(List<Asistencia> recientes, Map<Long, RutinasDelSocio.RutinaDeSocio> rutinas,
+                                         LocalDate hoy, int semanasMax) {
         Map<Long, LocalDate> ultimaVisita = new LinkedHashMap<>();
         Map<Long, Socio> socios = new HashMap<>();
-        for (Asistencia a : asistenciaRepo.findByFechaBetweenOrderByFechaDescHoraDesc(hoy.minusDays(DIAS_ACTIVIDAD), hoy)) {
+        for (Asistencia a : recientes) {
             if (!Boolean.TRUE.equals(a.getPermitido()) || !Boolean.TRUE.equals(a.getSocio().getActivo())) continue;
             ultimaVisita.putIfAbsent(a.getSocio().getId(), a.getFecha());
             socios.putIfAbsent(a.getSocio().getId(), a.getSocio());
         }
         List<SocioARenovar> lista = new ArrayList<>();
-        Map<Long, RutinasDelSocio.RutinaDeSocio> rutinas = rutinasDelSocio.actuales(ultimaVisita.keySet());
         for (var e : ultimaVisita.entrySet()) {
             Socio s = socios.get(e.getKey());
             RutinaResumen r = resumen(rutinas.get(s.getId()), hoy);

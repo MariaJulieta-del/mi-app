@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 @Data
 @Entity
 @Table(name = "tarifas_membresia")
+@jakarta.persistence.EntityListeners(com.example.gymtrack_backend.service.Catalogo.Oyente.class)
 public class TarifaMembresia {
 
     @Id

@@ -65,11 +65,18 @@ public class ReservaService {
         for (ReservaClase r : reservaRepo.entre(hoy, hasta)) {
             reservas.computeIfAbsent(clave(r.getDisciplina().getId(), r.getFecha(), r.getHoraInicio()), k -> new ArrayList<>()).add(r);
         }
+        // Los alumnos fijos de todas las disciplinas en una sola consulta (antes era una por disciplina)
+        List<Disciplina> activas = disciplinaRepo.findByActivaTrue();
         Map<Long, List<InscripcionDisciplina>> fijosPorDisciplina = new HashMap<>();
+        if (!activas.isEmpty()) {
+            for (InscripcionDisciplina i : inscripcionRepo.findConSocioByDisciplinaIdIn(activas.stream().map(Disciplina::getId).toList())) {
+                fijosPorDisciplina.computeIfAbsent(i.getDisciplina().getId(), k -> new ArrayList<>()).add(i);
+            }
+        }
 
         List<ClaseAgenda> lista = new ArrayList<>();
-        for (Disciplina d : disciplinaRepo.findByActivaTrue()) {
-            List<InscripcionDisciplina> fijos = fijosPorDisciplina.computeIfAbsent(d.getId(), inscripcionRepo::findConSocioByDisciplinaId);
+        for (Disciplina d : activas) {
+            List<InscripcionDisciplina> fijos = fijosPorDisciplina.getOrDefault(d.getId(), List.of());
             for (LocalDate f = hoy; !f.isAfter(hasta); f = f.plusDays(1)) {
                 String dia = DisciplinaService.DIAS.get(f.getDayOfWeek().getValue() - 1);
                 for (Disciplina.Horario h : d.getHorarios()) {

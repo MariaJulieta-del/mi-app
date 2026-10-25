@@ -38,7 +38,7 @@ export function PedidosRutinaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!esStaff) return
     recargar()
-    const id = setInterval(recargar, CADA_MS)
+    const id = setInterval(() => { if (document.visibilityState === 'visible') recargar() }, CADA_MS)
     const alVolver = () => { if (document.visibilityState === 'visible') recargar() }
     document.addEventListener('visibilitychange', alVolver)
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', alVolver) }

@@ -30,6 +30,7 @@ import java.util.List;
 public class NotificacionService {
 
     private final NotificacionRepository repo;
+    private final Catalogo catalogo;
     private final SocioRepository        socioRepo;
     private final EmailService           emailService;
     private final com.example.gymtrack_backend.repository.DisciplinaRepository disciplinaRepo;
@@ -215,7 +216,7 @@ public class NotificacionService {
 
     // ── Mail ─────────────────────────────────────────────────────────────────
     private String nombreGimnasio() {
-        return configRepo.findById(1L).map(c -> c.getNombre()).filter(x -> x != null && !x.isBlank()).orElse("GymTrack");
+        return catalogo.config().map(c -> c.getNombre()).filter(x -> x != null && !x.isBlank()).orElse("GymTrack");
     }
 
     private String asunto(Notificacion n) {

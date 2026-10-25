@@ -85,4 +85,25 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
           AND p.fechaPago < :hasta
         """)
     long countCompletadosByFecha(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    /** Total y cantidad de pagos COMPLETADOS por método entre dos fechas, en una sola consulta (caja del día) */
+    @Query("""
+        SELECT p.metodoPago, COALESCE(SUM(p.monto), 0), COUNT(p)
+        FROM Pago p
+        WHERE p.estadoPago = 'COMPLETADO'
+          AND p.fechaPago >= :desde
+          AND p.fechaPago < :hasta
+        GROUP BY p.metodoPago
+        """)
+    List<Object[]> totalesPorMetodo(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
+
+    /** Momentos de los pagos COMPLETADOS de un período (para saber qué días tuvieron cobros) */
+    @Query("""
+        SELECT p.fechaPago
+        FROM Pago p
+        WHERE p.estadoPago = 'COMPLETADO'
+          AND p.fechaPago >= :desde
+          AND p.fechaPago < :hasta
+        """)
+    List<LocalDateTime> fechasCompletados(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 }

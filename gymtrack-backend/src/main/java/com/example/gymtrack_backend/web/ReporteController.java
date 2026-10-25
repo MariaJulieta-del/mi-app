@@ -29,7 +29,7 @@ public class ReporteController {
     private final MembresiaRepository  membresiaRepo;
     private final PagoRepository       pagoRepo;
     private final AsistenciaRepository asistenciaRepo;
-    private final TarifaMembresiaRepository tarifaRepo;
+    private final com.example.gymtrack_backend.service.Catalogo catalogo;
     private final com.example.gymtrack_backend.service.MetricasService metricasService;
     private final com.example.gymtrack_backend.service.DemografiaService demografiaService;
 
@@ -59,13 +59,13 @@ public class ReporteController {
     @GetMapping("/planes")
     public List<PlanVendido> planes(@RequestParam(defaultValue = "6") int meses) {
         int m = Math.max(1, Math.min(24, meses));
-        Map<String, String> nombres = new java.util.HashMap<>();
-        tarifaRepo.findAll().forEach(t -> nombres.put(t.getTipo(), t.getNombre() != null ? t.getNombre() : t.getTipo()));
+        Map<String, Long> activos = new java.util.HashMap<>();
+        membresiaRepo.activosPorTipo().forEach(f -> activos.put((String) f[0], ((Number) f[1]).longValue()));
         return pagoRepo.cobrosPorPlan(LocalDate.now().minusMonths(m).atStartOfDay()).stream()
                 .map(f -> {
                     String tipo = (String) f[0];
-                    return new PlanVendido(tipo, nombres.getOrDefault(tipo, tipo), ((Number) f[1]).longValue(),
-                            ((Number) f[2]).doubleValue(), membresiaRepo.countActivosByTipo(tipo));
+                    return new PlanVendido(tipo, catalogo.nombrePlan(tipo), ((Number) f[1]).longValue(),
+                            ((Number) f[2]).doubleValue(), activos.getOrDefault(tipo, 0L));
                 })
                 .sorted(java.util.Comparator.comparingLong(PlanVendido::cobros).reversed())
                 .toList();
@@ -120,14 +120,13 @@ public class ReporteController {
         LocalDate hoy      = LocalDate.now();
         LocalDate inicioMes = hoy.withDayOfMonth(1);
 
-        long totalSocios      = socioRepo.countByActivoTrue();
-        long membresiasActivas = membresiaRepo.countByEstadoMembresia(EstadoMembresia.ACTIVA);
-        long membresiasVencidas = membresiaRepo.countByEstadoMembresia(EstadoMembresia.VENCIDA);
-
-        // Total recaudado este mes (pagos COMPLETADOS)
-        double recaudadoMes = pagoRepo.totalCompletadoEntre(inicioMes.atStartOfDay(), hoy.plusDays(1).atStartOfDay()).doubleValue();
-
-        long asistentesHoy = asistenciaRepo.countSociosHoy(hoy);
+        // Todos los números en una sola consulta (antes eran cinco)
+        Object[] r = socioRepo.resumenDashboard(inicioMes.atStartOfDay(), hoy.plusDays(1).atStartOfDay(), hoy).get(0);
+        long totalSocios        = ((Number) r[0]).longValue();
+        long membresiasActivas  = ((Number) r[1]).longValue();
+        long membresiasVencidas = ((Number) r[2]).longValue();
+        double recaudadoMes     = ((Number) r[3]).doubleValue();   // pagos COMPLETADOS del mes
+        long asistentesHoy      = ((Number) r[4]).longValue();
 
         return ResponseEntity.ok(Map.of(
                 "totalSociosActivos",    totalSocios,
