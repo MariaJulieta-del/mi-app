@@ -314,10 +314,11 @@ function AppLayout() {
 
 // ── App raíz ──────────────────────────────────────────────────────────────
 export default function App() {
+  const { pathname } = useLocation()
   return (
     <ToastProvider>
       <BarraCarga />
-      {ES_DEMO && <div className="gt-demo-cartel" aria-hidden>DEMO · datos de prueba</div>}
+      {ES_DEMO && pathname !== '/login' && <div className="gt-demo-cartel" aria-hidden>DEMO · datos de prueba</div>}
       <Routes>
         <Route path="/login" element={ES_DEMO ? <DemoEntrada /> : <LoginPage />} />
         {/* Dirección fija del QR impreso: redirige a la demo pública */}
