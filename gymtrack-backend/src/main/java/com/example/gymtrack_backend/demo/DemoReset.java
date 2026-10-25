@@ -38,10 +38,14 @@ public class DemoReset {
     private final DataSource dataSource;
     private final SesionesCache sesiones;
     private final DemoEsquemas esquemas;
+    private final com.example.gymtrack_backend.service.Catalogo catalogo;
 
     @EventListener(ApplicationReadyEvent.class)
     public void alArrancar() {
-        if (demo.habilitada()) recargar();
+        if (!demo.habilitada()) return;
+        // Los planes y la configuración en memoria van por separado para cada visitante (cada uno tiene su copia)
+        com.example.gymtrack_backend.service.Catalogo.ambito = () -> java.util.Objects.toString(DemoContexto.actual(), "");
+        recargar();
     }
 
     @Scheduled(cron = "0 0 5 * * *", zone = "America/Argentina/Cordoba")
@@ -105,6 +109,7 @@ public class DemoReset {
                 st.execute("UPDATE usuarios SET pin_actualizado = LEAST(pin_actualizado, now() - interval '1 day') WHERE pin_actualizado IS NOT NULL");
                 c.commit();
                 sesiones.olvidarTodo();
+                catalogo.olvidar();
                 log.info("[Demo] Datos de prueba recargados (fechas corridas {} días) en {} ms", dias, System.currentTimeMillis() - t0);
             } catch (Exception ex) {
                 c.rollback();
