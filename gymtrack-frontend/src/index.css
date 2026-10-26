@@ -29,7 +29,7 @@ hr { margin: 1rem 0; border: 0; border-top: 1px solid var(--border); }
   --text-primary:   #111827;
   --text-secondary: #374151;
   --text-muted:     #5B6472;   /* 4,9:1 sobre los grises claros (auditoría UX) */
-  --text-xmuted:    #6B7280;   /* antes #9CA3AF (2,5:1) */
+  --text-xmuted:    #646B78;   /* antes #9CA3AF (2,5:1); 4,9:1 sobre el fondo gris */
   --accent:         #1B5E44;
   --accent-hover:   #145038;
   --accent-light:   #F0FDF4;
@@ -1622,7 +1622,9 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
   display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;
 }
 .gt-socio-contacto { font-size: 13px; color: var(--text-secondary); min-width: 0; }
-.gt-socio-wa { display: inline-flex; margin-left: 6px; color: #16A34A; vertical-align: middle; }
+.gt-socio-wa { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 32px; margin-left: 2px; color: #15803D; vertical-align: middle; border-radius: 8px; }
+.dark .gt-socio-wa { color: #4ADE80; }
+@media (max-width: 768px), (pointer: coarse) { .gt-socio-wa { min-width: 44px; min-height: 44px; } }
 .gt-socio-alta { font-size: 12px; color: var(--text-muted); }
 .gt-socio-acciones { display: flex; gap: 6px; justify-content: flex-end; }
 .gt-paginado { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
@@ -2244,7 +2246,7 @@ button.gt-resumen-item.activo { border-color: var(--accent); box-shadow: 0 0 0 1
 .gt-topbar-kbd { font-size: 12px; opacity: .75; background: rgba(0, 0, 0, .2); padding: 1px 4px; border-radius: 3px; }
 .gt-topbar-cuenta { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .gt-topbar-usuario { font-size: 13px; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
-.gt-topbar-rol { color: #fff; font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; background: #3B82F6; }
+.gt-topbar-rol { color: #fff; font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; background: #2563EB; }
 .gt-topbar-rol.admin { background: var(--yellow-text); color: var(--bg-surface); }
 .gt-topbar :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (max-width: 480px) {
@@ -2636,3 +2638,6 @@ main:focus { outline: none; }
 @media (max-width: 768px), (pointer: coarse) {
   .gt-chip, .gt-chip-boton, .gt-chip-neutro, .gt-filtro-chip, .gt-btn-link { display: inline-flex; align-items: center; }
 }
+/* Enlace que es una acción suelta (no parte de una frase): área táctil cómoda */
+.gt-link-accion { display: flex; width: fit-content; align-items: center; min-height: 28px; }
+@media (max-width: 768px), (pointer: coarse) { .gt-link-accion { min-height: 44px; } }

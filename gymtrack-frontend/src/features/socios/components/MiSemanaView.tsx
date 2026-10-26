@@ -75,15 +75,15 @@ export default function MiSemanaView({
           const esHoy = idx === hoyIdx
           const seleccionado = idx === diaSeleccionado
           return (
-            <button key={dia} type="button"
+            <button key={dia} type="button" aria-pressed={seleccionado}
+              aria-label={`${dia}${esHoy ? ' (hoy)' : ''}${tienEjs ? '' : ', sin ejercicios'}`}
               onClick={() => setDiaSeleccionado(idx)}
               style={{
-                padding: '7px 16px', borderRadius: 20, border: '2px solid', cursor: 'pointer',
+                padding: '7px 16px', borderRadius: 20, border: '2px solid', cursor: 'pointer', borderStyle: tienEjs || seleccionado ? 'solid' : 'dashed',
                 fontWeight: 700, fontSize: 13,
                 borderColor: seleccionado ? 'var(--accent)' : esHoy ? 'var(--accent)' : 'var(--border)',
                 background: seleccionado ? 'var(--accent)' : 'var(--bg-surface)',
                 color: seleccionado ? 'var(--on-accent)' : esHoy ? 'var(--accent)' : tienEjs ? 'var(--text-primary)' : 'var(--text-muted)',
-                opacity: tienEjs || seleccionado ? 1 : 0.5,
               }}>
               {dia.slice(0, 3)}
               {esHoy && !seleccionado && <span style={{ fontSize: 12, display: 'block', marginTop: -2 }}>hoy</span>}
@@ -112,7 +112,7 @@ export default function MiSemanaView({
 
             return (
               <div key={ejId} className="gt-list-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <button type="button"
+                <button type="button" aria-expanded={abierto}
                   onClick={() => toggleExpandedEj(ejId)}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
@@ -142,13 +142,14 @@ export default function MiSemanaView({
                         ))}
                       </div>
                     )}
-                    <Link to={`/rutinas/${rutinaId}?socioId=${socioId}`} onClick={e => e.stopPropagation()}
-                      style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>
-                      {rutinaNombre}
-                    </Link>
                   </div>
-                  <span style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0 }}>{abierto ? '▾' : '▸'}</span>
+                  <span style={{ fontSize: 18, color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden>{abierto ? '▾' : '▸'}</span>
                 </button>
+                {/* Fuera del botón: un enlace no puede ir dentro de otro control */}
+                <Link to={`/rutinas/${rutinaId}?socioId=${socioId}`}
+                  style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', minHeight: 28, margin: '-10px 16px 8px 136px' }}>
+                  {rutinaNombre}
+                </Link>
 
                 {abierto && (
                   <div style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
