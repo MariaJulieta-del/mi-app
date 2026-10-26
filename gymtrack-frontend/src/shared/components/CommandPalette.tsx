@@ -196,7 +196,7 @@ export default function CommandPalette() {
                 }}
               />
               <kbd style={{
-                fontSize: 11, color: 'var(--text-muted)',
+                fontSize: 12, color: 'var(--text-muted)',
                 background: 'var(--bg-surface-2)', border: '1px solid var(--border)',
                 borderRadius: 4, padding: '2px 6px',
               }}>Esc</kbd>
@@ -245,10 +245,10 @@ export default function CommandPalette() {
                         onClick={e => handleVerificarAcceso(e, s)}
                         disabled={verificando === s.id}
                         style={{
-                          fontSize: 11, padding: '4px 10px', borderRadius: 6,
-                          background: verificando === s.id ? '#D1FAE5' : '#16A34A',
+                          fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                          background: verificando === s.id ? 'var(--green-bg)' : '#15803D',
                           border: 'none',
-                          color: verificando === s.id ? '#16A34A' : '#fff',
+                          color: verificando === s.id ? 'var(--green-text)' : '#fff',
                           cursor: verificando === s.id ? 'wait' : 'pointer',
                           fontWeight: 700,
                         }}>
@@ -257,7 +257,7 @@ export default function CommandPalette() {
                       <button
                         onClick={e => { e.stopPropagation(); goTo(s) }}
                         style={{
-                          fontSize: 11, padding: '4px 8px', borderRadius: 6,
+                          fontSize: 12, padding: '4px 8px', borderRadius: 6,
                           background: 'var(--bg-surface-2)', border: '1px solid var(--border)',
                           color: 'var(--text-secondary)', cursor: 'pointer',
                         }}>
@@ -272,7 +272,7 @@ export default function CommandPalette() {
             {/* Footer hint */}
             <div style={{
               padding: '8px 16px', borderTop: query.length >= 1 ? '1px solid var(--border)' : 'none',
-              display: 'flex', gap: 16, fontSize: 11, color: 'var(--text-muted)',
+              display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)',
             }}>
               <span><kbd style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 4px' }}>↑↓</kbd> navegar</span>
               <span><kbd style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 4px' }}>Enter</kbd> ver perfil</span>

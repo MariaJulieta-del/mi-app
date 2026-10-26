@@ -19,14 +19,18 @@ public class AuditoriaController {
 
     private final AuditoriaRepository repo;
 
-    /** Últimos movimientos en un rango de fechas (por defecto, los últimos 30 días) */
+    /** Movimientos en un rango de fechas (por defecto, los últimos 30 días); con «ultimos», los N más recientes */
     @GetMapping
     public ResponseEntity<List<Auditoria>> listar(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @RequestParam(required = false) Long socioId) {
+            @RequestParam(required = false) Long socioId,
+            @RequestParam(required = false) Integer ultimos) {
         if (socioId != null) {
             return ResponseEntity.ok(repo.findBySocioIdOrderByFechaDesc(socioId, PageRequest.of(0, 500)));
+        }
+        if (ultimos != null && desde == null && hasta == null) {
+            return ResponseEntity.ok(repo.findByOrderByFechaDesc(PageRequest.of(0, Math.max(1, Math.min(ultimos, 200)))));
         }
         LocalDate h = hasta != null ? hasta : LocalDate.now();
         LocalDate d = desde != null ? desde : h.minusDays(30);

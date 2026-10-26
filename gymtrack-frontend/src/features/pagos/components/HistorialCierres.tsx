@@ -35,8 +35,8 @@ export default function HistorialCierres({ onAbrir }: { onAbrir: (fecha: string)
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
         <button type="button" className="gt-btn gt-btn-secondary" onClick={exportar}><Download size={16} aria-hidden /> Exportar</button>
       </div>
-      <div className="gt-table-wrap gt-card" style={{ padding: 0 }}>
-        <table className="gt-table">
+      <div tabIndex={0} role="region" aria-label="Cierres de caja" className="gt-table-wrap gt-card" style={{ padding: 0 }}>
+        <table className="gt-table gt-tabla-tarjetas">
           <thead><tr><th>Día</th><th style={{ textAlign: 'right' }}>Cobrado</th><th style={{ textAlign: 'right' }}>Gastos</th><th style={{ textAlign: 'right' }}>Debía haber</th><th>Resultado</th><th style={{ textAlign: 'right' }}>Retiro</th><th>Cerró</th></tr></thead>
           <tbody>
             {cierres.map(c => {
@@ -44,13 +44,13 @@ export default function HistorialCierres({ onAbrir }: { onAbrir: (fecha: string)
               return (
                 <tr key={c.id} className="gt-fila-clic" tabIndex={0} aria-label={`Abrir la caja del ${formatFecha(c.fecha)}`}
                   onClick={() => onAbrir(c.fecha)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrir(c.fecha) } }}>
-                  <td className="gt-fw-600" style={{ whiteSpace: 'nowrap' }}>{formatFecha(c.fecha)}</td>
-                  <td style={{ textAlign: 'right' }}>{pesos(c.totalIngresos)}</td>
-                  <td style={{ textAlign: 'right' }}>{Number(c.totalEgresos) > 0 ? pesos(c.totalEgresos) : '—'}</td>
-                  <td style={{ textAlign: 'right' }}>{pesos(c.balanceCalculado)}</td>
-                  <td><Pill tono={dif.tono}>{dif.texto}</Pill></td>
-                  <td style={{ textAlign: 'right' }}>{pesos(c.retiro ?? null)}</td>
-                  <td className="gt-text-muted">{c.creadoPor ?? '—'}{c.observaciones && <div className="gt-text-sm">“{c.observaciones}”</div>}</td>
+                  <td className="gt-td-titulo gt-fw-600" style={{ whiteSpace: 'nowrap' }}>{formatFecha(c.fecha)}</td>
+                  <td data-label="Cobrado" style={{ textAlign: 'right' }}>{pesos(c.totalIngresos)}</td>
+                  <td data-label="Gastos" style={{ textAlign: 'right' }}>{Number(c.totalEgresos) > 0 ? pesos(c.totalEgresos) : '—'}</td>
+                  <td data-label="Debía haber" style={{ textAlign: 'right' }}>{pesos(c.balanceCalculado)}</td>
+                  <td data-label="Resultado"><Pill tono={dif.tono}>{dif.texto}</Pill></td>
+                  <td data-label="Retiro" style={{ textAlign: 'right' }}>{pesos(c.retiro ?? null)}</td>
+                  <td data-label="Cerró" className="gt-text-muted">{c.creadoPor ?? '—'}{c.observaciones && <div className="gt-text-sm">“{c.observaciones}”</div>}</td>
                 </tr>
               )
             })}

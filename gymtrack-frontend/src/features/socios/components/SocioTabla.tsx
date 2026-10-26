@@ -99,6 +99,7 @@ export default function SocioTabla({ socios, onEditar, onEliminar, onReactivar, 
                     </Link>
                   )}
                   <IconButton icono={Pencil} etiqueta={`Editar a ${s.nombre}`} onClick={() => onEditar(s)} />
+                  <span className="gt-sep-accion" aria-hidden />
                   <IconButton icono={UserX} etiqueta={`Dar de baja a ${s.nombre}`} tono="danger" disabled={ocupado != null} onClick={() => onEliminar(s.id)} />
                 </>
               )}

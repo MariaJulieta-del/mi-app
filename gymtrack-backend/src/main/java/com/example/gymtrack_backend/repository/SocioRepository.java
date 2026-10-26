@@ -35,12 +35,12 @@ public interface SocioRepository extends JpaRepository<Socio, Long> {
         """)
     List<Socio> findActivosSinAsistenciaDesde(@Param("desde") LocalDate desde);
 
-    /** Los números del tablero de inicio en una sola consulta: socios activos, membresías activas y vencidas,
+    /** Los números del tablero de inicio en una sola consulta: socios activos, cuántos de ellos están al día y con la cuota vencida,
      *  recaudado en el período y socios que ingresaron en el día */
     @Query(value = """
         SELECT (SELECT count(*) FROM socios WHERE activo = true),
-               (SELECT count(*) FROM membresias WHERE estado_membresia = 'ACTIVA'),
-               (SELECT count(*) FROM membresias WHERE estado_membresia = 'VENCIDA'),
+               (SELECT count(*) FROM membresias m JOIN socios s ON s.id = m.socio_id WHERE s.activo = true AND m.estado_membresia = 'ACTIVA'),
+               (SELECT count(*) FROM membresias m JOIN socios s ON s.id = m.socio_id WHERE s.activo = true AND m.estado_membresia = 'VENCIDA'),
                (SELECT coalesce(sum(monto), 0) FROM pagos WHERE estado_pago = 'COMPLETADO' AND fecha_pago >= :desde AND fecha_pago < :hasta),
                (SELECT count(DISTINCT socio_id) FROM asistencias WHERE fecha = :hoy AND permitido = true)
         """, nativeQuery = true)

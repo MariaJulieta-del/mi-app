@@ -458,10 +458,11 @@ export default function EntrenarPage() {
 
       {/* Récord nuevo */}
       {festejo && (
-        <div className="gt-festejo" role="status" onClick={() => setFestejo(null)}>
+        <div className="gt-festejo" role="status">
           <span className="gt-festejo-icono" aria-hidden><Trophy size={30} /></span>
           <strong>¡Nuevo récord!</strong>
           <span>{festejo.ejercicio}: {kgTxt(festejo.kg)}{festejo.tipo === 'e1rm' ? ` · 1RM ≈ ${kgTxt(festejo.e1rm)}` : ''}</span>
+          <button type="button" className="gt-festejo-cerrar" onClick={() => setFestejo(null)} aria-label="Cerrar el aviso de récord">×</button>
         </div>
       )}
 

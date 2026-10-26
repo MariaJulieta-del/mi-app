@@ -55,15 +55,15 @@ export function PinesPendientesModal({ pines, onCerrar }: { pines: PinGenerado[]
               Se generaron {pines.length} PIN. Imprimí esta lista y entregale a cada socio el suyo.
               <strong> No se vuelve a mostrar.</strong>
             </p>
-            <div className="gt-table-wrap" style={{ maxHeight: 360, overflowY: 'auto' }}>
-              <table className="gt-table">
+            <div tabIndex={0} role="region" aria-label="PIN de los socios" className="gt-table-wrap" style={{ maxHeight: 360, overflowY: 'auto' }}>
+              <table className="gt-table gt-tabla-tarjetas">
                 <thead><tr><th>Socio</th><th>DNI</th><th>PIN</th></tr></thead>
                 <tbody>
                   {pines.map(p => (
                     <tr key={p.socioId}>
-                      <td className="gt-fw-600">{p.nombre}</td>
-                      <td>{p.dni}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 800, letterSpacing: 3 }}>{p.pin}</td>
+                      <td className="gt-td-titulo gt-fw-600">{p.nombre}</td>
+                      <td data-label="DNI">{p.dni}</td>
+                      <td data-label="PIN" style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 800, letterSpacing: 3 }}>{p.pin}</td>
                     </tr>
                   ))}
                 </tbody>

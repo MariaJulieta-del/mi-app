@@ -1,6 +1,6 @@
 import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import LimiteErrores from './shared/components/LimiteErrores'
-import { useState, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense, useEffect, useRef } from 'react'
 import {
   Bell, CalendarCheck, CalendarDays, ChartColumn, TrendingUp, CircleUser, ClipboardList, Cog, Dumbbell, House, IdCard,
   LogOut, Menu, Moon, ScanLine, Search, Sun, Settings, ShieldCheck, UserCog, Users, Wallet, type LucideIcon,
@@ -90,26 +90,50 @@ const NAV_GRUPOS: { titulo: string; items: NavItem[] }[] = [
   ] },
 ]
 
-/** Barra inferior del staff en el celular: lo que más se usa en el salón */
-const BOTTOM_LINKS = [
-  { to: '/hoy',     label: 'Hoy',     icono: CalendarCheck },
-  { to: '/acceso',  label: 'Acceso',  icono: ScanLine },
-  { to: '/socios',  label: 'Socios',  icono: Users },
-  { to: '/rutinas', label: 'Rutinas', icono: ClipboardList },
+/** Barra inferior en el celular: lo que más usa cada rol (la dueña cobra; el profe atiende el salón) */
+const BOTTOM_LINKS: Record<Rol, { to: string; label: string; icono: LucideIcon; end?: boolean }[]> = {
+  ADMIN: [
+    { to: '/',            label: 'Inicio', icono: House, end: true },
+    { to: '/pagos/nuevo', label: 'Cobrar', icono: Wallet },
+    { to: '/socios',      label: 'Socios', icono: Users },
+    { to: '/hoy',         label: 'Hoy',    icono: CalendarCheck },
+  ],
+  PROFESOR: [
+    { to: '/hoy',     label: 'Hoy',     icono: CalendarCheck },
+    { to: '/acceso',  label: 'Acceso',  icono: ScanLine },
+    { to: '/socios',  label: 'Socios',  icono: Users },
+    { to: '/rutinas', label: 'Rutinas', icono: ClipboardList },
+  ],
+}
+
+/** Nombre de cada pantalla para el título de la pestaña del navegador */
+const TITULOS: [RegExp, string][] = [
+  [/^\/socios\/\d+\/perfil/, 'Perfil del socio'], [/^\/socios\/\d+\/ficha/, 'Ficha médica'], [/^\/pagos\/nuevo/, 'Cobrar'],
+  [/^\/rutinas\/nueva/, 'Nueva rutina'], [/^\/rutinas\/asignar/, 'Asignar rutina'], [/^\/rutinas\/editar/, 'Editar rutina'],
+  [/^\/rutinas\/\d+\/entrenar/, 'Entrenar'], [/^\/rutinas\/\d+/, 'Rutina'], [/^\/membresias\/nueva/, 'Nueva membresía'],
+  [/^\/membresias\/\d+/, 'Membresía'], [/^\/qr-ingreso/, 'QR de ingreso'], [/^\/mi-rutina\/plantillas/, 'Plantillas'],
+  [/^\/mi-rutina/, 'Mi rutina'], [/^\/clases/, 'Clases'], [/^\/progreso/, 'Mi progreso'], [/^\/yo/, 'Mi cuenta'], [/^\/ingreso/, 'Registrar ingreso'],
 ]
+function tituloDe(ruta: string): string {
+  const fijo = TITULOS.find(([r]) => r.test(ruta))
+  if (fijo) return fijo[1]
+  for (const g of NAV_GRUPOS) for (const l of g.items) if (l.to !== '/' && ruta.startsWith(l.to)) return l.label
+  return 'Inicio'
+}
 
 /** Contador rojo al lado de un ítem del menú (pedidos de rutina sin resolver) */
 function Contador({ ruta }: { ruta: string }) {
   const { abiertos } = usePedidosRutina()
   if (ruta !== '/rutinas' || abiertos === 0) return null
-  return <span className="gt-nav-contador" aria-label={`${abiertos} ${abiertos === 1 ? 'pedido' : 'pedidos'} de rutina sin resolver`}>{abiertos > 9 ? '9+' : abiertos}</span>
+  const texto = `${abiertos} ${abiertos === 1 ? 'pedido' : 'pedidos'} de rutina sin resolver`
+  return <span className="gt-nav-contador" role="img" aria-label={texto} title={texto}>{abiertos > 9 ? '9+' : abiertos}</span>
 }
 
-function BottomNav({ onMas }: { onMas: () => void }) {
+function BottomNav({ rol, onMas }: { rol: Rol; onMas: () => void }) {
   return (
     <nav className="gt-bottom-nav" aria-label="Navegación principal">
-      {BOTTOM_LINKS.map(l => (
-        <NavLink key={l.to} to={l.to} className={({ isActive }) => 'gt-bottom-link' + (isActive ? ' active' : '')}>
+      {(BOTTOM_LINKS[rol] ?? BOTTOM_LINKS.PROFESOR).map(l => (
+        <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => 'gt-bottom-link' + (isActive ? ' active' : '')}>
           <span className="gt-nav-icono"><l.icono size={22} aria-hidden /><Contador ruta={l.to} /></span>{l.label}
         </NavLink>
       ))}
@@ -205,9 +229,20 @@ function AppLayout() {
   const ubicacion = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [dark, setDark] = useTema()
+  const { marca } = useMarca()
+  const contenido = useRef<HTMLElement>(null)
+  const primera = useRef(true)
+
+  // Título de la pestaña según la pantalla, y foco al contenido al cambiar de pantalla (lectores y teclado)
+  useEffect(() => {
+    document.title = `${tituloDe(ubicacion.pathname)} · ${marca.nombre || 'GymTrack'}`
+    if (primera.current) { primera.current = false; return }
+    contenido.current?.focus({ preventScroll: true })
+  }, [ubicacion.pathname, marca.nombre])
 
   return (
     <>
+      <a href="#contenido" className="gt-saltar">Saltar al contenido</a>
       <header className="gt-topbar">
         <Marca />
         <div className="gt-topbar-acciones">
@@ -240,9 +275,9 @@ function AppLayout() {
       <PedidosRutinaProvider>
       <div className="gt-layout">
         {user?.rol !== 'SOCIO' && <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />}
-        {user?.rol !== 'SOCIO' && <BottomNav onMas={() => setMenuAbierto(true)} />}
+        {user?.rol !== 'SOCIO' && <BottomNav rol={user?.rol === 'ADMIN' ? 'ADMIN' : 'PROFESOR'} onMas={() => setMenuAbierto(true)} />}
         {user?.rol === 'SOCIO' && <SocioNav />}
-        <main className={`gt-content${user?.rol === 'SOCIO' ? ' gt-content-socio' : ' gt-content-staff'}`}>
+        <main id="contenido" ref={contenido} tabIndex={-1} className={`gt-content${user?.rol === 'SOCIO' ? ' gt-content-socio' : ' gt-content-staff'}`}>
           <SocioAppProvider>
           <LimiteErrores reinicio={ubicacion.pathname}>
           <Suspense fallback={<CargandoPagina />}>

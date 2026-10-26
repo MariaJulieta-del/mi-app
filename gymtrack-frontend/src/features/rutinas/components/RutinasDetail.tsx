@@ -129,7 +129,7 @@ export default function RutinasDetail() {
           <div style={{ background: 'var(--bg-surface-2)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {calentamiento.map((ej, idx) => (
               <div key={ej.id ?? idx} style={{ display: 'flex', gap: 10, padding: '10px 12px', background: 'var(--bg-surface-3)', borderRadius: 8, border: '1px solid var(--border)', alignItems: 'center' }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--yellow-bg)', color: 'var(--yellow-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{idx + 1}</div>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--yellow-bg)', color: 'var(--yellow-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{idx + 1}</div>
                 {(() => {
                   const img = ej.imagenUrl || resolverImgEstatica(ej.nombreEjercicio)
                   return img ? (
@@ -147,11 +147,11 @@ export default function RutinasDetail() {
                     {ej.repeticiones != null && <span>× <strong style={{ color: 'var(--text-secondary)' }}>{ej.repeticiones}</strong> reps</span>}
                     {ej.descansoSeg != null && ej.descansoSeg > 0 && <span>{ej.descansoSeg}s desc.</span>}
                   </div>
-                  {ej.notas && <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>{ej.notas}</p>}
+                  {ej.notas && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>{ej.notas}</p>}
                 </div>
                 {d.esAdmin && (
                   <button type="button" onClick={() => d.abrirEdicion(ej)} title="Editar series/reps"
-                    style={{ padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--yellow-text)', cursor: 'pointer' }}><Pencil size={12} aria-hidden /></button>
+                    style={{ padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 12, color: 'var(--yellow-text)', cursor: 'pointer' }}><Pencil size={12} aria-hidden /></button>
                 )}
                 {!d.esSocio && <span title="Ejercicio inamovible" style={{ fontSize: 16, color: 'var(--yellow-text)', marginLeft: 4, display: 'inline-flex' }}><Lock size={14} aria-hidden /></span>}
               </div>
@@ -194,7 +194,7 @@ export default function RutinasDetail() {
                   }
                   <span style={{ flex: 1, fontWeight: d.ejSel?.id === e.id ? 700 : 400, fontSize: 13 }}>{e.nombre}</span>
                   {(e.grupos ?? []).slice(0, 2).map(g => (
-                    <span key={g} style={{ fontSize: 10, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 4, padding: '1px 5px' }}>{g}</span>
+                    <span key={g} style={{ fontSize: 12, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 4, padding: '1px 5px' }}>{g}</span>
                   ))}
                 </button>
               ))}
@@ -219,13 +219,13 @@ export default function RutinasDetail() {
                 { label: 'Peso (kg)',    val: d.peso,     set: (v: number) => d.setPeso(v),      min: 0,   max: 999 },
               ].map(({ label, val, set, min, max }) => (
                 <div key={label}>
-                  <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>{label}</label>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>{label}</label>
                   <input type="number" className="gt-input" min={min} max={max} value={val === '' ? '' : val}
                     onChange={e => set(Number(e.target.value))} placeholder="—" style={{ textAlign: 'center' }} />
                 </div>
               ))}
               <div>
-                <label style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Notas</label>
+                <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>Notas</label>
                 <input className="gt-input" value={d.notas} onChange={e => d.setNotas(e.target.value)} placeholder="Ej: Con agarre neutro..." maxLength={80} />
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function RutinasDetail() {
                   <button key={dia} type="button" onClick={() => d.setDiaActivo(dia)}
                     style={{ padding: '6px 16px', borderRadius: 20, border: '2px solid', borderColor: d.diaActivo === dia ? 'var(--accent)' : 'var(--border)', background: d.diaActivo === dia ? 'var(--accent)' : 'var(--bg-surface)', color: d.diaActivo === dia ? 'var(--on-accent)' : 'var(--text-secondary)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                     {etiquetaDia(rutina.diasSemana, dia)}
-                    <span style={{ fontWeight: 400, marginLeft: 5, fontSize: 11, opacity: 0.8 }}>({principales.filter(e => (e.dia ?? 1) === dia).length} ej.)</span>
+                    <span style={{ fontWeight: 400, marginLeft: 5, fontSize: 12, opacity: 0.8 }}>({principales.filter(e => (e.dia ?? 1) === dia).length} ej.)</span>
                   </button>
                 ))}
               </div>
@@ -314,7 +314,7 @@ export default function RutinasDetail() {
                                 { label: 'Peso (kg)', field: 'pesoKg'            as const, placeholder: ej.pesoKg != null ? String(ej.pesoKg) : '—' },
                               ].map(({ label, field, placeholder }) => (
                                 <div key={field} style={{ flex: '1 1 60px', maxWidth: 90 }}>
-                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block' }}>{label}</label>
+                                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block' }}>{label}</label>
                                   <input type="number" inputMode="decimal" min={0} max={999} className="gt-input"
                                     value={d.progresoHoy[ej.id!]?.[field] ?? ''}
                                     onChange={e => d.setProgresoHoy(p => ({ ...p, [ej.id!]: { ...p[ej.id!], [field]: e.target.value ? Number(e.target.value) : undefined } }))}
@@ -343,7 +343,7 @@ export default function RutinasDetail() {
                           <img src={gifUrl} alt={ej.nombreEjercicio} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8, display: 'block', transition: 'opacity .15s' }}
                             onMouseEnter={ev => (ev.currentTarget.style.opacity = '0.75')}
                             onMouseLeave={ev => (ev.currentTarget.style.opacity = '1')} />
-                          <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 10, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 3, padding: '0 3px', lineHeight: '14px', pointerEvents: 'none' }}>▶</span>
+                          <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 12, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 3, padding: '0 3px', lineHeight: '14px', pointerEvents: 'none' }}>▶</span>
                         </button>
                       ) : (
                         <div style={{ width: 52, height: 52, borderRadius: 8, background: 'var(--bg-surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, color: 'var(--text-muted)' }}>{ej.esMaquina ? <Cog size={24} aria-hidden /> : <Dumbbell size={24} aria-hidden />}</div>
@@ -358,27 +358,27 @@ export default function RutinasDetail() {
                           {ej.pesoKg != null && <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{ej.pesoKg} kg</span>}
                           {d.esAdmin && (
                             <button type="button" onClick={() => d.abrirEdicion(ej)} title="Editar"
-                              style={{ marginLeft: 2, padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 11, color: 'var(--text-muted)', cursor: 'pointer' }}><Pencil size={12} aria-hidden /></button>
+                              style={{ marginLeft: 2, padding: '2px 7px', background: 'none', border: '1px solid var(--border)', borderRadius: 5, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}><Pencil size={12} aria-hidden /></button>
                           )}
                         </div>
                         {(ej.grupos ?? []).length > 0 && (
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 4 }}>
-                            {ej.grupos!.map(g => <span key={g} style={{ fontSize: 11, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 5, padding: '2px 7px', fontWeight: 600 }}>{g}</span>)}
+                            {ej.grupos!.map(g => <span key={g} style={{ fontSize: 12, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 5, padding: '2px 7px', fontWeight: 600 }}>{g}</span>)}
                           </div>
                         )}
                         {maks.length > 0 && (
                           <div style={{ marginBottom: 4 }}>
-                            <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Máquinas asignadas</p>
+                            <p style={{ margin: '0 0 3px', fontSize: 12, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Máquinas asignadas</p>
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                              {maks.map(m => <span key={m.id} style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 5, padding: '2px 8px', fontWeight: 600, border: '1px solid var(--border)' }}>{m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}</span>)}
+                              {maks.map(m => <span key={m.id} style={{ fontSize: 12, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 5, padding: '2px 8px', fontWeight: 600, border: '1px solid var(--border)' }}>{m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}</span>)}
                             </div>
                           </div>
                         )}
                         {maqRecomendadas.length > 0 && (
                           <div style={{ marginBottom: 4 }}>
-                            <p style={{ margin: '0 0 3px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Máquinas recomendadas</p>
+                            <p style={{ margin: '0 0 3px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Máquinas recomendadas</p>
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                              {maqRecomendadas.map(m => <span key={m.id} style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 5, padding: '2px 8px', fontWeight: 500, border: '1px solid var(--border)' }}>{m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}</span>)}
+                              {maqRecomendadas.map(m => <span key={m.id} style={{ fontSize: 12, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 5, padding: '2px 8px', fontWeight: 500, border: '1px solid var(--border)' }}>{m.nroMaquina ? `${m.nroMaquina} — ` : ''}{m.nombre}</span>)}
                             </div>
                           </div>
                         )}

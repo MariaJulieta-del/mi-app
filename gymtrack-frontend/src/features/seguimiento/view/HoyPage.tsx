@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { obtenerHoy, type Hoy } from '../services/seguimientoService'
-import { formatFecha } from '../../../shared/utils/fechas'
+import { MessageCircle } from 'lucide-react'
+import { fechaCorta } from '../../../shared/utils/fechas'
+import { linkWhatsApp } from '../../../shared/utils/whatsapp'
 import { useAuth } from '../../../shared/context/AuthContext'
 import { clasesDeHoy, type ClaseHoy } from '../../disciplinas/services/disciplinaService'
 import { colorDisciplina, minutos, textoCupo } from '../../disciplinas/utils/disciplinaUtils'
 import { CargandoPagina } from '../../../shared/components/ui'
 import TareasRetencion from '../components/TareasRetencion'
+import { TIPOS_RUTINA, resolverTarea, type Tarea } from '../services/retencionService'
 import PedidosHoy from '../components/PedidosHoy'
 import ComentariosSocios from '../components/ComentariosSocios'
 
@@ -21,6 +24,16 @@ export default function HoyPage() {
   const [clases, setClases] = useState<ClaseHoy[]>([])
   const minutosDeAhora = () => new Date().getHours() * 60 + new Date().getMinutes()
   const [ahoraMin, setAhoraMin] = useState(minutosDeAhora)
+  // Tareas de rutina (sin rutina / rutina vieja) por socio: se ofrecen en «Para atender», no en una lista aparte
+  const [tareasRutina, setTareasRutina] = useState<Record<number, Tarea>>({})
+  const [verEntrenando, setVerEntrenando] = useState(false)
+  const [verAtender, setVerAtender] = useState(false)
+  const recibirTareas = (ts: Tarea[]) =>
+    setTareasRutina(Object.fromEntries(ts.filter(t => TIPOS_RUTINA.includes(t.tipo)).map(t => [t.socioId, t])))
+  const avisado = (t: Tarea) => {
+    setTareasRutina(prev => { const n = { ...prev }; delete n[t.socioId]; return n })
+    resolverTarea(t.id, 'HECHA').catch(() => {})
+  }
 
   useEffect(() => {
     const cargar = () => {
@@ -74,13 +87,12 @@ export default function HoyPage() {
           </div>
 
           <PedidosHoy />
-          <TareasRetencion />
-          <ComentariosSocios />
+          <TareasRetencion onCargadas={recibirTareas} enAtender={new Set(hoy.renovarRutina.map(s => s.socioId))} />
 
           {clases.length > 0 && (
             <div className="gt-card" style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p className="gt-card-title" style={{ margin: 0 }}>Clases de hoy</p>
+                <h2 className="gt-card-title" style={{ margin: 0 }}>Clases de hoy</h2>
                 <Link to="/disciplinas" className="gt-text-sm">Calendario</Link>
               </div>
               <div className="gt-clases-hoy">
@@ -106,18 +118,18 @@ export default function HoyPage() {
           <div className="gt-hoy-grid">
             {/* ── Entrenando hoy ── */}
             <div className="gt-card">
-              <p className="gt-card-title" style={{ marginTop: 0 }}>Entrenaron hoy</p>
+              <h2 className="gt-card-title" style={{ marginTop: 0 }}>Entrenaron hoy</h2>
               {hoy.entrenando.length === 0 ? (
                 <div className="gt-empty">Todavía no ingresó nadie hoy.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {hoy.entrenando.map(s => (
+                  {(verEntrenando ? hoy.entrenando : hoy.entrenando.slice(0, 6)).map(s => (
                     <div key={s.socioId} className="gt-hoy-socio">
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                        <Link to={`/socios/${s.socioId}/perfil`} style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
+                        <Link to={`/socios/${s.socioId}/perfil`} className="gt-link-socio">
                           {s.nombre}
                         </Link>
-                        <span className="gt-text-muted gt-text-sm" style={{ fontFamily: 'monospace' }}>{String(s.hora).slice(0, 5)}</span>
+                        <span className="gt-text-muted gt-text-sm gt-num">{String(s.hora).slice(0, 5)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6, alignItems: 'center' }}>
                         {s.rutina ? (
@@ -142,13 +154,17 @@ export default function HoyPage() {
                       )}
                     </div>
                   ))}
+                  {hoy.entrenando.length > 6 && (
+                    <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" aria-expanded={verEntrenando}
+                      onClick={() => setVerEntrenando(v => !v)}>{verEntrenando ? 'Ver menos' : `Ver los ${hoy.entrenando.length}`}</button>
+                  )}
                 </div>
               )}
             </div>
 
             {/* ── A quién atender ── */}
             <div className="gt-card">
-              <p className="gt-card-title" style={{ marginTop: 0 }}>Para atender</p>
+              <h2 className="gt-card-title" style={{ marginTop: 0 }}>Para atender</h2>
               <p className="gt-text-muted gt-text-sm" style={{ margin: '-6px 0 12px' }}>
                 Socios que vinieron en las últimas 2 semanas sin rutina o con una de más de {hoy.semanasRenovar} semanas.
               </p>
@@ -156,23 +172,41 @@ export default function HoyPage() {
                 <div className="gt-empty">Todos tienen una rutina al día</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {hoy.renovarRutina.slice(0, 15).map(s => (
-                    <div key={s.socioId} className="gt-hoy-fila">
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <Link to={`/socios/${s.socioId}/perfil`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{s.nombre}</Link>
-                        <div className="gt-text-sm gt-text-muted">
-                          {s.motivo === 'SIN_RUTINA' ? 'Sin rutina' : `Rutina de hace ${s.semanas} semanas`} · vino el {formatFecha(s.ultimaVisita)}
+                  {(verAtender ? hoy.renovarRutina : hoy.renovarRutina.slice(0, 5)).map(s => {
+                    const tarea = tareasRutina[s.socioId]
+                    const wa = tarea ? linkWhatsApp(tarea.telefono, tarea.mensaje) : null
+                    return (
+                      <div key={s.socioId} className="gt-hoy-fila">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <Link to={`/socios/${s.socioId}/perfil`} className="gt-link-socio">{s.nombre}</Link>
+                          <div className="gt-text-sm gt-text-muted">
+                            {s.motivo === 'SIN_RUTINA' ? 'Sin rutina' : `Rutina de hace ${s.semanas} semanas`} · vino el {fechaCorta(s.ultimaVisita)}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {wa && tarea && (
+                            <a href={wa} target="_blank" rel="noopener noreferrer" className="gt-btn gt-btn-secondary gt-btn-sm gt-btn-wa"
+                              onClick={() => avisado(tarea)} aria-label={`Escribirle a ${s.nombre} por WhatsApp`}>
+                              <MessageCircle size={14} aria-hidden /> Avisar
+                            </a>
+                          )}
+                          <Link to={`/rutinas/asignar?socioId=${s.socioId}`} className="gt-btn gt-btn-primary gt-btn-sm">
+                            {s.motivo === 'SIN_RUTINA' ? 'Asignar' : 'Renovar'}
+                          </Link>
                         </div>
                       </div>
-                      <Link to={`/rutinas/asignar?socioId=${s.socioId}`} className="gt-btn gt-btn-secondary gt-btn-sm">
-                        {s.motivo === 'SIN_RUTINA' ? 'Asignar' : 'Renovar'}
-                      </Link>
-                    </div>
-                  ))}
+                    )
+                  })}
+                  {hoy.renovarRutina.length > 5 && (
+                    <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" style={{ marginTop: 6 }} aria-expanded={verAtender}
+                      onClick={() => setVerAtender(v => !v)}>{verAtender ? 'Ver menos' : `Ver los ${hoy.renovarRutina.length}`}</button>
+                  )}
                 </div>
               )}
             </div>
           </div>
+
+          <ComentariosSocios />
 
           {user?.rol === 'ADMIN' && (
             <p className="gt-text-muted gt-text-sm" style={{ marginTop: 16 }}>

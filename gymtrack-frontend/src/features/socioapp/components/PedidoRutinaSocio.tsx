@@ -51,7 +51,7 @@ export default function PedidoRutinaSocio() {
 
   return (
     <section className="gt-card gt-socio-bloque gt-socio-pedido" id="otra-rutina">
-      <div className="gt-socio-bloque-cab"><h3>¿Querés otra rutina?</h3></div>
+      <div className="gt-socio-bloque-cab"><h2>¿Querés otra rutina?</h2></div>
 
       {enCurso && pedido ? (
         <div className="gt-socio-pedido-estado">

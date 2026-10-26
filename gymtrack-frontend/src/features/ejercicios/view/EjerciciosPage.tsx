@@ -47,7 +47,7 @@ export default function EjerciciosPage() {
             }}>
             {label}
             {key === 'mis' && ej.ejercicios.filter(e => !e.esMaquina && e.activo).length > 0 && (
-              <span style={{ marginLeft: 7, fontSize: 11, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>
+              <span style={{ marginLeft: 7, fontSize: 12, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 10, padding: '1px 7px', fontWeight: 700 }}>
                 {ej.ejercicios.filter(e => !e.esMaquina && e.activo).length}
               </span>
             )}

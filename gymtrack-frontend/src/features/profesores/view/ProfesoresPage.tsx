@@ -91,7 +91,7 @@ export default function ProfesoresPage() {
                       <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => p.handleToggle(prof.id)}>
                         {prof.activo ? 'Desactivar' : 'Activar'}
                       </button>
-                      <button type="button" className="gt-btn gt-btn-danger gt-btn-sm"
+                      <button type="button" className="gt-btn gt-btn-danger-outline gt-btn-sm"
                         disabled={p.eliminandoId === prof.id} onClick={() => p.setConfirmarEliminarId(prof.id)}>
                         Eliminar
                       </button>

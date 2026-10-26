@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
  if (roles && user && !roles.includes(user.rol)) {
  return (
  <div style={{ padding: 40, textAlign: 'center' }}>
- <h2 style={{ color: '#991B1B' }}>Acceso denegado</h2>
+ <h2 style={{ color: 'var(--red-text)' }}>Acceso denegado</h2>
  <p>No tenés permiso para ver esta página.</p>
  </div>
  )

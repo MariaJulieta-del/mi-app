@@ -74,7 +74,7 @@ export default function SocioProgresoPage() {
       {/* Desafío del mes */}
       <section className={`gt-card gt-socio-bloque gt-desafio${d.completado ? ' completo' : ''}`}>
         <div className="gt-socio-bloque-cab">
-          <h3><Target size={18} aria-hidden /> Desafío del mes</h3>
+          <h2><Target size={18} aria-hidden /> Desafío del mes</h2>
           {d.completado ? <Pill tono="ok" icono={Trophy}>¡Cumplido!</Pill> : <span className="gt-text-sm gt-text-muted">quedan {d.diasRestantes} días</span>}
         </div>
         <p style={{ margin: '0 0 10px', fontWeight: 600 }}>{d.titulo}</p>
@@ -89,7 +89,7 @@ export default function SocioProgresoPage() {
       {/* Insignias */}
       <section className="gt-card gt-socio-bloque">
         <div className="gt-socio-bloque-cab">
-          <h3><Award size={18} aria-hidden /> Insignias</h3>
+          <h2><Award size={18} aria-hidden /> Insignias</h2>
           <span className="gt-text-sm gt-text-muted">{obtenidas.length} de {logros.insignias.length}</span>
         </div>
         <div className="gt-insignias">
@@ -110,7 +110,7 @@ export default function SocioProgresoPage() {
       {/* Récords */}
       {records.length > 0 && (
         <section className="gt-card gt-socio-bloque">
-          <div className="gt-socio-bloque-cab"><h3><Star size={18} aria-hidden /> Mis récords</h3></div>
+          <div className="gt-socio-bloque-cab"><h2><Star size={18} aria-hidden /> Mis récords</h2></div>
           <div className="gt-records">
             {records.filter(r => r.pesoMax != null).slice(0, 8).map(r => (
               <div key={r.ejercicio} className="gt-record">
@@ -135,7 +135,7 @@ export default function SocioProgresoPage() {
       {ranking && (
         <section className="gt-card gt-socio-bloque" style={{ marginTop: 16 }}>
           <div className="gt-socio-bloque-cab">
-            <h3><Trophy size={18} aria-hidden /> Ranking del mes</h3>
+            <h2><Trophy size={18} aria-hidden /> Ranking del mes</h2>
             <label className="gt-switch">
               <input type="checkbox" checked={logros.rankingVisible} disabled={cambiando} onChange={e => cambiarRanking(e.target.checked)} />
               <span>Aparecer</span>
@@ -166,7 +166,7 @@ export default function SocioProgresoPage() {
       {/* Historial */}
       {sesiones.length > 0 && (
         <section className="gt-card gt-socio-bloque">
-          <div className="gt-socio-bloque-cab"><h3>Últimos entrenamientos</h3></div>
+          <div className="gt-socio-bloque-cab"><h2>Últimos entrenamientos</h2></div>
           {sesiones.slice(0, 10).map(s => {
             const sen = SENSACIONES.find(x => x.valor === s.sensacion)
             return (

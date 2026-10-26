@@ -38,7 +38,7 @@ export default function SocioRutinaPage() {
       <PedidoRutinaSocio />
       {anteriores.length > 0 && (
         <section className="gt-card gt-socio-bloque">
-          <div className="gt-socio-bloque-cab"><h3>Rutinas anteriores</h3></div>
+          <div className="gt-socio-bloque-cab"><h2>Rutinas anteriores</h2></div>
           {anteriores.map(r => (
             <Link key={r.id} to={`/rutinas/${r.id}`} className="gt-socio-fila-link">
               <span style={{ flex: 1, minWidth: 0 }}>

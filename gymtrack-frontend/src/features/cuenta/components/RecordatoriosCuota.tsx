@@ -111,7 +111,7 @@ export default function RecordatoriosCuota() {
                 <strong>{r.socio}</strong>
                 <small>{r.tipo === 'ANTES' ? 'Por vencer' : 'Ya vencida'} · vence el {formatFecha(r.fechaVencimiento)}</small>
               </span>
-              <span className="gt-recordatorio-canales" aria-label={r.porMail ? 'App y mail' : 'Solo app'}>
+              <span className="gt-recordatorio-canales" role="img" aria-label={r.porMail ? 'App y mail' : 'Solo app'}>
                 <Smartphone size={14} aria-hidden />{r.porMail && <Mail size={14} aria-hidden />}
               </span>
               <span className="gt-text-sm gt-text-muted" style={{ whiteSpace: 'nowrap' }}>{cuando(r.enviado)}</span>

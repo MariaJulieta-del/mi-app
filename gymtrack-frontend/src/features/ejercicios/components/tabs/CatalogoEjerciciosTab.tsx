@@ -157,11 +157,11 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                     <span style={{ color: 'var(--text-muted)', display: 'flex' }}><Dumbbell size={40} aria-hidden /></span>
                   )}
                   {ex.gifUrl && (
-                    <span style={{ position: 'absolute', bottom: 6, right: 6, fontSize: 10, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>▶ GIF</span>
+                    <span style={{ position: 'absolute', bottom: 6, right: 6, fontSize: 12, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>▶ GIF</span>
                   )}
                   <span style={{
                     position: 'absolute', top: 8, left: 8,
-                    fontSize: 10, fontWeight: 700,
+                    fontSize: 12, fontWeight: 700,
                     background: 'rgba(46,117,182,0.9)', color: '#fff',
                     borderRadius: 6, padding: '2px 7px',
                   }}>
@@ -170,8 +170,8 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                   {yaGuardado && (
                     <span style={{
                       position: 'absolute', top: 8, right: 8,
-                      fontSize: 10, fontWeight: 700,
-                      background: 'rgba(22,163,74,0.9)', color: '#fff',
+                      fontSize: 12, fontWeight: 700,
+                      background: 'rgba(21,128,61,0.94)', color: '#fff',
                       borderRadius: 6, padding: '2px 7px',
                     }}>
                       ✓ Guardado
@@ -187,13 +187,13 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                   }}>
                     {ex.name}
                   </p>
-                  <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                     {ex.equipment} · {ex.target}
                   </p>
 
                   {isExp && ex.instructions?.length > 0 && (
                     <div style={{ marginBottom: 8 }}>
-                      <ol style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      <ol style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                         {ex.instructions.slice(0, 4).map((inst, i) => (
                           <li key={i} style={{ marginBottom: 3 }}>{inst}</li>
                         ))}
@@ -202,7 +202,7 @@ export default function CatalogoEjerciciosTab({ ejercicios, setMsg, setError, se
                         onClick={ev => { ev.stopPropagation(); abrirGifCatalogo(ex) }}
                         style={{
                           marginTop: 6, background: 'none', border: '1px solid var(--border)',
-                          borderRadius: 5, padding: '3px 10px', fontSize: 11, cursor: 'pointer',
+                          borderRadius: 5, padding: '3px 10px', fontSize: 12, cursor: 'pointer',
                           color: 'var(--text-muted)', width: '100%',
                         }}>
                         ▶ Ver demostración

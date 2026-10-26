@@ -21,7 +21,7 @@ export default function SociosPage() {
     setRegistrando(true)
     try { if (await p.handleAltaCompleta(data)) setAltaAbierta(false) } finally { setRegistrando(false) }
   }
-  const filtrarMem = (f: '' | 'VENCIDA' | 'SIN_MEMBRESIA') => {
+  const filtrarMem = (f: '' | 'ACTIVA' | 'VENCIDA' | 'SIN_MEMBRESIA') => {
     // Las vencidas tienen su propia solapa (con el botón para avisarles)
     if (f === 'VENCIDA') { p.setFiltroMem(''); p.setVista(p.vista === 'vencidas' ? 'activos' : 'vencidas'); p.setPagina(1); return }
     p.setVista('activos'); p.setFiltroMem(p.filtroMem === f ? '' : f); p.setPagina(1)
@@ -56,9 +56,9 @@ export default function SociosPage() {
       {c && c.activos + c.inactivos > 0 && (
         <Resumen items={[
           { valor: c.activos, texto: 'socios activos' },
-          { valor: c.alDia, texto: 'al día', tono: 'ok' },
+          { valor: c.alDia, texto: 'al día', tono: 'ok', onClick: () => filtrarMem('ACTIVA'), activo: p.filtroMem === 'ACTIVA' },
           { valor: c.vencidas, texto: 'con la cuota vencida', tono: c.vencidas ? 'danger' : 'ok', onClick: () => filtrarMem('VENCIDA'), activo: p.vista === 'vencidas' },
-          { valor: c.sinMembresia, texto: 'sin membresía', tono: c.sinMembresia ? 'warn' : 'ok', onClick: () => filtrarMem('SIN_MEMBRESIA'), activo: p.filtroMem === 'SIN_MEMBRESIA' },
+          { valor: c.sinMembresia, texto: 'sin plan', tono: c.sinMembresia ? 'warn' : 'ok', onClick: () => filtrarMem('SIN_MEMBRESIA'), activo: p.filtroMem === 'SIN_MEMBRESIA' },
         ]} />
       )}
 

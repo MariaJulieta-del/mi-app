@@ -36,17 +36,17 @@ export default function MembresiasDetail() {
       {d.esAdmin && <div className="gt-card">
         <p className="gt-card-title">Historial de pagos</p>
         {d.pagos.length === 0 ? <p className="gt-text-muted">Sin pagos registrados.</p> : (
-          <div className="gt-table-wrap">
-            <table className="gt-table">
+          <div tabIndex={0} role="region" aria-label="Pagos de la membresía" className="gt-table-wrap">
+            <table className="gt-table gt-tabla-tarjetas">
               <thead><tr><th>Fecha</th><th>Plan</th><th>Monto</th><th>Método</th><th>Observaciones</th></tr></thead>
               <tbody>
                 {d.pagos.map(p => (
                   <tr key={p.id}>
-                    <td>{formatFecha(p.fechaPago)}</td>
-                    <td>{p.tipoMembresia ?? '—'}</td>
-                    <td style={{ fontWeight: 600 }}>${Number(p.monto).toLocaleString('es-AR')}</td>
-                    <td>{p.metodoPago}</td>
-                    <td>{p.observaciones ?? '—'}</td>
+                    <td className="gt-td-titulo">{formatFecha(p.fechaPago)}</td>
+                    <td data-label="Plan">{p.tipoMembresia ?? '—'}</td>
+                    <td data-label="Monto" style={{ fontWeight: 600 }}>${Number(p.monto).toLocaleString('es-AR')}</td>
+                    <td data-label="Método">{p.metodoPago}</td>
+                    <td data-label="Observaciones">{p.observaciones ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

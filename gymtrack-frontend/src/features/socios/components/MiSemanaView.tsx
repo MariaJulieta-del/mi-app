@@ -86,7 +86,7 @@ export default function MiSemanaView({
                 opacity: tienEjs || seleccionado ? 1 : 0.5,
               }}>
               {dia.slice(0, 3)}
-              {esHoy && !seleccionado && <span style={{ fontSize: 9, display: 'block', marginTop: -2 }}>hoy</span>}
+              {esHoy && !seleccionado && <span style={{ fontSize: 12, display: 'block', marginTop: -2 }}>hoy</span>}
             </button>
           )
         })}
@@ -115,7 +115,7 @@ export default function MiSemanaView({
                 <button type="button"
                   onClick={() => toggleExpandedEj(ejId)}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
                     {idx2 + 1}
                   </div>
                   {img
@@ -138,12 +138,12 @@ export default function MiSemanaView({
                     {ej.grupos && ej.grupos.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {ej.grupos.map(g => (
-                          <span key={g} style={{ background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{g}</span>
+                          <span key={g} style={{ background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 20, padding: '2px 9px', fontSize: 12, fontWeight: 700 }}>{g}</span>
                         ))}
                       </div>
                     )}
                     <Link to={`/rutinas/${rutinaId}?socioId=${socioId}`} onClick={e => e.stopPropagation()}
-                      style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>
+                      style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>
                       {rutinaNombre}
                     </Link>
                   </div>
@@ -154,13 +154,13 @@ export default function MiSemanaView({
                   <div style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {(ej.maquinas ?? []).length > 0 && (
                       <div>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Dónde hacerlo</p>
+                        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Dónde hacerlo</p>
                         <MaquinasEjercicio maquinas={ej.maquinas} grande />
                       </div>
                     )}
                     {maqRecomendadas.length > 0 && (
                       <div>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Máquinas recomendadas</p>
+                        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Máquinas recomendadas</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {maqRecomendadas.map(m => (
                             <span key={m.id} style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px', fontSize: 12 }}>
@@ -188,7 +188,7 @@ export default function MiSemanaView({
                             { label: 'Peso (kg)', field: 'pesoKg' as const, max: 999, placeholder: ej.pesoKg != null ? String(ej.pesoKg) : '—' },
                           ].map(({ label, field, max, placeholder }) => (
                             <div key={field} style={{ flex: '1 1 60px', minWidth: 60, maxWidth: 90 }}>
-                              <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>{label}</label>
+                              <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>{label}</label>
                               <input type="number" inputMode="numeric" min={0} max={max}
                                 value={progresoHoy[ejId]?.[field] ?? ''}
                                 onChange={e => setProgresoHoy(p => ({ ...p, [ejId]: { ...p[ejId], [field]: e.target.value ? Number(e.target.value) : undefined } }))}
@@ -199,7 +199,7 @@ export default function MiSemanaView({
                           <button type="button"
                             disabled={guardandoProgreso === ejId}
                             onClick={() => onGuardarProgreso(ejId)}
-                            style={{ flex: '0 0 auto', padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                            style={{ flex: '0 0 auto', padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                             {guardandoProgreso === ejId ? '…' : '✓ Guardar'}
                           </button>
                         </div>

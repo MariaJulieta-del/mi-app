@@ -192,10 +192,18 @@ public class RetencionService {
 
     @Transactional
     public void resolver(Long id, String estado, String usuario) {
+        AccionRetencion a = accionRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
+        // PENDIENTE = «Deshacer»: la tarea vuelve a la lista (solo si la habían resuelto a mano)
+        if (AccionRetencion.PENDIENTE.equals(estado)
+                && (AccionRetencion.HECHA.equals(a.getEstado()) || AccionRetencion.DESCARTADA.equals(a.getEstado()))) {
+            a.setEstado(AccionRetencion.PENDIENTE);
+            a.setResuelta(null);
+            a.setResueltaPor(null);
+            return;
+        }
         if (!AccionRetencion.HECHA.equals(estado) && !AccionRetencion.DESCARTADA.equals(estado)) {
             throw new IllegalArgumentException("Estado inválido");
         }
-        AccionRetencion a = accionRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
         a.setEstado(estado);
         a.setResuelta(LocalDateTime.now());
         a.setResueltaPor(usuario);

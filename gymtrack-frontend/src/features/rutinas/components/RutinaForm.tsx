@@ -378,7 +378,7 @@ export default function RutinaForm() {
                         : <span className="gt-ej-thumb gt-bej-img vacio" style={{ width: 38, height: 38 }}><Dumbbell size={16} aria-hidden /></span>}
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ display: 'block', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.nombre}</span>
-                        <span className="gt-text-muted" style={{ fontSize: 11 }}>{(e.grupos ?? []).slice(0, 2).join(' · ')}</span>
+                        <span className="gt-text-muted" style={{ fontSize: 12 }}>{(e.grupos ?? []).slice(0, 2).join(' · ')}</span>
                       </span>
                       <span className="gt-cat-mas" aria-hidden>{yaEnDia ? '✓' : <Plus size={16} />}</span>
                     </button>
