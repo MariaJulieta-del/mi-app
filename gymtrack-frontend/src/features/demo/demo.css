@@ -32,9 +32,9 @@
 @keyframes gt-girar { to { transform: rotate(360deg); } }
 
 /* Cartelito fijo: chico, abajo a la izquierda (arriba de la barra del celular), no recibe toques */
-.gt-demo-cartel { position: fixed; left: 10px; bottom: 10px; z-index: 9000; pointer-events: none; font-size: 11px; font-weight: 700;
+.gt-demo-cartel { position: fixed; left: 10px; bottom: 10px; z-index: 9000; pointer-events: none; font-size: 12px; font-weight: 700;
   letter-spacing: .06em; padding: 4px 9px; border-radius: 999px; background: rgba(245, 158, 11, .92); color: #1a1406; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
-@media (max-width: 768px) { .gt-demo-cartel { bottom: calc(70px + env(safe-area-inset-bottom)); left: 8px; font-size: 10px; } }
+@media (max-width: 768px) { .gt-demo-cartel { bottom: calc(70px + env(safe-area-inset-bottom)); left: 8px; font-size: 12px; } }
 
 .gt-demo-aviso { position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 9500;
   width: min(92vw, 420px); background: #0d1b17; color: #f6f1e7; border: 1px solid #f59e0b; border-radius: 14px; padding: 12px 14px;
