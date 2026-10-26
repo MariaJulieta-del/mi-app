@@ -82,7 +82,7 @@ export function RetencionMensual() {
           <span className="gt-text-sm gt-text-muted"><strong className="gt-numero-destacado">{ultimoCompleto.porcentaje}%</strong> renovó en {fmtMes(ultimoCompleto.mes)}</span>
         )}
       </div>
-      <div className="gt-table-wrap">
+      <div tabIndex={0} role="region" aria-label="Métricas por mes" className="gt-table-wrap">
         <table className="gt-table">
           <thead><tr><th>Mes</th><th>Renovaron</th><th style={{ width: '40%' }}>Retención</th><th>Nuevos</th><th>Recaudado</th></tr></thead>
           <tbody>

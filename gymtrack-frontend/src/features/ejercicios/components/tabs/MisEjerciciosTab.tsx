@@ -84,7 +84,7 @@ export default function MisEjerciciosTab({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
                     {GRUPOS_CATEGORIAS.map(cat => (
                       <div key={cat.label}>
-                        <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                           {cat.label}
                         </p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -144,7 +144,7 @@ export default function MisEjerciciosTab({
                   <span className="gt-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>Máquinas asociadas</span>
                     {(form.maquinaIds ?? []).length > 0 && (
-                      <span style={{ fontSize: 11, background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 8px', fontWeight: 700 }}>
+                      <span style={{ fontSize: 12, background: 'var(--accent)', color: 'var(--on-accent)', borderRadius: 10, padding: '1px 8px', fontWeight: 700 }}>
                         {(form.maquinaIds ?? []).length} seleccionada{(form.maquinaIds ?? []).length !== 1 ? 's' : ''}
                       </span>
                     )}
@@ -175,12 +175,12 @@ export default function MisEjerciciosTab({
                               background: sel ? 'var(--accent)' : 'var(--bg-surface-3)',
                               color: sel ? 'var(--on-accent)' : 'var(--text-muted)',
                               borderRadius: 10, padding: '1px 6px',
-                              fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
+                              fontSize: 12, fontWeight: 700, fontFamily: 'monospace',
                               minWidth: 22, textAlign: 'center',
                             }}>
                               {m.nroMaquina ?? '?'}
                             </span>
-                            {sel && <span style={{ fontSize: 10, color: 'var(--blue-text)' }}>✓</span>}
+                            {sel && <span style={{ fontSize: 12, color: 'var(--blue-text)' }}>✓</span>}
                             <span>{m.nombre}</span>
                           </button>
                         )
@@ -232,7 +232,7 @@ export default function MisEjerciciosTab({
           </div>
           {GRUPOS_CATEGORIAS.map(cat => (
             <div key={cat.label} style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 88, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 88, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {cat.label}
               </span>
               {cat.grupos.map(g => (
@@ -301,7 +301,7 @@ export default function MisEjerciciosTab({
                           style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 7, border: '1px solid var(--border)', display: 'block', transition: 'opacity .15s' }}
                           onMouseEnter={ev => (ev.currentTarget.style.opacity = '0.7')}
                           onMouseLeave={ev => (ev.currentTarget.style.opacity = '1')} />
-                        <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 9, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 2, padding: '0 2px', lineHeight: '13px', pointerEvents: 'none' }}>▶</span>
+                        <span style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 12, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 2, padding: '0 2px', lineHeight: '13px', pointerEvents: 'none' }}>▶</span>
                       </button>
                     ) : (
                       <div style={{ width: 44, height: 44, borderRadius: 7, background: 'var(--blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, color: 'var(--blue-text)' }}>
@@ -313,13 +313,13 @@ export default function MisEjerciciosTab({
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{e.nombre}</span>
                         {!e.activo && (
-                          <span style={{ fontSize: 10, background: 'var(--red-light)', color: 'var(--red)', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>INACTIVO</span>
+                          <span style={{ fontSize: 12, background: 'var(--red-light)', color: 'var(--red)', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>INACTIVO</span>
                         )}
                       </div>
                       {e.grupos && e.grupos.length > 0 && (
                         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 3 }}>
                           {e.grupos.map(g => (
-                            <span key={g} style={{ fontSize: 11, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
+                            <span key={g} style={{ fontSize: 12, background: 'var(--blue-bg)', color: 'var(--blue-text)', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>
                               {g}
                             </span>
                           ))}
@@ -329,11 +329,11 @@ export default function MisEjerciciosTab({
 
                     {maquinasAsig.length > 0 ? (
                       <span title={maquinasAsig.map(m => m.nombre).join(', ')}
-                        style={{ fontSize: 11, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 6, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
+                        style={{ fontSize: 12, background: 'var(--yellow-bg)', color: 'var(--yellow-text)', borderRadius: 6, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
                         Máquina {maquinasAsig.map(m => m.nroMaquina ? `N° ${m.nroMaquina}` : m.nombre).join(', ')}
                       </span>
                     ) : (
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 6, padding: '1px 8px', flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: 6, padding: '1px 8px', flexShrink: 0 }}>
                         sin máquina
                       </span>
                     )}
@@ -359,7 +359,7 @@ export default function MisEjerciciosTab({
 
                       {maquinasAsig.length > 0 && (
                         <div style={{ marginBottom: 12 }}>
-                          <p style={{ margin: '0 0 7px', fontSize: 11, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 700, color: 'var(--yellow-text)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Máquinas asignadas
                           </p>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -373,9 +373,9 @@ export default function MisEjerciciosTab({
                                   borderRadius: 20, padding: '4px 6px 4px 8px',
                                 }}>
                                   <span style={{
-                                    background: 'var(--yellow-text)', color: '#fff',
+                                    background: 'var(--yellow-text)', color: 'var(--bg-surface)',
                                     borderRadius: 10, padding: '0 6px',
-                                    fontSize: 11, fontWeight: 800, fontFamily: 'monospace',
+                                    fontSize: 12, fontWeight: 800, fontFamily: 'monospace',
                                     minWidth: 22, textAlign: 'center', lineHeight: '18px',
                                   }}>
                                     {m.nroMaquina ?? '?'}
@@ -397,7 +397,7 @@ export default function MisEjerciciosTab({
 
                       {maquinasEj.filter(m => !maquinasAsig.some(x => x.id === m.id)).length > 0 && (
                         <div>
-                          <p style={{ margin: '0 0 7px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          <p style={{ margin: '0 0 7px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Compatibles por grupo — tocá para asociar
                           </p>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -413,7 +413,7 @@ export default function MisEjerciciosTab({
                                     borderRadius: 20, padding: '3px 10px 3px 6px',
                                     border: '1.5px dashed var(--border)', fontWeight: 500, opacity: cargando ? 0.5 : 1,
                                   }}>
-                                  <span style={{ background: 'var(--bg-surface-2)', color: 'var(--text-muted)', borderRadius: 10, padding: '0 5px', fontSize: 10, fontWeight: 700, fontFamily: 'monospace' }}>
+                                  <span style={{ background: 'var(--bg-surface-2)', color: 'var(--text-muted)', borderRadius: 10, padding: '0 5px', fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>
                                     {m.nroMaquina ?? '?'}
                                   </span>
                                   {m.nombre}

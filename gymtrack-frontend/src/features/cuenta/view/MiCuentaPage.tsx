@@ -51,7 +51,7 @@ export default function MiCuentaPage() {
       <div className="gt-card" style={{ marginBottom: 16 }}>
         <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>Usuario</p>
         <p style={{ margin: '2px 0 0', fontWeight: 700, fontSize: 16 }}>
-          {user?.username} <span className="gt-badge gt-badge-gray" style={{ fontSize: 10, marginLeft: 6 }}>{user?.rol}</span>
+          {user?.username} <span className="gt-badge gt-badge-gray" style={{ fontSize: 12, marginLeft: 6 }}>{user?.rol}</span>
         </p>
       </div>
 

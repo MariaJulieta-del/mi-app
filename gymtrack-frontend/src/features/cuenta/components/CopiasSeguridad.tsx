@@ -102,18 +102,18 @@ export default function CopiasSeguridad() {
       )}
 
       {e.copias.length > 0 && (
-        <div className="gt-table-wrap" style={{ marginTop: 14 }}>
-          <table className="gt-table">
+        <div tabIndex={0} role="region" aria-label="Copias de seguridad" className="gt-table-wrap" style={{ marginTop: 14 }}>
+          <table className="gt-table gt-tabla-tarjetas">
             <thead><tr><th>Fecha</th><th>Estado</th><th>Tamaño</th><th>Registros</th><th>Origen</th><th style={{ width: 52 }} /></tr></thead>
             <tbody>
               {e.copias.map(c => (
                 <tr key={c.id}>
-                  <td>{fecha(c.fecha)}</td>
-                  <td>{c.estado === 'OK' ? <Pill tono="ok">Correcta</Pill> : <span title={c.error ?? ''}><Pill tono="danger">Falló</Pill></span>}</td>
-                  <td>{tamano(c.tamano)}</td>
-                  <td>{c.filas?.toLocaleString('es-AR') ?? '—'}</td>
-                  <td className="gt-text-muted">{c.manual ? 'A mano' : 'Automática'}</td>
-                  <td>
+                  <td className="gt-td-titulo">{fecha(c.fecha)}</td>
+                  <td data-label="Estado">{c.estado === 'OK' ? <Pill tono="ok">Correcta</Pill> : <span title={c.error ?? ''}><Pill tono="danger">Falló</Pill></span>}</td>
+                  <td data-label="Tamaño">{tamano(c.tamano)}</td>
+                  <td data-label="Registros">{c.filas?.toLocaleString('es-AR') ?? '—'}</td>
+                  <td data-label="Origen" className="gt-text-muted">{c.manual ? 'A mano' : 'Automática'}</td>
+                  <td data-label="">
                     {c.disponible && (
                       <IconButton icono={Download} etiqueta={bajando === c.id ? 'Descargando…' : `Descargar la copia del ${fecha(c.fecha)}`}
                         disabled={bajando !== null} onClick={() => descargar(c)} />

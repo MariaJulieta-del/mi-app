@@ -40,11 +40,11 @@ export default function LoginPage() {
           <form onSubmit={l.handleStaff}>
             <div className="gt-form-group" style={{ marginBottom: 16 }}>
               <label className="gt-label" htmlFor="loginpage-campo-1">Usuario</label>
-              <input id="loginpage-campo-1" className="gt-input" type="text" value={l.username} onChange={e => l.setUsername(e.target.value)} placeholder="Ej: admin" autoFocus />
+              <input id="loginpage-campo-1" className="gt-input" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} value={l.username} onChange={e => l.setUsername(e.target.value)} placeholder="Ej: admin" autoFocus />
             </div>
             <div className="gt-form-group" style={{ marginBottom: 24 }}>
               <label className="gt-label" htmlFor="loginpage-campo-2">Contraseña</label>
-              <CampoClave id="loginpage-campo-2" className="gt-input" value={l.password} onChange={e => l.setPassword(e.target.value)} placeholder="••••••••" />
+              <CampoClave id="loginpage-campo-2" className="gt-input" autoComplete="current-password" value={l.password} onChange={e => l.setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <button type="submit" className="gt-btn gt-btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={l.loading}>
               {l.loading ? <><Spinner /> Iniciando sesión…</> : 'Ingresar'}
@@ -56,7 +56,7 @@ export default function LoginPage() {
           <form onSubmit={l.handleSocio}>
             <div className="gt-form-group" style={{ marginBottom: 8 }}>
               <label className="gt-label" htmlFor="loginpage-campo-3">Número de DNI</label>
-              <input id="loginpage-campo-3" className="gt-input" type="text" inputMode="numeric" value={l.dni}
+              <input id="loginpage-campo-3" className="gt-input" type="text" inputMode="numeric" autoComplete="username" value={l.dni}
                 onChange={e => l.setDni(e.target.value.replace(/\D/g, ''))}
                 placeholder="Ej: 38291047" autoFocus style={{ fontSize: 20, letterSpacing: 2, textAlign: 'center' }} />
             </div>

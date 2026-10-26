@@ -15,7 +15,7 @@ const num = (n: number | null | undefined, sufijo = '') => (n == null ? '—' : 
 function TablaGrupos({ grupos, mostrarEdad }: { grupos: GrupoPublico[]; mostrarEdad: boolean }) {
   const max = Math.max(1, ...grupos.map(g => g.socios))
   return (
-    <div className="gt-table-wrap">
+    <div tabIndex={0} role="region" aria-label="Público por grupo" className="gt-table-wrap">
       <table className="gt-table gt-publico-tabla">
         <thead>
           <tr>
@@ -58,7 +58,7 @@ function MapaFranjas({ d, grupos }: { d: Demografia; grupos: GrupoPublico[] }) {
   const conVisitas = grupos.filter(g => g.visitas > 0)
   if (conVisitas.length === 0) return <p className="gt-text-muted gt-text-sm" style={{ margin: 0 }}>Todavía no hay ingresos de estos grupos en el período.</p>
   return (
-    <div className="gt-table-wrap">
+    <div tabIndex={0} role="region" aria-label="Horarios por grupo" className="gt-table-wrap">
       <table className="gt-table gt-cohortes">
         <thead>
           <tr><th>Grupo</th>{d.nombresFranjas.map(f => <th key={f}>{f}</th>)}<th>Hora promedio</th></tr>

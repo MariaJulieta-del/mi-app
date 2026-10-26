@@ -90,11 +90,11 @@ export default function HorarioSemanal({ disciplinas, onAbrir }: { disciplinas: 
   return (
     <>
       {/* ── Escritorio: grilla ── */}
-      <div className="gt-semana" role="grid" aria-label="Horario semanal de clases">
+      <div className="gt-semana" role="region" aria-label="Horario semanal de clases">
         <div className="gt-semana-cab">
           <div />
           {DIAS.map(dia => (
-            <div key={dia} className={`gt-semana-dia${dia === hoy ? ' hoy' : ''}`} role="columnheader">
+            <div key={dia} className={`gt-semana-dia${dia === hoy ? ' hoy' : ''}`}>
               {DIAS_CORTO[dia]}{dia === hoy && <span className="gt-semana-hoy">hoy</span>}
             </div>
           ))}

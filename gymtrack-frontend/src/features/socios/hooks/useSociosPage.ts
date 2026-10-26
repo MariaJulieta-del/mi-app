@@ -15,7 +15,7 @@ export const POR_PAGINA = 20
 
 /** 'vencidas' = socios activos con la cuota vencida (para avisarles) */
 export type Vista = NonNullable<FiltrosSocios['vista']> | 'vencidas'
-type FiltroMem = '' | 'VENCIDA' | 'SIN_MEMBRESIA'
+type FiltroMem = '' | 'ACTIVA' | 'VENCIDA' | 'SIN_MEMBRESIA'
 export type Orden = NonNullable<FiltrosSocios['orden']>
 
 /**
@@ -29,7 +29,11 @@ export function useSociosPage() {
   const [socioEditar, setSocioEditar] = useState<Socio | null>(null)
   const [error, setError] = useState('')
   const [vista, setVista] = useState<Vista>(() => (params.get('vista') === 'vencidas' ? 'vencidas' : 'activos'))
-  const [filtroMem, setFiltroMem] = useState<FiltroMem>('')
+  // Desde las tarjetas del Inicio se llega con el filtro puesto (?membresia=ACTIVA | SIN_MEMBRESIA)
+  const [filtroMem, setFiltroMem] = useState<FiltroMem>(() => {
+    const m = params.get('membresia')
+    return m === 'ACTIVA' || m === 'SIN_MEMBRESIA' ? m : ''
+  })
   const [busqueda, setBusqueda] = useState('')
   /** La búsqueda se manda al servidor recién cuando se deja de escribir */
   const [busquedaEnviada, setBusquedaEnviada] = useState('')

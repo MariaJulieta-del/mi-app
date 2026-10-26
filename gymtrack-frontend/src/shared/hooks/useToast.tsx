@@ -8,6 +8,8 @@ export interface Toast {
   title: string
   message?: string
   duration?: number
+  /** Botón dentro del aviso, por ejemplo «Deshacer» */
+  accion?: { texto: string; onClick: () => void }
 }
 
 interface ToastContextValue {
@@ -17,6 +19,8 @@ interface ToastContextValue {
   success: (title: string, message?: string) => void
   error: (title: string, message?: string) => void
   warning: (title: string, message?: string) => void
+  /** Aviso con un botón «Deshacer» que queda 7 segundos */
+  conDeshacer: (title: string, deshacer: () => void, message?: string) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -42,8 +46,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const warning = useCallback((title: string, message?: string) =>
     showToast({ type: 'warning', title, message }), [showToast])
 
+  const conDeshacer = useCallback((title: string, deshacer: () => void, message?: string) =>
+    showToast({ type: 'success', title, message, duration: 7000, accion: { texto: 'Deshacer', onClick: deshacer } }), [showToast])
+
   return (
-    <ToastContext.Provider value={{ toasts, showToast, removeToast, success, error, warning }}>
+    <ToastContext.Provider value={{ toasts, showToast, removeToast, success, error, warning, conDeshacer }}>
       {children}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </ToastContext.Provider>
@@ -64,9 +71,9 @@ const ICONS: Record<ToastType, string> = {
 }
 
 const ICON_COLORS: Record<ToastType, string> = {
-  success: '#16A34A',
-  error:   '#DC2626',
-  warning: '#D97706',
+  success: 'var(--green-text)',
+  error:   'var(--red)',
+  warning: 'var(--yellow-text)',
   info:    'var(--accent)',
 }
 
@@ -83,9 +90,9 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       className={`gt-toast ${toast.type}`}
       style={{ animation: leaving ? 'gt-slide-out-right 0.22s ease forwards' : undefined }}
     >
-      <div style={{
+      <div aria-hidden style={{
         width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-        background: ICON_COLORS[toast.type] + '20',
+        background: `color-mix(in srgb, ${ICON_COLORS[toast.type]} 14%, transparent)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 700, fontSize: 13,
         color: ICON_COLORS[toast.type],
@@ -96,15 +103,20 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
         <p className="gt-toast-title">{toast.title}</p>
         {toast.message && <p className="gt-toast-msg">{toast.message}</p>}
       </div>
-      <button className="gt-toast-close" onClick={handleClose} title="Cerrar">×</button>
+      {toast.accion && (
+        <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" onClick={() => { toast.accion!.onClick(); handleClose() }}>
+          {toast.accion.texto}
+        </button>
+      )}
+      <button type="button" className="gt-toast-close" onClick={handleClose} aria-label="Cerrar aviso">×</button>
     </div>
   )
 }
 
 function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: string) => void }) {
-  if (toasts.length === 0) return null
+  // El contenedor queda siempre montado para que los lectores de pantalla anuncien cada aviso
   return (
-    <div className="gt-toast-container">
+    <div className="gt-toast-container" role="status" aria-live="polite">
       {toasts.map(t => (
         <ToastItem key={t.id} toast={t} onRemove={() => removeToast(t.id)} />
       ))}

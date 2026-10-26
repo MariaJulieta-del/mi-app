@@ -79,7 +79,7 @@ export default function MotivosBaja() {
                     {b.socioId != null
                       ? <Link to={`/socios/${b.socioId}/perfil`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{b.socioNombre}</Link>
                       : <span style={{ fontWeight: 600 }}>{b.socioNombre}</span>}
-                    {b.socioActivo && <span className="gt-badge gt-badge-green" style={{ fontSize: 10, marginLeft: 6 }}>Volvió</span>}
+                    {b.socioActivo && <span className="gt-badge gt-badge-green" style={{ fontSize: 12, marginLeft: 6 }}>Volvió</span>}
                     <div className="gt-text-sm gt-text-muted">
                       {formatFecha(b.fecha)} · {textoMotivoBaja(b.motivo)}{b.detalle ? ` — “${b.detalle}”` : ''}
                     </div>

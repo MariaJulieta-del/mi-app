@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { CargandoPagina, IconButton, Spinner } from '../../../shared/components/ui'
 import { useMontosVisibles } from '../../../shared/hooks/useMontosVisibles'
 import { useNombrePlan } from '../../../shared/hooks/useNombrePlan'
+import { fechaCorta } from '../../../shared/utils/fechas'
 
 function BellIcon() {
   return (
@@ -26,16 +27,17 @@ export default function DashboardPage() {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1 className="gt-page-title" style={{ margin: 0 }}>Dashboard</h1>
+        <h1 className="gt-page-title" style={{ margin: 0 }}>Inicio</h1>
         <Link to="/reportes" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>Ver reportes detallados →</Link>
       </div>
 
       <div className="gt-dash-stats">
         <div className="gt-stat-card">
           <div className="gt-stat-number">{d.stats.totalSociosActivos}</div>
-          <div className="gt-stat-label">Socios registrados</div>
+          <div className="gt-stat-label">Socios activos</div>
           <div style={{ marginTop: 8, display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
-            <span style={{ color: 'var(--green-text)', fontWeight: 600 }}>{d.stats.membresiasActivas} con plan activo</span>
+            <span style={{ color: 'var(--green-text)', fontWeight: 600 }}>{d.stats.membresiasActivas} al día</span>
+            {d.stats.membresiasVencidas > 0 && <span style={{ color: 'var(--red-text)', fontWeight: 600 }}>{d.stats.membresiasVencidas} con la cuota vencida</span>}
             {d.sinMembresia > 0 && <span style={{ color: 'var(--yellow-text)', fontWeight: 600 }}>{d.sinMembresia} sin plan</span>}
           </div>
         </div>
@@ -57,15 +59,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="gt-dash-membresias">
+        {/* Mismas palabras y cuentas que en Socios; cada tarjeta lleva a la lista ya filtrada */}
         {[
-          { label: 'Activas',         val: d.stats.membresiasActivas,   color: 'var(--green-text)',  bg: 'var(--green-bg)' },
-          { label: `Vencen en ${d.diasFiltro} días`, val: d.proximas.length, color: 'var(--yellow-text)', bg: 'var(--yellow-bg)' },
-          { label: 'Vencidas',        val: d.stats.membresiasVencidas,  color: 'var(--red)',          bg: 'var(--red-light)' },
-        ].map(({ label, val, color, bg }) => (
-          <div key={label} style={{ background: bg, borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color, fontWeight: 600 }}>{label}</span>
-            <span style={{ fontSize: 22, fontWeight: 700, color }}>{val}</span>
-          </div>
+          { label: 'Al día',        val: d.stats.membresiasActivas,  color: 'var(--green-text)',  bg: 'var(--green-bg)',  to: '/socios?membresia=ACTIVA' },
+          { label: `Vencen en ${d.diasFiltro} días`, val: d.proximas.length, color: 'var(--yellow-text)', bg: 'var(--yellow-bg)', to: '#proximas' },
+          { label: 'Cuota vencida', val: d.stats.membresiasVencidas, color: 'var(--red-text)',    bg: 'var(--red-light)', to: '/socios?vista=vencidas' },
+          ...(d.sinMembresia > 0 ? [{ label: 'Sin plan', val: d.sinMembresia, color: 'var(--yellow-text)', bg: 'var(--yellow-bg)', to: '/socios?membresia=SIN_MEMBRESIA' }] : []),
+        ].map(({ label, val, color, bg, to }) => to.startsWith('#') ? (
+          <a key={label} href={to} className="gt-dash-tarjeta" style={{ background: bg, color }}
+            onClick={e => { e.preventDefault(); document.getElementById('proximas')?.scrollIntoView({ behavior: 'smooth' }) }}>
+            <span>{label}</span><strong>{val}</strong>
+          </a>
+        ) : (
+          <Link key={label} to={to} className="gt-dash-tarjeta" style={{ background: bg, color }} aria-label={`${label}: ${val}. Ver la lista`}>
+            <span>{label}</span><strong>{val}</strong>
+          </Link>
         ))}
       </div>
 
@@ -87,7 +95,7 @@ export default function DashboardPage() {
                   {m.descripcion && <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>— {m.descripcion}</span>}
                 </div>
                 {m.fechaMantenimiento && (
-                  <span style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 12, color: 'var(--red)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     desde {new Date(m.fechaMantenimiento + 'T00:00:00').toLocaleDateString('es-AR')}
                   </span>
                 )}
@@ -100,11 +108,11 @@ export default function DashboardPage() {
       <SociosEnRiesgo />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>Membresías próximas a vencer</h2>
+        <h2 id="proximas" style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text-primary)', scrollMarginTop: 80 }}>Membresías próximas a vencer</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Próximos</span>
           {[7, 14, 30].map(x => (
-            <button key={x} onClick={() => d.setDiasFiltro(x)}
+            <button key={x} type="button" className="gt-filtro-chip" aria-pressed={d.diasFiltro === x} onClick={() => d.setDiasFiltro(x)}
               style={{ padding: '3px 10px', borderRadius: 16, fontSize: 12, border: '1.5px solid', cursor: 'pointer',
                 borderColor: d.diasFiltro === x ? 'var(--accent)' : 'var(--border)',
                 background: d.diasFiltro === x ? 'var(--accent-light)' : 'var(--bg-surface)',
@@ -128,31 +136,31 @@ export default function DashboardPage() {
           Sin membresías que venzan en los próximos {d.diasFiltro} días
         </div>
       ) : (
-        <div className="gt-table-wrap" style={{ marginBottom: 20 }}>
-          <table className="gt-table">
-            <thead><tr><th>Socio</th><th>Plan</th><th>Vence</th><th style={{ width: 90 }}>Días rest.</th><th style={{ width: 160 }}>Acciones</th></tr></thead>
+        <div tabIndex={0} role="region" aria-label="Membresías próximas a vencer" className="gt-table-wrap" style={{ marginBottom: 20 }}>
+          <table className="gt-table gt-tabla-tarjetas">
+            <thead><tr><th>Socio</th><th>Plan</th><th>Vence</th><th style={{ width: 110 }}>Faltan</th><th style={{ width: 200 }}>Acciones</th></tr></thead>
             <tbody>
               {d.proximas.map(m => {
                 const dias = d.diasRestantes(m.fechaVencimiento)
                 return (
                   <tr key={m.id} style={dias <= 2 ? { background: 'var(--yellow-bg)' } : {}}>
-                    <td>
+                    <td className="gt-td-titulo">
                       <Link to={`/socios/${m.socioId}/perfil`} className="gt-fw-600" style={{ color: 'var(--blue-text)', textDecoration: 'none' }}>{m.socioNombreCompleto}</Link>
                     </td>
-                    <td>{nombrePlan(m.tipoMembresia)}</td>
-                    <td style={{ fontSize: 13 }}>{m.fechaVencimiento}</td>
-                    <td>
-                      <span className={`gt-badge ${dias === 0 ? 'gt-badge-red' : dias <= 3 ? 'gt-badge-yellow' : 'gt-badge-green'}`}>{dias === 0 ? 'Hoy' : `${dias}d`}</span>
+                    <td data-label="Plan">{nombrePlan(m.tipoMembresia)}</td>
+                    <td data-label="Vence" style={{ fontSize: 13 }}>{fechaCorta(m.fechaVencimiento)}</td>
+                    <td data-label="Faltan">
+                      <span className={`gt-badge ${dias === 0 ? 'gt-badge-red' : dias <= 3 ? 'gt-badge-yellow' : 'gt-badge-green'}`}>{dias === 0 ? 'Hoy' : `${dias} ${dias === 1 ? 'día' : 'días'}`}</span>
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <button className="gt-btn gt-btn-secondary" style={{ fontSize: 11, padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
+                    <td data-label="">
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button type="button" className="gt-btn gt-btn-secondary gt-btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                           disabled={d.notificando === m.id} onClick={() => d.notificarSocio(m)}>
                           <BellIcon />
-                          {d.notificando === m.id ? '...' : 'Notificar'}
+                          {d.notificando === m.id ? 'Enviando…' : 'Notificar'}
                         </button>
-                        <Link to={`/socios/${m.socioId}/perfil`} className="gt-btn gt-btn-secondary"
-                          style={{ fontSize: 11, padding: '3px 8px', textDecoration: 'none', display: 'inline-block' }}>Ver perfil</Link>
+                        <Link to={`/socios/${m.socioId}/perfil`} className="gt-btn gt-btn-secondary gt-btn-sm"
+                          style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Ver perfil</Link>
                       </div>
                     </td>
                   </tr>
@@ -164,7 +172,7 @@ export default function DashboardPage() {
       )}
 
       <p style={{ fontSize: 12, color: 'var(--text-xmuted)', marginTop: 4 }}>
-        Un socio está <em>registrado</em> cuando existe en el sistema. Para estar <em>con plan activo</em> debe tener una membresía vigente y paga.
+        <em>Socios activos</em>: los que no se dieron de baja. <em>Al día</em>: con la membresía vigente y paga. <em>Cuota vencida</em>: no pueden entrar hasta renovar. Son las mismas cuentas que en Socios.
       </p>
     </>
   )

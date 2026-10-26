@@ -21,12 +21,12 @@ export default function MembresiasForm() {
             <div className="gt-form-group">
               <label className="gt-label" htmlFor="membresiasform-campo-1">Nombre del plan *</label>
               <input id="membresiasform-campo-1" className="gt-input" type="text" value={f.nombre} onChange={e => f.setNombre(e.target.value)} placeholder="Ej: Plan Quincenal" required />
-              {f.tipoGenerado && <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-xmuted)' }}>Código interno: <strong>{f.tipoGenerado}</strong></p>}
+              {f.tipoGenerado && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-xmuted)' }}>Código interno: <strong>{f.tipoGenerado}</strong></p>}
             </div>
             <div className="gt-form-group">
               <label className="gt-label" htmlFor="membresiasform-campo-2">Duración (días) *</label>
               <input id="membresiasform-campo-2" className="gt-input" type="number" value={f.duracionDias} onChange={e => f.setDuracionDias(Number(e.target.value))} min={1} placeholder="Ej: 15" required />
-              <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-xmuted)' }}>El sistema calcula la fecha de vencimiento automáticamente.</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-xmuted)' }}>El sistema calcula la fecha de vencimiento automáticamente.</p>
             </div>
             <div className="gt-form-group">
               <label className="gt-label" htmlFor="membresiasform-campo-3">Precio ($) *</label>
@@ -44,7 +44,7 @@ export default function MembresiasForm() {
               </div>
               <input className="gt-input" type="number" min={1} value={f.pasesMensuales} placeholder="Vacío = pase libre"
                 onChange={e => f.setPasesMensuales(e.target.value === '' ? '' : Number(e.target.value))} />
-              <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--text-xmuted)' }}>Cuántos días por mes puede ingresar el socio. Se reinician cada mes.</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-xmuted)' }}>Cuántos días por mes puede ingresar el socio. Se reinician cada mes.</p>
             </div>
             <div className="gt-form-group" style={{ gridColumn: '1 / -1' }}>
               <label className="gt-label" htmlFor="membresiasform-campo-4">¿Qué incluye? (opcional)</label>

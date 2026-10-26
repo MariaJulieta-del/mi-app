@@ -86,7 +86,7 @@ export function CohortesRetencion() {
       <div className="gt-reporte-dos" style={{ marginBottom: 0 }}>
         <div style={{ minWidth: 0 }}>
           <p className="gt-card-title" style={{ marginTop: 0 }}>¿Se quedan los nuevos?</p>
-          <div className="gt-table-wrap">
+          <div tabIndex={0} role="region" aria-label="Retención por mes de alta" className="gt-table-wrap">
             <table className="gt-table gt-cohortes">
               <thead><tr><th>Empezaron</th><th>Altas</th><th>1 mes</th><th>2 meses</th><th>3 meses</th></tr></thead>
               <tbody>

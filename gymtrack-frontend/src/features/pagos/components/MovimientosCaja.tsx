@@ -100,23 +100,23 @@ export default function MovimientosCaja({ fechaInicial }: { fechaInicial?: strin
         <div className="gt-card"><EmptyState icono={Wallet} titulo={enPeriodo.length === 0 ? 'No hay cobros en este período' : 'Nada coincide con el filtro'}
           accion={<Link to="/pagos/nuevo" className="gt-btn gt-btn-primary">Registrar pago</Link>} /></div>
       ) : (
-        <div className="gt-table-wrap gt-card" style={{ padding: 0 }}>
-          <table className="gt-table">
+        <div tabIndex={0} role="region" aria-label="Movimientos de caja" className="gt-table-wrap gt-card" style={{ padding: 0 }}>
+          <table className="gt-table gt-tabla-tarjetas">
             <thead><tr><th>Fecha</th><th>Socio</th><th>Plan</th><th>Medio</th><th style={{ textAlign: 'right' }}>Monto</th></tr></thead>
             <tbody>
               {visibles.map(p => (
                 <tr key={p.id} style={p.estadoPago === 'CANCELADO' ? { opacity: 0.55 } : undefined}>
-                  <td style={{ whiteSpace: 'nowrap' }}>{formatFecha(p.fechaPago)}<span className="gt-text-muted gt-text-sm"> {p.fechaPago?.slice(11, 16)}</span></td>
-                  <td>
+                  <td data-label="Fecha" style={{ whiteSpace: 'nowrap' }}><span>{formatFecha(p.fechaPago)}<span className="gt-text-muted gt-text-sm"> {p.fechaPago?.slice(11, 16)}</span></span></td>
+                  <td className="gt-td-titulo">
                     {p.socioId ? <Link to={`/socios/${p.socioId}/perfil`} className="gt-fw-600" style={{ color: 'var(--text-primary)' }}>{p.socioNombre ?? '—'}</Link> : (p.socioNombre ?? '—')}
                     {p.observaciones && <div className="gt-text-sm gt-text-muted">{p.observaciones}</div>}
                   </td>
-                  <td>
+                  <td data-label="Plan">
                     {p.tipoMembresia ? nombrePlan(p.tipoMembresia) : `#${p.membresiaId}`}{' '}
                     {p.estadoMembresia && <Pill tono={TONO_ESTADO[p.estadoMembresia] ?? 'neutral'}>{p.estadoMembresia.toLowerCase()}</Pill>}
                   </td>
-                  <td>{METODOS.find(m => m.valor === p.metodoPago)?.texto ?? p.metodoPago}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <td data-label="Medio">{METODOS.find(m => m.valor === p.metodoPago)?.texto ?? p.metodoPago}</td>
+                  <td data-label="Monto" style={{ textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {pesos(Number(p.monto))}
                     {p.estadoPago === 'CANCELADO' && <div className="gt-text-sm gt-text-muted" style={{ fontWeight: 400 }}>anulado</div>}
                   </td>

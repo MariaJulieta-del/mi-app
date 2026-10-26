@@ -18,7 +18,7 @@ export default function PedidosHoy() {
     <section className="gt-card gt-pedidos-hoy" aria-labelledby="pedidos-hoy">
       <div className="gt-card-cabecera">
         <h2 id="pedidos-hoy" className="gt-card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Inbox size={16} aria-hidden /> Pedidos de rutina <span className="gt-nav-contador">{pedidos.length}</span>
+          <Inbox size={16} aria-hidden /> Pedidos de rutina <span className="gt-cuenta">{pedidos.length}</span>
         </h2>
         <Link to="/rutinas?tab=pedidos" className="gt-btn gt-btn-secondary gt-btn-sm">Ver todos</Link>
       </div>

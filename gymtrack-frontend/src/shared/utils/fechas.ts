@@ -21,6 +21,16 @@ export function formatFecha(iso?: string | null): string {
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-AR')
 }
 
+/** Fecha cercana, fácil de leer: "mar 28/10" (con el año si no es el actual) */
+export function fechaCorta(iso?: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso + 'T00:00:00' : iso)
+  if (isNaN(d.getTime())) return '—'
+  const dia = d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '')
+  const dm = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+  return `${dia} ${dm}${d.getFullYear() !== new Date().getFullYear() ? '/' + d.getFullYear() : ''}`
+}
+
 /** Edad cumplida a hoy a partir de una fecha YYYY-MM-DD (null si no hay fecha o es inválida) */
 export function edadDe(nacimiento?: string | null): number | null {
   if (!nacimiento || !/^\d{4}-\d{2}-\d{2}/.test(nacimiento)) return null

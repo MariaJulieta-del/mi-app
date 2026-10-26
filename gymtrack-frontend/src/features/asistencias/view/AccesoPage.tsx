@@ -111,22 +111,22 @@ export default function AccesoPage() {
         {a.historial.length === 0 ? (
           <div className="gt-empty">No hay registros para hoy todavía.</div>
         ) : (
-          <div className="gt-table-wrap">
-            <table className="gt-table">
+          <div tabIndex={0} role="region" aria-label="Historial de ingresos" className="gt-table-wrap">
+            <table className="gt-table gt-tabla-tarjetas">
               <thead><tr><th>Hora</th><th>Socio</th><th>DNI</th><th>Tipo</th><th>Acceso</th><th>Observación</th></tr></thead>
               <tbody>
                 {a.historial.map(h => (
                   <tr key={h.id}>
-                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{String(h.hora).slice(0, 5)}</td>
-                    <td className="gt-fw-600">{h.socioNombre}</td>
-                    <td>{h.socioDni}</td>
-                    <td><span className={h.tipo === 'ENTRADA' ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-blue'}>{h.tipo}</span></td>
-                    <td>
+                    <td data-label="Hora" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{String(h.hora).slice(0, 5)}</td>
+                    <td className="gt-td-titulo gt-fw-600">{h.socioNombre}</td>
+                    <td data-label="DNI">{h.socioDni}</td>
+                    <td data-label="Tipo"><span className={h.tipo === 'ENTRADA' ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-blue'}>{h.tipo}</span></td>
+                    <td data-label="Acceso">
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                         <span className={h.permitido ? 'gt-badge gt-badge-green' : 'gt-badge gt-badge-red'}>{h.permitido ? 'Permitido' : 'Denegado'}</span>
                       </div>
                     </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 200 }}>{h.observacion ?? '—'}</td>
+                    <td data-label="Observación" style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 200 }}>{h.observacion ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

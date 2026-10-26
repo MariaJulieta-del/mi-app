@@ -20,7 +20,9 @@ function aplicarEnPagina(m: Marca) {
     document.head.appendChild(estilo)
   }
   estilo.textContent = m.colorAcento ? cssDelColor(m.colorAcento) : ''
-  document.title = m.nombre
+  // Respeta la pantalla que ya figura en la pestaña («Socios · Mi Gimnasio»)
+  const pantalla = document.title.includes(' · ') ? document.title.split(' · ')[0] : null
+  document.title = pantalla ? `${pantalla} · ${m.nombre}` : m.nombre
   // Ícono de la pestaña: el logo del gimnasio (o el de GymTrack si no cargó uno)
   let icono = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
   if (!icono) {

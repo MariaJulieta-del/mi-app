@@ -159,7 +159,7 @@ export default function ReportesPage() {
                   {d.asistencias.length > 0 && ` · ${Math.round(d.totalAsistencias / d.asistencias.length)} por día en promedio`}
                 </p>
                 {d.asistencias.length === 0 ? <div className="gt-empty">Sin registros para el período seleccionado.</div> : (
-                  <div className="gt-table-wrap">
+                  <div tabIndex={0} role="region" aria-label="Ingresos por día" className="gt-table-wrap">
                     <table className="gt-table">
                       <thead><tr><th>Fecha</th><th>Ingresos</th><th style={{ width: '60%' }}>Distribución</th></tr></thead>
                       <tbody>
