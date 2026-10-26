@@ -54,7 +54,7 @@ export default function ComentariosSocios() {
               <span className="gt-text-sm gt-text-muted">{fechaCorta(s.fecha)} · {s.rutinaNombre ?? 'Entrenamiento'}{s.dia ? ` día ${s.dia}` : ''}{s.duracionMin ? ` · ${s.duracionMin} min` : ''}</span>
               {s.comentario && <p className="gt-comentario-texto">“{s.comentario}”</p>}
               {alerta && s.rutinaId && (
-                <Link to={`/rutinas/${s.rutinaId}?socioId=${s.socioId}`} className="gt-text-sm" style={{ fontWeight: 600 }}>
+                <Link to={`/rutinas/${s.rutinaId}?socioId=${s.socioId}`} className="gt-text-sm gt-link-accion" style={{ fontWeight: 600 }}>
                   {s.sensacion === 'MUY_FACIL' ? 'Le quedó fácil: subir la exigencia →' : 'Le costó mucho: revisar la rutina →'}
                 </Link>
               )}
